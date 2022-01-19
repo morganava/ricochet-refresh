@@ -130,7 +130,7 @@ namespace
 
     QString serviceIdToContactId(const QString& serviceId)
     {
-        return QStringLiteral("ricochet:%1").arg(serviceId);
+        return QStringLiteral("speek:%1").arg(serviceId);
     }
 
     QString tegoUserIdToServiceId(const tego_user_id_t* user)
@@ -420,6 +420,28 @@ namespace
         });
     }
 
+    void on_message_part_received(
+        tego_context_t*,
+        const tego_user_id_t* sender,
+        tego_time_t timestamp,
+        tego_message_id_t messageId,
+        const char* message,
+        size_t messageLength, int chunks_max, int chunks_rec)
+    {
+        auto contactId = tegoUserIdToContactId(sender);
+        auto messageString = QString::fromUtf8(message, messageLength);
+
+        push_task([=]() -> void
+        {
+            auto contactUser = contactUserFromContactId(contactId);
+            Q_ASSERT(contactUser != nullptr);
+            auto conversationModel = contactUser->conversation();
+            Q_ASSERT(conversationModel != nullptr);
+
+            conversationModel->messagePartReceived(messageId, QDateTime::fromMSecsSinceEpoch(timestamp), messageString, chunks_max, chunks_rec);
+        });
+    }
+
     void on_message_acknowledged(
         tego_context_t*,
         const tego_user_id_t* userId,
@@ -667,6 +689,11 @@ void init_libtego_callbacks(tego_context_t* context)
     tego_context_set_message_received_callback(
         context,
         &on_message_received,
+        tego::throw_on_error());
+
+    tego_context_set_message_part_received_callback(
+        context,
+        &on_message_part_received,
         tego::throw_on_error());
 
     tego_context_set_message_acknowledged_callback(

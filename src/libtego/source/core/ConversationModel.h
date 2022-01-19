@@ -91,7 +91,7 @@ signals:
     void unreadCountChanged();
 
 private slots:
-    void messageReceived(const QString &text, const QDateTime &time, MessageId id);
+    void messageReceived(const QString &text, const QDateTime &time, MessageId id, int chunk_id, int chunk_max);
     void messageAcknowledged(MessageId id, bool accepted);
     void outboundChannelClosed();
     void sendQueuedMessages();
@@ -112,6 +112,8 @@ private:
         MessageId identifier;
         MessageStatus status;
         quint8 attemptCount;
+        int chunk_id;
+        int chunk_max;
 
         MessageData(MessageType type, const QString &text, const QDateTime &time, MessageId id, MessageStatus status)
             : type(type), text(text), time(time), identifier(id), status(status), attemptCount(0)

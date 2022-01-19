@@ -36,7 +36,7 @@
 
 // multiple consumers of this regex object seems to cause thread contention issues
 // and segfaults, so make it thread_local to sidestep the issue for now
-static thread_local QRegularExpression regex(QStringLiteral("ricochet:([a-z2-7]{56})"));
+static thread_local QRegularExpression regex(QStringLiteral("speek:([a-z2-7]{56})"));
 
 ContactIDValidator::ContactIDValidator(QObject *parent)
     : QRegularExpressionValidator(parent)
@@ -108,7 +108,7 @@ QString ContactIDValidator::idFromHostname(const QString &hostname)
         re.chop(static_strlen(DOT_ONION));
     }
 
-    re.prepend(QStringLiteral("ricochet:"));
+    re.prepend(QStringLiteral("speek:"));
 
     if (!isValidID(re))
         return QString();

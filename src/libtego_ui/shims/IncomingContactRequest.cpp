@@ -27,7 +27,7 @@ namespace shims
 
     QString IncomingContactRequest::getContactId() const
     {
-        return QString("ricochet:") + serviceIdString;
+        return QString("speek:") + serviceIdString;
     }
 
     void IncomingContactRequest::setNickname(const QString& nickname)

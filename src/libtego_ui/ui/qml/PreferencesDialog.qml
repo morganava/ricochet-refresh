@@ -9,7 +9,7 @@ ApplicationWindow {
     minimumWidth: 820
     height: 400
     minimumHeight: 400
-    title: qsTr("Ricochet Preferences")
+    title: qsTr("Speek Preferences")
 
     signal closed
     onVisibleChanged: if (!visible) closed()

@@ -14,19 +14,17 @@ Install the following development packages:
 apt-get install build-essential libssl-dev pkg-config libprotobuf-dev protobuf-compiler libgl-dev
 ```
 
-## Building Ricochet Refresh
+## Building Speek
 
-These instructions are intended for people who wish to build or modify Ricochet Refresh from source. Most users should [download releases](https://github.com/blueprint-freespeech/ricochet-refresh/releases) instead.
+These instructions are intended for people who wish to build or modify Speek from source. Most users should [download releases](https://github.com/blueprint-freespeech/ricochet-refresh/releases) instead.
 
 Clone with git from `https://github.com/blueprint-freespeech/ricochet-refresh.git`, or download source packages [on github](https://github.com/blueprint-freespeech/ricochet-refresh/releases). Then proceed to instructions for your platform.
-
-If you're interested in helping to package Ricochet Refresh for common Linux platforms, please get in touch!
 
 ## Hints
 
 Add `CONFIG+=debug` or `CONFIG+=release` to the qmake command for a debug or release build. Debug builds enable logging to standard output, and shouldn't be used in sensitive environments.
 
-By default, Ricochet Refresh will be portable, and configuration is stored in a folder named `config` next to the binary. Add `DEFINES+=RICOCHET_NO_PORTABLE` to the qmake command for a system-wide installation using platform configuration paths instead.
+By default, Speek will be portable, and configuration is stored in a folder named `config` next to the binary. Add `DEFINES+=RICOCHET_NO_PORTABLE` to the qmake command for a system-wide installation using platform configuration paths instead.
 
 ## Linux
 
@@ -61,21 +59,14 @@ qmake # qmake-qt5 for some platforms
 make
 ```
 
-For a system-wide installation, use:
-```sh
-qmake DEFINES+=RICOCHET_NO_PORTABLE
-make
-make install # as root
-```
-
-You must have a `tor` binary installed on the system (in $PATH), or placed next to the `ricochet` binary.
+You must have a `tor` binary installed on the system (in $PATH), or placed next to the `Speek` binary.
 
 In portable mode (default), all configuration is stored in a folder called `config` with the binary. When installed, the platform's user configuration path is used instead.
 
-The [buildscripts](https://github.com/blueprint-freespeech/ricochet-refresh/tree/master/buildscripts) directory contains a set of scripts to build a fully static Ricochet Refresh on a clean Debian system. These are used to create the generic linux binary packages.
+The [buildscripts](https://github.com/blueprint-freespeech/ricochet-refresh/tree/master/buildscripts) directory contains a set of scripts to build a fully static Speek on a clean Debian system. These are used to create the generic linux binary packages.
 
 #### Hardening
-Ricochet Refresh will use aggressive compiler hardening flags if available. `qmake` will print the results of these tests on first run, or when run with `CONFIG+=recheck`.
+Speek will use aggressive compiler hardening flags if available. `qmake` will print the results of these tests on first run, or when run with `CONFIG+=recheck`.
 
 To take full advantage of the sanitizer options, you may need to install `libasan` and `libubsan`.
 
@@ -128,6 +119,6 @@ After installing the Qt SDK, open the `ricochet.pro` project in Qt Creator. Befo
 
 Use the 'Build -> Run qmake' menu to test your changes.
 
-You also need a `tor.exe` binary, placed in the same folder as `ricochet.exe`.
+You also need a `tor.exe` binary, placed in the same folder as `Speek.exe`.
 
 The windows installer can be built using Inno Setup. See `packaging\installer` for more information.

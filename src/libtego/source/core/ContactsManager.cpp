@@ -78,7 +78,7 @@ void ContactsManager::addOutgoingRequests(const QList<QString>& userHostnames)
 {
     for(const auto& hostname : userHostnames)
     {
-        this->createContactRequest(QString("ricochet:%1").arg(hostname), QString());
+        this->createContactRequest(QString("speek:%1").arg(hostname), QString());
     }
 }
 

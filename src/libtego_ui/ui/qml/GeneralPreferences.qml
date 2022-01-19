@@ -25,6 +25,36 @@ ColumnLayout {
     }
 
     CheckBox {
+        //: Text description of an option to activate a dark mode theme
+        text: qsTr("Activate dark mode (restart required)")
+        checked: uiSettings.data.darkMode || false
+        onCheckedChanged: {
+            uiSettings.write("darkMode", checked)
+        }
+
+        Accessible.role: Accessible.CheckBox
+        Accessible.name: text
+        Accessible.onPressAction: {
+            uiSettings.write("darkMode", checked)
+        }
+    }
+
+    CheckBox {
+        //: Text description of an option to activate rich text editing by default which allows the input of emojis and images
+        text: qsTr("Default Rich Text editing")
+        checked: uiSettings.data.defaultRichText || false
+        onCheckedChanged: {
+            uiSettings.write("defaultRichText", checked)
+        }
+
+        Accessible.role: Accessible.CheckBox
+        Accessible.name: text
+        Accessible.onPressAction: {
+            uiSettings.write("defaultRichText", checked)
+        }
+    }
+
+    CheckBox {
         //: Text description of an option to play audio notifications when contacts log in, log out, and send messages
         text: qsTr("Play audio notifications")
         checked: uiSettings.data.playAudioNotification || false
@@ -99,7 +129,7 @@ ColumnLayout {
             Bubble {
                 id: restartBubble
                 target: languageBox
-                text: qsTr("Restart Ricochet to apply changes")
+                text: qsTr("Restart Speek to apply changes")
                 displayed: false
                 horizontalAlignment: Qt.AlignRight
 

@@ -110,6 +110,7 @@ namespace shims
 
         void messageReceived(tego_message_id_t messageId, QDateTime timestamp, const QString& text);
         void messageAcknowledged(tego_message_id_t messageId, bool accepted);
+        void messagePartReceived(tego_message_id_t messageId, QDateTime timestamp, const QString& text, int chunks_max, int chunks_rec);
 
     public slots:
         void sendMessage(const QString &text);
@@ -120,6 +121,8 @@ namespace shims
         void unreadCountChanged(int prevCount, int currentCount);
         void conversationEventCountChanged();
     private:
+        static QMutex mutex;
+
         void setUnreadCount(int count);
 
         shims::ContactUser* contactUser = nullptr;
@@ -128,6 +131,7 @@ namespace shims
         {
             MessageDataType type = InvalidMessage;
             QString text = {};
+            QString prep_text = {};
             QDateTime time = {};
             static_assert(std::is_same_v<quint32, tego_file_transfer_id_t>);
             static_assert(std::is_same_v<quint32, tego_message_id_t>);

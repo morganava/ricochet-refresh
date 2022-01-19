@@ -6,7 +6,7 @@ namespace shims
     ContactIDValidator::ContactIDValidator(QObject *parent)
     : QRegularExpressionValidator(parent)
     {
-        QRegularExpressionValidator::setRegularExpression(QRegularExpression(QStringLiteral("ricochet:([a-z2-7]{56})")));
+        QRegularExpressionValidator::setRegularExpression(QRegularExpression(QStringLiteral("speek:([a-z2-7]{56})")));
     }
 
     void ContactIDValidator::fixup(QString &text) const
@@ -69,7 +69,7 @@ namespace shims
         char serviceIdString[TEGO_V3_ONION_SERVICE_ID_SIZE] = {0};
         tego_v3_onion_service_id_to_string(serviceId.get(), serviceIdString, sizeof(serviceIdString), tego::throw_on_error());
 
-        auto utf8Text = text.mid(tego::static_strlen("ricochet:")).toUtf8();
+        auto utf8Text = text.mid(tego::static_strlen("speek:")).toUtf8();
         auto utf8ServiceId = QByteArray(serviceIdString, TEGO_V3_ONION_SERVICE_ID_LENGTH);
 
         return utf8Text == utf8ServiceId;
@@ -77,7 +77,7 @@ namespace shims
 
     bool ContactIDValidator::isValidID(const QString &serviceID) const
     {
-        auto strippedID = serviceID.mid(tego::static_strlen("ricochet:"));
+        auto strippedID = serviceID.mid(tego::static_strlen("speek:"));
         logger::println("strippedID : {}", strippedID.toUtf8().constData(), strippedID.size());
 
         bool valid = tego_v3_onion_service_id_string_is_valid(strippedID.toUtf8().constData(), strippedID.size(), nullptr) == TEGO_TRUE;

@@ -13,6 +13,12 @@ ToolBar {
     property Action addContact: addContactAction
     property Action preferences: preferencesAction
 
+    style: ToolBarStyle {
+        panel: Rectangle {
+            color: palette.base
+        }
+    }
+
     data: [
         Action {
             id: addContactAction
@@ -51,9 +57,12 @@ ToolBar {
     RowLayout {
         id: toolBarLayout
         width: parent.width
+        spacing: 0
 
         TorStateWidget {
+            id:torstatewidget
             Layout.alignment: Qt.AlignVCenter
+            visible: text === qsTr("Online") ? false : true
         }
 
         Item {
@@ -62,11 +71,35 @@ ToolBar {
         }
 
         ToolButton {
+            visible: !torstatewidget.visible
             id: addContactButton
-            implicitHeight: 24
+            implicitHeight: 32
+            implicitWidth: 32
             action: addContactAction
-            style: iconButtonStyle
-            text: "\ue810" // iconFont plus symbol
+            //style: iconButtonStyle
+            //text: "\ue810" // iconFont plus symbol
+            style: ButtonStyle {
+            background: Rectangle {
+
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    border.color: control.hovered ? "#dddddd" : "transparent"
+                    border.width: 1
+                    radius: 5
+                    color: "transparent"
+                }
+            label: Image {
+                height: 32
+                width: 32
+                        source: palette.base == "#2a2a2a" ? "qrc:/icons/guest-add-svgrepo-com-white.svg" : "qrc:/icons/guest-add-svgrepo-com.svg"
+                        fillMode: Image.PreserveAspectFit  // ensure it fits
+                        Layout.preferredHeight: 32
+                            Layout.preferredWidth: 32
+                            smooth: true
+                            antialiasing: true
+                            sourceSize: Qt.size(width*2,height*2)
+                    }
+            }
 
             Loader {
                 id: emptyState
@@ -88,9 +121,33 @@ ToolBar {
 
         ToolButton {
             action: preferencesAction
-            implicitHeight: 24
-            style: iconButtonStyle
-            text: "\ue803" // iconFont gear
+            implicitHeight: 32
+            implicitWidth: 32
+            //style: iconButtonStyle
+            //text: "\ue803" // iconFont gear
+
+            style: ButtonStyle {
+            background: Rectangle {
+
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    border.color: control.hovered ? "#dddddd" : "transparent"
+                    border.width: 1
+                    radius: 5
+                    color: "transparent"
+                }
+            label: Image {
+                height: 32
+                width: 32
+                        source: palette.base == "#2a2a2a" ? "qrc:/icons/table-settings-svgrepo-com-white.svg" : "qrc:/icons/table-settings-svgrepo-com.svg"
+                        fillMode: Image.PreserveAspectFit  // ensure it fits
+                        Layout.preferredHeight: 32
+                            Layout.preferredWidth: 32
+                            smooth: true
+                            antialiasing: true
+                            sourceSize: Qt.size(width*2,height*2)
+                    }
+            }
 
             Accessible.role: Accessible.Button
             //: Name of the button for launching the preferences window for accessibility tech like screen readres

@@ -315,7 +315,7 @@ void ConversationModel::sendQueuedMessages()
     }
 }
 
-void ConversationModel::messageReceived(const QString &text, const QDateTime &time, MessageId id)
+void ConversationModel::messageReceived(const QString &text, const QDateTime &time, MessageId id, int chunk_id, int chunk_max)
 {
     // In rare cases an outgoing acknowledgement packet can be lost which
     // causes the other party to resend the message. Discard the duplicate.
@@ -341,19 +341,54 @@ void ConversationModel::messageReceived(const QString &text, const QDateTime &ti
             break;
         }
     }
+    QString tt;
+    INSERT:
+    bool found = false;
+    for(int i = 1; i < messages.size(); i++){
+        if(messages[i].identifier == id){
+            messages[i].text = messages[i].text.replace("￿"+QString::number(chunk_id)+"￿",text);
+            tt = messages[i].text;
+            found = true;
+            break;
+        }
+    }
+    if(found == false){
+        QString xx = "";
+        for(int i = 0; i<chunk_max; i++){
+            xx += "￿"+QString::number(i)+"￿";
+        }
+        beginInsertRows(QModelIndex(), row, row);
+        MessageData message(Message, xx, time, id, Received);
+        messages.insert(row, message);
+        endInsertRows();
+        prune();
+        goto INSERT;
+    }
+    if(tt.contains("￿")){
+        //auto userId = this->m_contact->toTegoUserId();
+        //g_globals.context->callback_registry_.emit_message_part_received(userId.release(), time.toMSecsSinceEpoch(), static_cast<tego_message_id_t>(id), "", 0,chunk_max,chunk_max-(tt.count("￿")/2));
+        //return;
+        goto SKIP;
 
-    beginInsertRows(QModelIndex(), row, row);
-    MessageData message(Message, text, time, id, Received);
-    messages.insert(row, message);
-    endInsertRows();
-    prune();
-
+    }
     m_unreadCount++;
     emit unreadCountChanged();
-
+SKIP:;
+    int ctr1 = chunk_max-(tt.count("￿")/2);
     {
+        auto utf8Text = tt.toUtf8();
         // convert QString to raw utf8
-        auto utf8Text = text.toUtf8();
+        /*
+        QString tt = text;
+        tt = tt.replace("￿","").replace("￾","");
+        if(text.contains("￿")){
+            for(int i = messages.size()-1; i>=0; i--){
+                if(messages[i].text.contains("￾"))
+                    tt = messages[i].text.replace("￿","").replace("￾","") + tt;
+            }
+            utf8Text = tt.toUtf8();
+        }*/
+
         auto rawText = std::make_unique<char[]>(utf8Text.size() + 1);
         std::copy(utf8Text.begin(), utf8Text.end(), rawText.get());
 
@@ -361,8 +396,11 @@ void ConversationModel::messageReceived(const QString &text, const QDateTime &ti
 
         logger::println("Received Message : {}", rawText.get());
 
-        g_globals.context->callback_registry_.emit_message_received(userId.release(), time.toMSecsSinceEpoch(), static_cast<tego_message_id_t>(id), rawText.release(), utf8Text.size());
+        //g_globals.context->callback_registry_.emit_message_received(userId.release(), time.toMSecsSinceEpoch(), static_cast<tego_message_id_t>(id), rawText.release(), utf8Text.size());
+        g_globals.context->callback_registry_.emit_message_part_received(userId.release(), time.toMSecsSinceEpoch(), static_cast<tego_message_id_t>(id), rawText.release(), utf8Text.size(),chunk_max,ctr1);
+
     }
+
 }
 
 void ConversationModel::messageAcknowledged(MessageId id, bool accepted)

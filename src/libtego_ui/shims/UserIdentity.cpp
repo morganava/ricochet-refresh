@@ -57,7 +57,7 @@ namespace shims
 
     QString UserIdentity::contactID() const
     {
-        // get host user id and convert to the ricochet:blahlah format
+        // get host user id and convert to the speek:blahlah format
         std::unique_ptr<tego_user_id_t> userId;
         tego_context_get_host_user_id(this->context, tego::out(userId), tego::throw_on_error());
 
@@ -68,7 +68,7 @@ namespace shims
         tego_v3_onion_service_id_to_string(serviceId.get(), serviceIdString, sizeof(serviceIdString), tego::throw_on_error());
 
         QString contactId;
-        QTextStream(&contactId) << "ricochet:" << serviceIdString;
+        QTextStream(&contactId) << "speek:" << serviceIdString;
 
         return contactId;
     }

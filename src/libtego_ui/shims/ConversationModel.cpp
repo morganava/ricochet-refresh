@@ -4,6 +4,7 @@
 
 namespace shims
 {
+QMutex ConversationModel::mutex;
     ConversationModel::ConversationModel(QObject *parent)
     : QAbstractListModel(parent)
     , contactUser(nullptr)
@@ -28,6 +29,7 @@ namespace shims
     {
         QHash<int, QByteArray> roles;
         roles[Qt::DisplayRole] = "text";
+        roles[Qt::CheckStateRole] = "prep_text";
         roles[TimestampRole] = "timestamp";
         roles[IsOutgoingRole] = "isOutgoing";
         roles[StatusRole] = "status";
@@ -62,6 +64,15 @@ namespace shims
                 {
                     return QStringLiteral("not a text message");
                 }
+        case Qt::CheckStateRole:
+            if (message.type == TextMessage)
+            {
+                return message.prep_text;
+            }
+            else
+            {
+                return QStringLiteral("not a text message");
+            }
 
             case TimestampRole: return message.time;
             case IsOutgoingRole: return message.status != Received;
@@ -665,6 +676,45 @@ namespace shims
         MessageData md;
         md.type = TextMessage;
         md.text = text;
+        md.time = timestamp;
+        md.identifier = messageId;
+        md.status = Received;
+
+        this->beginInsertRows(QModelIndex(), 0, 0);
+        this->messages.prepend(std::move(md));
+        this->endInsertRows();
+
+        this->setUnreadCount(this->unreadCount + 1);
+        this->addEventFromMessage(indexOfIncomingMessage(messageId));
+    }
+
+    void ConversationModel::messagePartReceived(tego_message_id_t messageId, QDateTime timestamp, const QString& text, int chunks_max, int chunks_rec)
+    {
+        QMutexLocker locker(&mutex);
+        QList<MessageData>::iterator i = nullptr;
+        for (i = messages.begin(); i != messages.end(); i++)
+            if(i->identifier == messageId){
+                auto row = this->indexOfMessage(messageId);
+                if (row >= 0)
+                {
+                    MessageData &data = messages[row];
+                    data.prep_text = QString::number(chunks_rec*100/chunks_max) + "% (" + QString::number(float(chunks_max)*63000/1000/1000*chunks_rec/chunks_max) + "/" + QString::number(float(chunks_max)*63000/1000/1000)+"MB)";
+
+                    if(chunks_max == chunks_rec){
+                        data.text = text;
+                    }
+                    emitDataChanged(row);
+                    //this->addEventFromMessage(indexOfIncomingMessage(messageId));
+                    return;
+                }
+            }
+
+        MessageData md;
+        md.type = TextMessage;
+        if(chunks_max == chunks_rec){
+            md.text = text;
+        }
+        md.prep_text = QString::number(chunks_rec/chunks_max*100);
         md.time = timestamp;
         md.identifier = messageId;
         md.status = Received;

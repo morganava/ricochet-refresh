@@ -39,16 +39,18 @@ include($${QMAKE_INCLUDES}/artifacts.pri)
 include($${QMAKE_INCLUDES}/compiler_flags.pri)
 include($${QMAKE_INCLUDES}/linker_flags.pri)
 
-TARGET = ricochet-refresh
+TARGET = speek
 TEMPLATE = app
 
-QT += core gui network quick widgets
+QT += core gui network quick widgets quickcontrols2
 
-isEmpty(RICOCHET_REFRESH_VERSION) {
-    VERSION = devbuild
-} else {
-    VERSION = $${RICOCHET_REFRESH_VERSION}
-}
+#isEmpty(RICOCHET_REFRESH_VERSION) {
+#    VERSION = devbuild
+#} else {
+#    VERSION = $${RICOCHET_REFRESH_VERSION}
+#}
+
+VERSION = 1.4.1
 
 DEFINES += "TEGO_VERSION=$${VERSION}"
 
@@ -66,7 +68,7 @@ macx {
     # Work around by copying Info.plist directly.
     QMAKE_INFO_PLIST = Info.plist
 
-    icons.files = icons/ricochet_refresh.icns
+    icons.files = icons/speek.icns
     icons.path = Contents/Resources/
     QMAKE_BUNDLE_DATA += icons
 }
@@ -94,7 +96,7 @@ RESOURCES +=\
     icons/icons.qrc \
     sounds/sounds.qrc
 
-win32:RC_ICONS = icons/ricochet_refresh.ico
+win32:RC_ICONS = icons/speek.ico
 OTHER_FILES += $${PWD}/../libtego_ui/ui/qml/*
 lupdate_only {
     SOURCES += $${PWD}/../libtego_ui/ui/qml/*.qml

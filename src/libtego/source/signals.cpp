@@ -143,6 +143,7 @@ extern "C"
     TEGO_DEFINE_CALLBACK_SETTER(chat_request_received);
     TEGO_DEFINE_CALLBACK_SETTER(chat_request_response_received);
     TEGO_DEFINE_CALLBACK_SETTER(message_received);
+    TEGO_DEFINE_CALLBACK_SETTER(message_part_received);
     TEGO_DEFINE_CALLBACK_SETTER(message_acknowledged);
     TEGO_DEFINE_CALLBACK_SETTER(file_transfer_request_received);
     TEGO_DEFINE_CALLBACK_SETTER(file_transfer_request_acknowledged);

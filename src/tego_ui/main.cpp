@@ -35,6 +35,7 @@
 #include "utils/Settings.h"
 
 #include <libtego_callbacks.hpp>
+#include <QStyleFactory>
 
 // shim replacements
 #include "shims/TorControl.h"
@@ -43,6 +44,7 @@
 
 static bool initSettings(SettingsFile *settings, QLockFile **lockFile, QString &errorMessage);
 static void initTranslation();
+static void initTheme();
 
 int main(int argc, char *argv[]) try
 {
@@ -65,6 +67,12 @@ int main(int argc, char *argv[]) try
 
     QApplication a(argc, argv);
 
+    qApp->setStyle(QStyleFactory::create("Fusion"));
+    // increase font size for better reading
+    QFont defaultFont = QApplication::font();
+    defaultFont.setPointSize(defaultFont.pointSize()+2);
+    qApp->setFont(defaultFont);
+
     tego_context_t* tegoContext = nullptr;
     tego_initialize(&tegoContext, tego::throw_on_error());
 
@@ -78,7 +86,7 @@ int main(int argc, char *argv[]) try
     a.setApplicationVersion(QLatin1String(TEGO_VERSION_STR));
 
 #if !defined(Q_OS_WIN) && !defined(Q_OS_MAC)
-    a.setWindowIcon(QIcon(QStringLiteral(":/icons/ricochet_refresh.png")));
+    a.setWindowIcon(QIcon(QStringLiteral(":/icons/speek.png")));
 #endif
 
     QScopedPointer<SettingsFile> settings(new SettingsFile);
@@ -90,12 +98,13 @@ int main(int argc, char *argv[]) try
         if (error.isEmpty()) {
             return 0;
         }
-        QMessageBox::critical(0, qApp->translate("Main", "Ricochet Error"), error);
+        QMessageBox::critical(0, qApp->translate("Main", "Speek Error"), error);
         return 1;
     }
     QScopedPointer<QLockFile> lockFile(lock);
 
     initTranslation();
+    initTheme();
 
     // init our tor shims
     shims::TorControl::torControl = new shims::TorControl(tegoContext);
@@ -316,11 +325,11 @@ static bool initSettings(SettingsFile *settings, QLockFile **lockFile, QString &
 
             QMessageBox msgBox;
             msgBox.setWindowTitle(QStringLiteral("Profile Migration"));
-            msgBox.setText(QStringLiteral("Ricochet Refresh has detected an existing legacy profile. Do you want to import it?"));
+            msgBox.setText(QStringLiteral("Speek has detected an existing legacy profile. Do you want to import it?"));
             msgBox.setIcon(QMessageBox::Question);
             msgBox.setDetailedText(
                 QStringLiteral(
-                    "Previous versions of Ricochet Refresh stored your profile data in the application's install location. If you import your legacy profile, it will be moved to a new location within your home directory.\n\n"
+                    "Previous versions of Speek stored your profile data in the application's install location. If you import your legacy profile, it will be moved to a new location within your home directory.\n\n"
                     "Old profile: '%1'\n"
                     "New profile: '%2'").arg(legacyConfigPath).arg(configPath));
             msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Abort);
@@ -402,6 +411,38 @@ static bool initSettings(SettingsFile *settings, QLockFile **lockFile, QString &
     }
 
     return true;
+}
+
+static void initTheme()
+{
+    // modify palette to dark
+    QPalette darkPalette;
+    darkPalette.setColor(QPalette::Window,QColor(53,53,53));
+    darkPalette.setColor(QPalette::WindowText,Qt::white);
+    darkPalette.setColor(QPalette::Disabled,QPalette::WindowText,QColor(127,127,127));
+    darkPalette.setColor(QPalette::Base,QColor(42,42,42));
+    darkPalette.setColor(QPalette::AlternateBase,QColor(66,66,66));
+    darkPalette.setColor(QPalette::ToolTipBase,QColor(40,40,40));
+    darkPalette.setColor(QPalette::ToolTipText,Qt::white);
+    darkPalette.setColor(QPalette::Text,Qt::white);
+    darkPalette.setColor(QPalette::Disabled,QPalette::Text,QColor(127,127,127));
+    darkPalette.setColor(QPalette::Dark,QColor(35,35,35));
+    darkPalette.setColor(QPalette::Shadow,QColor(20,20,20));
+    darkPalette.setColor(QPalette::Button,QColor(53,53,53));
+    darkPalette.setColor(QPalette::ButtonText,Qt::white);
+    darkPalette.setColor(QPalette::Disabled,QPalette::ButtonText,QColor(127,127,127));
+    darkPalette.setColor(QPalette::BrightText,Qt::red);
+    darkPalette.setColor(QPalette::Link,QColor(42,130,218));
+    darkPalette.setColor(QPalette::Highlight,QColor(42,130,218));
+    darkPalette.setColor(QPalette::Disabled,QPalette::Highlight,QColor(80,80,80));
+    darkPalette.setColor(QPalette::HighlightedText,Qt::white);
+    darkPalette.setColor(QPalette::Disabled,QPalette::HighlightedText,QColor(127,127,127));
+    darkPalette.setColor(QPalette::Midlight,QColor(50,50,50));
+
+    SettingsObject settings;
+    if(settings.read("ui.darkMode").toBool()){
+        qApp->setPalette(darkPalette);
+    }
 }
 
 static void initTranslation()

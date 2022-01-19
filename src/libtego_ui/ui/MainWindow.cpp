@@ -49,6 +49,7 @@
 #include "shims/OutgoingContactRequest.h"
 #include "shims/ContactIDValidator.h"
 #include "shims/IncomingContactRequest.h"
+#include "shims/utility.h"
 
 MainWindow *uiMain = 0;
 
@@ -110,6 +111,7 @@ MainWindow::MainWindow(QObject *parent)
     qmlRegisterType<::SettingsObject>("im.ricochet", 1, 0, "Settings");
     qmlRegisterSingletonType<::Clipboard>("im.ricochet", 1, 0, "Clipboard", &Clipboard::singleton_provider);
     qmlRegisterType<::LanguagesModel>("im.ricochet", 1, 0, "LanguagesModel");
+    qmlRegisterType<Utility>("im.utility", 1, 0, "Utility");
 }
 
 MainWindow::~MainWindow()
@@ -127,8 +129,8 @@ bool MainWindow::showUI()
 
     if (qml->rootObjects().isEmpty()) {
         // Assume this is only applicable to technical users; not worth translating or simplifying.
-        QMessageBox::critical(0, QStringLiteral("Ricochet"),
-            QStringLiteral("An error occurred while loading the Ricochet UI.\n\n"
+        QMessageBox::critical(0, QStringLiteral("Speek"),
+            QStringLiteral("An error occurred while loading the Speek UI.\n\n"
                            "You might be missing plugins or dependency packages."));
         qCritical() << "Failed to load UI. Exiting.";
         return false;

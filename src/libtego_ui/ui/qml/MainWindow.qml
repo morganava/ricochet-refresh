@@ -7,11 +7,11 @@ import "ContactWindow.js" as ContactWindow
 
 ApplicationWindow {
     id: window
-    title: "Ricochet"
+    title: "Speek"
     visibility: Window.AutomaticVisibility
 
-    width: 650
-    height: 400
+    width: 950
+    height: 600
     minimumHeight: 400
     minimumWidth: uiSettings.data.combinedChatWindow ? 650 : 250
 
@@ -22,7 +22,7 @@ ApplicationWindow {
         active: Qt.platform.os == 'osx'
         sourceComponent: MenuBar {
             Menu {
-                title: "Ricochet"
+                title: "Speek"
                 MenuItem {
                     text: qsTranslate("QCocoaMenuItem", "Preference")
                     onTriggered: toolBar.preferences.trigger()
@@ -107,7 +107,7 @@ ApplicationWindow {
             visible: combinedChatView.visible
             width: 1
             Layout.fillHeight: true
-            color: Qt.darker(palette.window, 1.5)
+            color: "darkgrey"//Qt.darker(palette.window, 1.5)
         }
 
         PageView {

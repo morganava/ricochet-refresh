@@ -2,10 +2,15 @@ import QtQuick 2.15
 import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import im.ricochet 1.0
+import im.utility 1.0
 
 Column {
     id: delegate
     width: parent.width
+    property string selected_image;
+    property string copy_selected_image;
+
+    //FontLoader { id: localFont; source: "file:///home/jesus/Downloads/ricochet-refresh-main/pp/src/ricochet-refresh/build/release/tego_ui/NotoColorEmoji.ttf" }
 
     Loader {
         active: {
@@ -42,6 +47,8 @@ Column {
         width: Math.max(30, message.width + 12)
         height: message.height + 12
         x: model.isOutgoing ? parent.width - width - 11 : 10
+        radius: 5
+        border.color: "transparent"
 
         property int __maxWidth: parent.width * 0.8
 
@@ -54,15 +61,19 @@ Column {
             height: 10
             x: model.isOutgoing ? parent.width - 20 : 10
             y: model.isOutgoing ? parent.height - 5 : -5
+            //color: "white"
             color: parent.color
+            //color: (model.status === ConversationModel.Error) ? "#ffdcc4" : ( model.isOutgoing ? "#cccccc" : "#c4e7ff" )
         }
 
         Rectangle {
             anchors.fill: parent
+            radius: 5
             anchors.margins: 1
             opacity: (model.status === ConversationModel.Sending || model.status === ConversationModel.Queued || model.status === ConversationModel.Error) ? 1 : 0
             visible: opacity > 0
             color: Qt.lighter(parent.color, 1.15)
+            //color: (model.status === ConversationModel.Error) ? "#ffdcc4" : ( model.isOutgoing ? "#cccccc" : "#c4e7ff" )
 
             Behavior on opacity { NumberAnimation { } }
         }
@@ -70,6 +81,7 @@ Column {
         Rectangle
         {
             id: message
+            radius: 5
 
             property Item childItem: {
                 if (model.type == "text")
@@ -98,15 +110,22 @@ Column {
                 height: contentHeight
 
                 renderType: Text.NativeRendering
-                textFormat: TextEdit.PlainText
+                textFormat: TextEdit.RichText
+                //onLinkActivated: Qt.openUrlExternally(link)
+                //onLinkActivated: console.log(link + " link activated")
+                onLinkHovered: {
+                    //console.log(link)
+                    selected_image = link
+                }
                 selectionColor: palette.highlight
                 selectedTextColor: palette.highlightedText
                 font.pointSize: styleHelper.pointSize
+                font.family: "Helvetica"
 
                 wrapMode: TextEdit.Wrap
                 readOnly: true
                 selectByMouse: true
-                text: model.text
+                text: model.text != "" ? model.text : model.prep_text
 
                 MouseArea {
                     anchors.fill: parent
@@ -273,6 +292,7 @@ Column {
     }
 
     function showContextMenu() {
+        copy_selected_image = selected_image
         var object = rightClickContextMenu.createObject(delegate, { })
         object.popupVisibleChanged.connect(function() { if (!object.visible) object.destroy(1000) })
         object.popup()
@@ -303,6 +323,27 @@ Column {
                 text: qsTr("Copy Selection")
                 visible: textField.selectedText.length > 0
                 action: copySelectionAction
+            }
+
+            MenuItem {
+                //: Context menu quote message
+                text: qsTr("Quote")
+                onTriggered: {
+                    textInputMain.insert(textInputMain.cursorPosition, '<table style="margin:10px;margin-left:10px;padding-left:6px;color:grey;"><tr><td width=3 bgcolor="grey"/><td>' + textField.text + "</td></tr></table><br />")
+                }
+            }
+
+            MenuItem {
+                //: Context menu quote message
+                text: qsTr("Save Image")
+                visible: copy_selected_image != "" ? true : false
+                onTriggered: {
+                    const regex = '<a href="' + copy_selected_image + '"><img.* src="data:image/([a-zA-Z]+);base64,([A-Za-z0-9+/=]+)';
+                    const found = textField.text.match(regex);
+                    utility.saveBase64(found[2],"1",found[1])
+
+                    //console.log(found[1]);
+                }
             }
         }
     }

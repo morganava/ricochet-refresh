@@ -5,6 +5,8 @@ package Protocol.Data.Chat;
 message Packet {
     optional ChatMessage chat_message = 1;
     optional ChatAcknowledge chat_acknowledge = 2;
+    optional uint32 chunk_id = 3;
+    optional uint32 chunk_parts = 4;
 }
 
 message ChatMessage {

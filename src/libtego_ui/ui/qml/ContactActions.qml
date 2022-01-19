@@ -36,7 +36,7 @@ Item {
     }
 
     function canExportConversation() {
-        return contact.conversation.conversationEventCount > 0;
+        return contact !== null ? contact.conversation.conversationEventCount > 0 : false;
     }
 
     function exportConversation() {

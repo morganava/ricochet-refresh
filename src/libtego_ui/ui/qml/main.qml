@@ -79,6 +79,10 @@ QtObject {
         Connections {
             target: userIdentity
             function onRequestAdded(request) {
+                /*
+                console.log(request.message)
+                if(request.message !== "123")
+                    request.reject();*/
                 var object = createDialog("ContactRequestDialog.qml", { 'request': request })
                 object.visible = true
             }

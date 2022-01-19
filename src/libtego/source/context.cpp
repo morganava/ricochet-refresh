@@ -412,7 +412,7 @@ void tego_context::send_chat_request(
     auto contactsManager = userIdentity->getContacts();
 
     contactsManager->createContactRequest(
-        QString::fromStdString(fmt::format("ricochet:{}", user->serviceId.data)),
+        QString::fromStdString(fmt::format("speek:{}", user->serviceId.data)),
         (messageLength == 0) ? QString() : QString::fromUtf8(message, messageLength));
 }
 
