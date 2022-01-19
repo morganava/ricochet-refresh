@@ -65,7 +65,7 @@ ScrollView {
                 font.bold: true
                 font.capitalization: Font.SmallCaps
                 textFormat: Text.PlainText
-                color: "#3f454a"
+                color: palette.text//"#3f454a"
 
                 text: {
                     // Translation strings are uppercase for legacy reasons, and because they
@@ -97,7 +97,7 @@ ScrollView {
                     topMargin: 1
                 }
 
-                color: "black"
+                color: palette.text
                 opacity: 0.1
             }
         }

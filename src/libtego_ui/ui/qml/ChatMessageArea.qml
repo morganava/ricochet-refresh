@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.0
 Rectangle {
     id: scroll
     clip: true
+    //color: "#e4dcd3"
     color: palette.base
 
     property alias model: messageView.model
@@ -49,5 +50,7 @@ Rectangle {
 
         verticalLayoutDirection: ListView.BottomToTop
     }
+
+    //Rectangle {anchors.bottom: parent.bottom; width: parent.width; height: 1; color: "darkgrey"; }
 }
 

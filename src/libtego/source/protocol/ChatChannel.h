@@ -46,7 +46,7 @@ class ChatChannel : public Channel
 
 public:
     typedef quint32 MessageId;
-    static const int MessageMaxCharacters = 2000;
+    static const int MessageMaxCharacters = 63700;
 
     explicit ChatChannel(Direction direction, Connection *connection);
 
@@ -54,7 +54,7 @@ public:
 
 signals:
     void messageAcknowledged(MessageId id, bool accepted);
-    void messageReceived(const QString &text, const QDateTime &time, MessageId id);
+    void messageReceived(const QString &text, const QDateTime &time, MessageId id, int chunk_id, int chunk_max);
 
 protected:
     virtual bool allowInboundChannelRequest(const Data::Control::OpenChannel *request, Data::Control::ChannelResult *result);
@@ -64,7 +64,7 @@ protected:
 private:
     QSet<MessageId> pendingMessages;
 
-    void handleChatMessage(const Data::Chat::ChatMessage &message);
+    void handleChatMessage(const Data::Chat::ChatMessage &message, int chunk_id, int chunk_max);
     void handleChatAcknowledge(const Data::Chat::ChatAcknowledge &message);
 };
 

@@ -23,6 +23,7 @@ PRECOMPILED_HEADER = precomp.hpp
 
 SOURCES += \
     libtego_callbacks.cpp \
+    shims/utility.cpp \
     ui/Clipboard.cpp \
     ui/ContactsModel.cpp \
     ui/LanguagesModel.cpp \
@@ -41,6 +42,7 @@ SOURCES += \
 
 HEADERS += \
     libtego_callbacks.hpp \
+    shims/utility.h \
     ui/Clipboard.h \
     ui/ContactsModel.h \
     ui/LanguagesModel.h \

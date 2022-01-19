@@ -704,7 +704,7 @@ const char* tego_context_get_tor_version_string(
     const tego_context_t* context,
     tego_error_t** error);
 
-// corresponds to Ricochet's Tor::TorControl::Status enum
+// corresponds to Speek's Tor::TorControl::Status enum
 typedef enum
 {
     tego_tor_control_status_error = -1,
@@ -1168,6 +1168,24 @@ typedef void (*tego_message_received_callback_t)(
     size_t messageLength);
 
 /*
+ * Callback fired when the host receives a message from another user
+ *
+ * @param context : the current tego context
+ * @param sender : the user that sent host the message
+ * @param timestamp : the time the message was sent
+ * @param messageId : id of the message received
+ * @param message : null-terminated message string
+ * @param messageLength : length of the message not including null-terminator
+ */
+typedef void (*tego_message_part_received_callback_t)(
+    tego_context_t* context,
+    const tego_user_id_t* sender,
+    tego_time_t timestamp,
+    tego_message_id_t messageId,
+    const char* message,
+    size_t messageLength, int chunks_max, int chunks_rec);
+
+/*
  * Callback fired when a chat message is received and acknowledge
  * by the recipient
  *
@@ -1367,6 +1385,11 @@ void tego_context_set_chat_request_response_received_callback(
 void tego_context_set_message_received_callback(
     tego_context_t* context,
     tego_message_received_callback_t,
+    tego_error_t** error);
+
+void tego_context_set_message_part_received_callback(
+    tego_context_t* context,
+    tego_message_part_received_callback_t,
     tego_error_t** error);
 
 void tego_context_set_message_acknowledged_callback(

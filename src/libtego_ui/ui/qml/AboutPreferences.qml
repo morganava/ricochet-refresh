@@ -11,13 +11,13 @@ ColumnLayout {
     Label {
         Layout.fillWidth: true
         //: %1 version, e.g. 1.0.0
-        text: qsTr("Ricochet-Refresh %1").arg(uiMain.version)
+        text: qsTr("Speek %1").arg(uiMain.version)
         horizontalAlignment: Qt.AlignHCenter
 
-        Accessible.description: qsTr("Current Ricochet-Refresh version")
+        Accessible.description: qsTr("Current Speek version")
         Accessible.role: Accessible.StaticText
-        //: provides a readable interpretation of the Ricochet-Refresh version number for accessibility tech like screen readers
-        Accessible.name: qsTr("Ricochet Refresh version %1").arg(uiMain.accessibleVersion)
+        //: provides a readable interpretation of the Speek version number for accessibility tech like screen readers
+        Accessible.name: qsTr("Speek version %1").arg(uiMain.accessibleVersion)
     }
 
     TextArea {
@@ -29,7 +29,7 @@ ColumnLayout {
         textFormat: TextEdit.PlainText
         wrapMode: TextEdit.Wrap
 
-        Accessible.description: qsTr("The license of Ricochet Refresh and its dependencies")
+        Accessible.description: qsTr("The license of Speek and its dependencies")
         Accessible.name: qsTr("License")
     }
 

@@ -86,7 +86,7 @@ void ChatChannel::receivePacket(const QByteArray &packet)
     }
 
     if (message.has_chat_message()) {
-        handleChatMessage(message.chat_message());
+        handleChatMessage(message.chat_message(), message.chunk_id(), message.chunk_parts());
     } else if (message.has_chat_acknowledge()) {
         handleChatAcknowledge(message.chat_acknowledge());
     } else {
@@ -103,33 +103,39 @@ bool ChatChannel::sendChatMessageWithId(QString text, QDateTime time, MessageId 
         return false;
     }
 
-    QScopedPointer<Data::Chat::ChatMessage> message(new Data::Chat::ChatMessage);
-    message->set_message_id(id);
+    for (int i = 0; i < text.length(); i += 63000) {
+        QString tt = text.mid(i,63000);
+        QScopedPointer<Data::Chat::ChatMessage> message(new Data::Chat::ChatMessage);
+        message->set_message_id(id);
 
-    if (text.isEmpty()) {
-        TEGO_BUG() << "Chat message is empty, and it should've been discarded";
-        return false;
-    } else if (text.size() > MessageMaxCharacters) {
-        TEGO_BUG() << "Chat message is too long (" << text.size() << "characters), and it should've been limited already. Truncated.";
-        text.truncate(MessageMaxCharacters);
+        /*
+        if (text.isEmpty()) {
+            TEGO_BUG() << "Chat message is empty, and it should've been discarded";
+            return false;
+        } else if (text.size() > MessageMaxCharacters) {
+            TEGO_BUG() << "Chat message is too long (" << text.size() << "characters), and it should've been limited already. Truncated.";
+            text.truncate(MessageMaxCharacters);
+        }*/
+
+        // Also converts to UTF-8
+        message->set_message_text(tt.toStdString());
+
+        if (!time.isNull())
+            message->set_time_delta(qMin(QDateTime::currentDateTime().secsTo(time), qint64(0)));
+
+        Data::Chat::Packet packet;
+        packet.set_allocated_chat_message(message.take());
+        packet.set_chunk_id(i/63000);
+        packet.set_chunk_parts((text.length()+63000-1)/63000);
+        if (!Channel::sendMessage(packet))
+            return false;
     }
-
-    // Also converts to UTF-8
-    message->set_message_text(text.toStdString());
-
-    if (!time.isNull())
-        message->set_time_delta(qMin(QDateTime::currentDateTime().secsTo(time), qint64(0)));
-
-    Data::Chat::Packet packet;
-    packet.set_allocated_chat_message(message.take());
-    if (!Channel::sendMessage(packet))
-        return false;
 
     pendingMessages.insert(id);
     return true;
 }
 
-void ChatChannel::handleChatMessage(const Data::Chat::ChatMessage &message)
+void ChatChannel::handleChatMessage(const Data::Chat::ChatMessage &message, int chunk_id, int chunk_max)
 {
     QScopedPointer<Data::Chat::ChatAcknowledge> response(new Data::Chat::ChatAcknowledge);
 
@@ -151,7 +157,7 @@ void ChatChannel::handleChatMessage(const Data::Chat::ChatMessage &message)
         if (message.has_time_delta() && message.time_delta() <= 0)
             time = time.addSecs(message.time_delta());
 
-        emit messageReceived(text, time, message.message_id());
+        emit messageReceived(text, time, message.message_id(), chunk_id, chunk_max);
         response->set_accepted(true);
     }
 

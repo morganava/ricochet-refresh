@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.0
 
 ApplicationWindow {
     id: addContactWindow
-    width: 640
+    width: 740
     height: 300
     minimumWidth: width
     maximumWidth: width
@@ -48,8 +48,8 @@ ApplicationWindow {
             Layout.fillWidth: true
             horizontalAlignment: Qt.AlignHCenter
             wrapMode: Text.Wrap
-            //: tells the user the purpose of their Ricochet ID, which is basically a username
-            text: qsTr("Share your Ricochet ID to allow connection requests")
+            //: tells the user the purpose of their Speek ID, which is basically a username
+            text: qsTr("Share your Speek ID to allow connection requests")
             Accessible.role: Accessible.StaticText
             Accessible.name: text
         }

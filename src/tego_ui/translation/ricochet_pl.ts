@@ -4,25 +4,25 @@
 <context>
     <name>AboutPreferences</name>
     <message>
-        <source>Ricochet %1</source>
+        <source>Speek %1</source>
         <extracomment>%1 version, e.g. 1.0.0</extracomment>
-        <translation type="vanished">Ricochet %1</translation>
+        <translation type="vanished">Speek %1</translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/AboutPreferences.qml" line="14"/>
-        <source>Ricochet-Refresh %1</source>
+        <source>Speek %1</source>
         <extracomment>%1 version, e.g. 1.0.0</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/AboutPreferences.qml" line="20"/>
-        <source>Ricochet Refresh version %1</source>
-        <extracomment>provides a readable interpretation of the Ricochet-Refresh version number for accessibility tech like screen readers</extracomment>
+        <source>Speek version %1</source>
+        <extracomment>provides a readable interpretation of the Speek version number for accessibility tech like screen readers</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/AboutPreferences.qml" line="32"/>
-        <source>The license of Ricochet Refresh and its dependencies</source>
+        <source>The license of Speek and its dependencies</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -43,7 +43,7 @@
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/AboutPreferences.qml" line="17"/>
-        <source>Current Ricochet-Refresh version</source>
+        <source>Current Speek version</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -51,9 +51,9 @@
     <name>AddContactDialog</name>
     <message>
         <location filename="../../libtego_ui/ui/qml/AddContactDialog.qml" line="52"/>
-        <source>Share your Ricochet ID to allow connection requests</source>
-        <extracomment>tells the user the purpose of their Ricochet ID, which is basically a username</extracomment>
-        <translation>Udostępnij swój identyfikator Ricochet, aby umożliwić łączenie się z Tobą.</translation>
+        <source>Share your Speek ID to allow connection requests</source>
+        <extracomment>tells the user the purpose of their Speek ID, which is basically a username</extracomment>
+        <translation>Udostępnij swój identyfikator Speek, aby umożliwić łączenie się z Tobą.</translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/AddContactDialog.qml" line="111"/>
@@ -172,9 +172,9 @@
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/ContactIDField.qml" line="55"/>
-        <source>Enter an ID starting with &lt;b&gt;ricochet:&lt;/b&gt;</source>
-        <extracomment>Error message showed when the provided ricochet id is invalid</extracomment>
-        <translation>Wpisz ID zaczynające się od &lt;b&gt;ricochet:&lt;/b&gt;</translation>
+        <source>Enter an ID starting with &lt;b&gt;Speek:&lt;/b&gt;</source>
+        <extracomment>Error message showed when the provided Speek id is invalid</extracomment>
+        <translation>Wpisz ID zaczynające się od &lt;b&gt;Speek:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/ContactIDField.qml" line="97"/>
@@ -190,8 +190,8 @@
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/ContactIDField.qml" line="119"/>
-        <source>Copies the ricochet id to the clipboard</source>
-        <extracomment>Text description of ricochet id copy button for accessibility tech like screen readers</extracomment>
+        <source>Copies the Speek id to the clipboard</source>
+        <extracomment>Text description of Speek id copy button for accessibility tech like screen readers</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -332,7 +332,7 @@
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/ContactPreferences.qml" line="159"/>
-        <source>A list of all your contacts, with their ricochet IDs, and options such as renaming and removing</source>
+        <source>A list of all your contacts, with their Speek IDs, and options such as renaming and removing</source>
         <extracomment>Description of what user can do in the contact preferences window for accessibility tech like screen readers</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -442,12 +442,12 @@ Name of the combobox used to select UI langauge for accessibility tech like scre
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/GeneralPreferences.qml" line="102"/>
-        <source>Restart Ricochet to apply changes</source>
-        <translation type="unfinished">Aby zaakceptować zmiany, uruchom Ricochet ponownie</translation>
+        <source>Restart Speek to apply changes</source>
+        <translation type="unfinished">Aby zaakceptować zmiany, uruchom Speek ponownie</translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/GeneralPreferences.qml" line="116"/>
-        <source>What language ricochet will use</source>
+        <source>What language Speek will use</source>
         <extracomment>Description of what the language combox is for for accessibility tech like screen readers</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -459,8 +459,8 @@ Name of the combobox used to select UI langauge for accessibility tech like scre
         <translation type="vanished">Wybierz język</translation>
     </message>
     <message>
-        <source>Restart Ricochet to apply changes</source>
-        <translation type="vanished">Aby zaakceptować zmiany, uruchom Ricochet ponownie</translation>
+        <source>Restart Speek to apply changes</source>
+        <translation type="vanished">Aby zaakceptować zmiany, uruchom Speek ponownie</translation>
     </message>
 </context>
 <context>
@@ -475,8 +475,8 @@ Name of the combobox used to select UI langauge for accessibility tech like scre
     <name>Main</name>
     <message>
         <location filename="../main.cpp" line="91"/>
-        <source>Ricochet Error</source>
-        <translation>Błąd programu Ricochet</translation>
+        <source>Speek Error</source>
+        <translation>Błąd programu Speek</translation>
     </message>
 </context>
 <context>
@@ -606,7 +606,7 @@ Name of the button for launching the preferences window for accessibility tech l
     </message>
     <message>
         <source>Copy ID</source>
-        <extracomment>Text for context menu command to copy a ricochet contact id to clipboard</extracomment>
+        <extracomment>Text for context menu command to copy a Speek contact id to clipboard</extracomment>
         <translation type="vanished">Skopiuj ID</translation>
     </message>
     <message>
@@ -742,8 +742,8 @@ Name of the button for launching the preferences window for accessibility tech l
     <name>PreferencesDialog</name>
     <message>
         <location filename="../../libtego_ui/ui/qml/PreferencesDialog.qml" line="12"/>
-        <source>Ricochet Preferences</source>
-        <translation>Ustawienia Ricocheta</translation>
+        <source>Speek Preferences</source>
+        <translation>Ustawienia Speeka</translation>
     </message>
     <message>
         <location filename="../../libtego_ui/ui/qml/PreferencesDialog.qml" line="43"/>
@@ -776,7 +776,7 @@ Name of the button for launching the preferences window for accessibility tech l
     <message>
         <location filename="../../libtego_ui/ui/qml/PreferencesDialog.qml" line="67"/>
         <source>About</source>
-        <extracomment>Title of the about tab, contains license information and ricochet version</extracomment>
+        <extracomment>Title of the about tab, contains license information and Speek version</extracomment>
         <translation>O programie</translation>
     </message>
 </context>
@@ -1067,7 +1067,7 @@ Name of the button for launching the preferences window for accessibility tech l
     <message>
         <location filename="../../libtego_ui/ui/qml/TorPreferences.qml" line="44"/>
         <source>Control connected:</source>
-        <extracomment>Display label that beside it indicates whether ricochet is connected to tor&apos;s control port</extracomment>
+        <extracomment>Display label that beside it indicates whether Speek is connected to tor&apos;s control port</extracomment>
         <translation>Połączony z portem kontrolnym:</translation>
     </message>
     <message>

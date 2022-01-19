@@ -26,7 +26,7 @@ FocusScope {
             Layout.fillWidth: true
             font.family: "Courier"
             validator: readOnly ? null : idValidator
-            placeholderText: "ricochet:"
+            placeholderText: "speek:"
             focus: true
 
             ContactIDValidator {
@@ -52,7 +52,7 @@ FocusScope {
                     else
                     {
                         //: Error message showed when the provided ricochet id is invalid
-                        errorBubble.show(qsTr("Enter an ID starting with <b>ricochet:</b>"))
+                        errorBubble.show(qsTr("Enter an ID starting with <b>speek:</b>"))
                     }
                 }
 
