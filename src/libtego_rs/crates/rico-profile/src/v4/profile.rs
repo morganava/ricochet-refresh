@@ -5,7 +5,7 @@ use std::path::Path;
 // extern
 use rusqlite::{params, Connection, OpenFlags, Statement};
 use tor_interface::tor_crypto::{
-    Ed25519PrivateKey, V3OnionServiceId, X25519PrivateKey, X25519PublicKey,
+    Ed25519PrivateKey, Ed25519PublicKey, V3OnionServiceId, X25519PrivateKey, X25519PublicKey,
 };
 
 // internal
@@ -70,176 +70,109 @@ impl Profile {
             Connection::open_with_flags(path, open_flags).map_err(Error::DatabaseOpenFailure)?;
 
         // set the our password
-        conn.pragma_update(None, "key", password)
-            .map_err(Error::PragmaUpdateFailure)?;
+        db::set_password(&conn, password)?;
 
-        // build our tables
-        conn.execute_batch(
-            "BEGIN;
+        // create tabless
+        db::create_tables(&conn)?;
 
-            -- db_versions
-            CREATE TABLE db_versions (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              major INTEGER NOT NULL CHECK(major >= 0),
-              minor INTEGER NOT NULL CHECK(minor >= 0),
-              patch INTEGER NOT NULL CHECK(patch >= 0)
-            );
-
-            -- user_profiles
-            CREATE TABLE user_profiles (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              display_name TEXT NOT NULL,
-              pronouns TEXT CHECK(LENGTH(pronouns) <= 64),
-              avatar_rowid INTEGER UNIQUE REFERENCES avatars(rowid),
-              status TEXT CHECK(LENGTH(status) <= 256),
-              description TEXT CHECK(LENGTH(description) <= 2048)
-            );
-
-            -- avatars
-            CREATE TABLE avatars (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB CHECK(LENGTH(value) = 262144)
-            );
-
-            -- users
-            CREATE TABLE users (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              user_type INTEGER NOT NULL CHECK(user_type >= 0 AND user_type <= 4),
-              user_profile_rowid INTEGER NOT NULL UNIQUE REFERENCES user_profiles(rowid),
-              identity_ed25519_public_key_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_public_keys(rowid),
-              identity_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),
-              remote_endpoint_ed25519_public_key_rowid INTEGER UNIQUE REFERENCES ed25519_public_keys(rowid),
-              remote_endpoint_x25519_private_key_rowid INTEGER UNIQUE REFERENCES x25519_private_keys(rowid),
-              local_endpoint_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),
-              local_endpoint_x25519_public_key_rowid INTEGER UNIQUE REFERENCES x25519_public_keys(rowid),
-              CHECK((user_type == 0) == (identity_ed25519_private_key_rowid IS NOT NULL)),
-              CHECK(remote_endpoint_ed25519_public_key_rowid IS NULL == remote_endpoint_x25519_private_key_rowid IS NULL),
-              CHECK(local_endpoint_ed25519_private_key_rowid IS NULL == local_endpoint_x25519_public_key_rowid IS NULL)
-            );
-            CREATE INDEX idx_users_identity_ed25519_public_key_rowid ON users(identity_ed25519_public_key_rowid);
-
-            -- conversations
-            CREATE TABLE conversations (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              conversation_type INTEGER NOT NULL CHECK(conversation_type >= 0 AND conversation_type <= 2),
-              conversation_key_rowid INTEGER NOT NULL UNIQUE REFERENCES sha256_hashes(rowid)
-            );
-
-            -- conversation_members
-            CREATE TABLE conversation_members (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              conversation_rowid INTEGER NOT NULL REFERENCES conversations(rowid),
-              user_rowid INTEGER NOT NULL REFERENCES users(rowid),
-              UNIQUE(conversation_rowid, user_rowid)
-            );
-            CREATE INDEX idx_conversation_members_conversation_rowid ON conversation_members(conversation_rowid);
-
-            -- message_records
-            CREATE TABLE message_records (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              conversation_rowid INTEGER NOT NULL REFERENCES conversations(rowid),
-              user_rowid INTEGER NOT NULL REFERENCES users(rowid),
-              record_sequence INTEGER NOT NULL CHECK(record_sequence >= 0),
-              message_sequence INTEGER NOT NULL CHECK(message_sequence >= 0),
-              create_timestamp INTEGER NOT NULL,
-              modify_timestamp INTEGER NOT NULL CHECK(modify_timestamp >= create_timestamp),
-              message_content_rowid INTEGER NOT NULL UNIQUE REFERENCES message_contents(rowid),
-              signature_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_signatures(rowid),
-              UNIQUE(conversation_rowid, user_rowid, record_sequence)
-            );
-            CREATE INDEX idx_message_records_conversation_user_sequence ON message_records(conversation_rowid, user_rowid, message_sequence, record_sequence);
-            CREATE INDEX idx_message_records_conversation_user_timestamp_sequence ON message_records(conversation_rowid, user_rowid, create_timestamp, message_sequence, record_sequence);
-
-            -- message_contents
-            CREATE TABLE message_contents (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              salt_rowid INTEGER NOT NULL REFERENCES salts(rowid),
-              message_type INTEGER NOT NULL CHECK(message_type >= 0 AND message_type <= 2),
-              modified_message_rowid INTEGER REFERENCES modified_messages(rowid),
-              text_message_rowid INTEGER REFERENCES text_messages(rowid),
-              file_share_message_rowid INTEGER UNIQUE REFERENCES file_share_messages(rowid),
-              CHECK((message_type = 0) = (modified_message_rowid IS NOT NULL)),
-              CHECK((message_type = 1) = (text_message_rowid IS NOT NULL)),
-              CHECK((message_type = 2) = (file_share_message_rowid IS NOT NULL))
-            );
-
-            -- modified_messages
-            CREATE TABLE modified_messages (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              original_message_content_hash_rowid INTEGER NOT NULL REFERENCES sha256_hashes(rowid),
-              original_message_record_signature_rowid INTEGER NOT NULL REFERENCES ed25519_signatures(rowid)
-            );
-
-            -- text_messages
-            CREATE TABLE text_messages (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              text TEXT NOT NULL
-            );
-
-            -- file_share_messages
-            CREATE TABLE file_share_messages (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              file_data_salt_rowid INTEGER NOT NULL REFERENCES salts(rowid),
-              file_size INTEGER NOT NULL CHECK(file_size >= 0),
-              file_data_hash_rowid INTEGER NOT NULL REFERENCES sha256_hashes(rowid),
-              file_path TEXT
-            );
-
-            -- salts
-            CREATE TABLE salts (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
-            );
-
-            -- sha256_hashes
-            CREATE TABLE sha256_hashes (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
-            );
-
-            -- ed25519_private_keys
-            CREATE TABLE ed25519_private_keys (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 64)
-            );
-
-            -- ed25519_public_keys
-            CREATE TABLE ed25519_public_keys (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
-            );
-            CREATE INDEX idx_ed25519_public_keys_value ON ed25519_public_keys(value);
-
-            -- ed25519_signatures
-            CREATE TABLE ed25519_signatures (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 64)
-            );
-
-            -- x25519_private_keys
-            CREATE TABLE x25519_private_keys (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
-            );
-
-            -- x25519_public_keys
-            CREATE TABLE x25519_public_keys (
-              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
-            );
-
-            COMMIT;"
-        ).map_err(Error::StatementExecuteFailure)?;
         // insert the version row
         let version = Version::LATEST;
-        conn.execute(
-            "INSERT INTO db_versions (major, minor, patch) VALUES (?1, ?2, ?3)",
-            params![version.major, version.minor, version.patch],
-        )
-        .map_err(Error::StatementExecuteFailure)?;
+        db::insert_db_version(&conn, version.major, version.minor, version.patch)?;
         std::mem::drop(conn);
 
         Self::open(path, password)
+    }
+
+    #[cfg(feature = "v3-profile")]
+    pub fn new_from_v3_profile(
+        v3_profile: v3::profile::Profile,
+        nickname: &str,
+        path: &Path,
+        password: &str,
+    ) -> Result<Profile, Error> {
+        let profile = Profile::new(path, password)?;
+        let conn = &profile.conn;
+
+        //
+        // Add our host user
+        //
+        let identity_private_key = v3_profile.private_key;
+        let identity_public_key = Ed25519PublicKey::from_private_key(&identity_private_key);
+
+        // insert keys into db
+        let identity_private_key_rowid =
+            db::insert_ed25519_private_key(conn, &identity_private_key.to_bytes())?;
+        let identity_public_key_rowid =
+            db::insert_ed25519_public_key(conn, identity_public_key.as_bytes())?;
+
+        // create owner's user profile
+        let owner_user_profile_rowid = db::insert_user_profile(
+            conn, nickname, None, // pet_name
+            None, // pronouns
+            None, // avatar
+            None, //status
+            None, //description
+        )?;
+
+        // insert user
+        db::insert_user(
+            conn,
+            db::UserType::Owner,
+            Some(owner_user_profile_rowid),
+            identity_public_key_rowid,
+            Some(identity_private_key_rowid),
+            None, // remote endpoint ed25519 public key
+            None, // remote endpoint x25519 private key
+            None, // local endpoint ed25519 private key
+            None, // local endpoint x25519 public key
+        )?;
+
+        for (service_id, user) in v3_profile.users {
+            // insert public key
+            let identity_public_key = Ed25519PublicKey::from_service_id(&service_id).unwrap();
+            let identity_public_key_rowid =
+                db::insert_ed25519_public_key(conn, identity_public_key.as_bytes())?;
+
+            //insert user profile
+            let nickname = service_id.to_string();
+            let nickname = nickname.as_str();
+            let pet_name = user.nickname.as_str();
+
+            let user_profile_rowid = db::insert_user_profile(
+                conn,
+                nickname,
+                Some(pet_name),
+                None, // pronouns
+                None, // avatar
+                None, // status
+                None, // description
+            )?;
+
+            let user_type = user.user_type;
+            let user_type = match user_type {
+                v3::profile::UserType::Allowed => db::UserType::Allowed,
+                v3::profile::UserType::Requesting | v3::profile::UserType::Pending => {
+                    db::UserType::Requesting
+                }
+                v3::profile::UserType::Rejected => db::UserType::Rejected,
+                v3::profile::UserType::Blocked => db::UserType::Blocked,
+            };
+
+            // insert user
+            db::insert_user(
+                conn,
+                user_type.clone(),
+                Some(user_profile_rowid),
+                identity_public_key_rowid,
+                None, // identity ed25519 private key
+                None, // remote endpoint ed25519 public key
+                None, // remote endpoint x25519 private key
+                None, // local endpoint ed25519 private key
+                None, // local endpoint x25519 public key
+            )?;
+        }
+
+        Ok(profile)
     }
 
     pub fn open(path: &Path, password: &str) -> Result<Profile, Error> {
@@ -250,8 +183,7 @@ impl Profile {
             Connection::open_with_flags(path, open_flags).map_err(Error::DatabaseOpenFailure)?;
 
         // set password
-        conn.pragma_update(None, "key", password)
-            .map_err(Error::PragmaUpdateFailure)?;
+        db::set_password(&conn, password)?;
 
         let profile = Profile { conn };
 
@@ -287,9 +219,16 @@ impl Profile {
     //
 }
 
+//
 // UserProfile
+//
 pub struct UserProfile {
-    display_name: String,
+    nickname: String,
+    pet_name: Option<String>,
+    pronouns: Option<String>,
+    avatar: Option<Avatar>,
+    status: Option<String>,
+    description: Option<String>,
 }
 
 // Avatar
@@ -304,6 +243,46 @@ impl Avatar {
     const CHANNELS: usize = 4;
     const BYTES: usize = Self::WIDTH * Self::HEIGHT * Self::CHANNELS;
 }
+
+//
+// User
+//
+pub struct User {
+    user_type: UserType,
+    user_profile: UserProfile,
+    identity_ed25519_public_key: Ed25519PublicKey,
+    identity_ed25519_private_key: Option<Ed25519PrivateKey>,
+    remote_endpoint_ed25519_public_key: Option<Ed25519PublicKey>,
+    remote_endpoint_x25519_private_key: Option<X25519PrivateKey>,
+    local_endpoint_ed25519_private_key: Option<Ed25519PrivateKey>,
+    local_endpoint_x25519_public_key: Option<X25519PrivateKey>,
+}
+
+pub enum UserType {
+    Owner,
+    Allowed,
+    Requesting,
+    Rejected,
+    Blocked,
+}
+
+//
+// Conversation
+//
+pub struct Conversation {
+    conversation_type: ConversationType,
+    conversation_members: Vec<Ed25519PublicKey>,
+}
+
+pub enum ConversationType {
+    LegacyV3,
+    EphemeralDirectMessage,
+    PersistentDirectMessage,
+}
+
+//
+// Salt
+//
 
 pub struct Salt {
     data: [u8; 32],
@@ -444,7 +423,8 @@ mod db {
 
     pub(super) struct UserProfileRow {
         rowid: UserProfileRowID,
-        display_name: String,
+        nickname: String,
+        pet_name: Option<String>,
         pronouns: Option<String>,
         avatar_rowid: Option<AvatarRowID>,
         status: Option<String>,
@@ -514,8 +494,8 @@ mod db {
     #[repr(i64)]
     pub(super) enum ConversationType {
         LegacyV3 = 0i64,
-        PersistentDirectMessage = 1i64,
-        EphemeralDirectMessage = 2i64,
+        EphemeralDirectMessage = 1i64,
+        PersistentDirectMessage = 2i64,
     }
     impl rusqlite::ToSql for ConversationType {
         fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
@@ -671,26 +651,230 @@ mod db {
     }
 
     //
+    // Set the table's password for decryption key
+    //
+
+    pub(super) fn set_password(conn: &Connection, password: &str) -> Result<(), Error> {
+        conn.pragma_update(None, "key", password)
+            .map_err(Error::PragmaUpdateFailure)?;
+        Ok(())
+    }
+
+    //
+    // Create database tables and indexes
+    //
+
+    pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
+        // build our tables
+        conn.execute_batch(
+            "BEGIN;
+
+            -- db_versions
+            CREATE TABLE db_versions (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              major INTEGER NOT NULL CHECK(major >= 0),
+              minor INTEGER NOT NULL CHECK(minor >= 0),
+              patch INTEGER NOT NULL CHECK(patch >= 0)
+            );
+
+            -- user_profiles
+            CREATE TABLE user_profiles (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              nickname TEXT NOT NULL,
+              pet_name TEXT,
+              pronouns TEXT CHECK(LENGTH(pronouns) <= 64),
+              avatar_rowid INTEGER UNIQUE REFERENCES avatars(rowid),
+              status TEXT CHECK(LENGTH(status) <= 256),
+              description TEXT CHECK(LENGTH(description) <= 2048)
+            );
+
+            -- avatars
+            CREATE TABLE avatars (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB CHECK(LENGTH(value) = 262144)
+            );
+
+            -- users
+            CREATE TABLE users (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_type INTEGER NOT NULL CHECK(user_type >= 0 AND user_type <= 4),
+              user_profile_rowid INTEGER UNIQUE REFERENCES user_profiles(rowid),
+              identity_ed25519_public_key_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_public_keys(rowid),
+              identity_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),
+              remote_endpoint_ed25519_public_key_rowid INTEGER UNIQUE REFERENCES ed25519_public_keys(rowid),
+              remote_endpoint_x25519_private_key_rowid INTEGER UNIQUE REFERENCES x25519_private_keys(rowid),
+              local_endpoint_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),
+              local_endpoint_x25519_public_key_rowid INTEGER UNIQUE REFERENCES x25519_public_keys(rowid),
+              CHECK((user_type == 0) == (identity_ed25519_private_key_rowid IS NOT NULL)),
+              CHECK(remote_endpoint_ed25519_public_key_rowid IS NULL == remote_endpoint_x25519_private_key_rowid IS NULL),
+              CHECK(local_endpoint_ed25519_private_key_rowid IS NULL == local_endpoint_x25519_public_key_rowid IS NULL)
+            );
+            CREATE INDEX idx_users_identity_ed25519_public_key_rowid ON users(identity_ed25519_public_key_rowid);
+
+            -- conversations
+            CREATE TABLE conversations (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              conversation_type INTEGER NOT NULL CHECK(conversation_type >= 0 AND conversation_type <= 2),
+              conversation_key_rowid INTEGER NOT NULL UNIQUE REFERENCES sha256_hashes(rowid)
+            );
+
+            -- conversation_members
+            CREATE TABLE conversation_members (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              conversation_rowid INTEGER NOT NULL REFERENCES conversations(rowid),
+              user_rowid INTEGER NOT NULL REFERENCES users(rowid),
+              UNIQUE(conversation_rowid, user_rowid)
+            );
+            CREATE INDEX idx_conversation_members_conversation_rowid ON conversation_members(conversation_rowid);
+
+            -- message_records
+            CREATE TABLE message_records (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              conversation_rowid INTEGER NOT NULL REFERENCES conversations(rowid),
+              user_rowid INTEGER NOT NULL REFERENCES users(rowid),
+              record_sequence INTEGER NOT NULL CHECK(record_sequence >= 0),
+              message_sequence INTEGER NOT NULL CHECK(message_sequence >= 0),
+              create_timestamp INTEGER NOT NULL,
+              modify_timestamp INTEGER NOT NULL CHECK(modify_timestamp >= create_timestamp),
+              message_content_rowid INTEGER NOT NULL UNIQUE REFERENCES message_contents(rowid),
+              signature_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_signatures(rowid),
+              UNIQUE(conversation_rowid, user_rowid, record_sequence)
+            );
+            CREATE INDEX idx_message_records_conversation_user_sequence ON message_records(conversation_rowid, user_rowid, message_sequence, record_sequence);
+            CREATE INDEX idx_message_records_conversation_user_timestamp_sequence ON message_records(conversation_rowid, user_rowid, create_timestamp, message_sequence, record_sequence);
+
+            -- message_contents
+            CREATE TABLE message_contents (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              salt_rowid INTEGER NOT NULL REFERENCES salts(rowid),
+              message_type INTEGER NOT NULL CHECK(message_type >= 0 AND message_type <= 2),
+              modified_message_rowid INTEGER REFERENCES modified_messages(rowid),
+              text_message_rowid INTEGER REFERENCES text_messages(rowid),
+              file_share_message_rowid INTEGER UNIQUE REFERENCES file_share_messages(rowid),
+              CHECK((message_type = 0) = (modified_message_rowid IS NOT NULL)),
+              CHECK((message_type = 1) = (text_message_rowid IS NOT NULL)),
+              CHECK((message_type = 2) = (file_share_message_rowid IS NOT NULL))
+            );
+
+            -- modified_messages
+            CREATE TABLE modified_messages (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              original_message_content_hash_rowid INTEGER NOT NULL REFERENCES sha256_hashes(rowid),
+              original_message_record_signature_rowid INTEGER NOT NULL REFERENCES ed25519_signatures(rowid)
+            );
+
+            -- text_messages
+            CREATE TABLE text_messages (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              text TEXT NOT NULL
+            );
+
+            -- file_share_messages
+            CREATE TABLE file_share_messages (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              file_data_salt_rowid INTEGER NOT NULL REFERENCES salts(rowid),
+              file_size INTEGER NOT NULL CHECK(file_size >= 0),
+              file_data_hash_rowid INTEGER NOT NULL REFERENCES sha256_hashes(rowid),
+              file_path TEXT
+            );
+
+            -- salts
+            CREATE TABLE salts (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
+            );
+
+            -- sha256_hashes
+            CREATE TABLE sha256_hashes (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
+            );
+
+            -- ed25519_private_keys
+            CREATE TABLE ed25519_private_keys (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 64)
+            );
+
+            -- ed25519_public_keys
+            CREATE TABLE ed25519_public_keys (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
+            );
+            CREATE INDEX idx_ed25519_public_keys_value ON ed25519_public_keys(value);
+
+            -- ed25519_signatures
+            CREATE TABLE ed25519_signatures (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 64)
+            );
+
+            -- x25519_private_keys
+            CREATE TABLE x25519_private_keys (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
+            );
+
+            -- x25519_public_keys
+            CREATE TABLE x25519_public_keys (
+              rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+              value BLOB NOT NULL UNIQUE CHECK(LENGTH(value) = 32)
+            );
+
+            COMMIT;"
+        ).map_err(Error::StatementExecuteFailure)?;
+        Ok(())
+    }
+
+    //
     // Row insert methods
     //
 
+    pub(super) fn insert_db_version(
+        conn: &Connection,
+        major: i64,
+        minor: i64,
+        patch: i64,
+    ) -> Result<DBVersionRowID, Error> {
+        conn.execute(
+            "INSERT INTO db_versions (
+                major,
+                minor,
+                patch
+            ) VALUES (?1, ?2, ?3)",
+            params![major, minor, patch],
+        )
+        .map_err(Error::StatementExecuteFailure)?;
+        let rowid = conn.last_insert_rowid();
+        Ok(DBVersionRowID(rowid))
+    }
+
     pub(super) fn insert_user_profile(
         conn: &Connection,
-        display_name: String,
-        pronouns: Option<String>,
+        nickname: &str,
+        pet_name: Option<&str>,
+        pronouns: Option<&str>,
         avatar_rowid: Option<AvatarRowID>,
-        status: Option<String>,
-        description: Option<String>,
+        status: Option<&str>,
+        description: Option<&str>,
     ) -> Result<UserProfileRowID, Error> {
         conn.execute(
             "INSERT INTO user_profiles (
-                  display_name,
+                  nickname,
+                  pet_name,
                   pronouns,
                   avatar_rowid,
                   status,
                   description
-                ) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![display_name, pronouns, avatar_rowid, status, description],
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                nickname,
+                pet_name,
+                pronouns,
+                avatar_rowid,
+                status,
+                description
+            ],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -713,7 +897,7 @@ mod db {
     pub(super) fn insert_user(
         conn: &Connection,
         user_type: UserType,
-        user_profile_rowid: UserProfileRowID,
+        user_profile_rowid: Option<UserProfileRowID>,
         identity_ed25519_public_key_rowid: Ed25519PublicKeyRowID,
         identity_ed25519_private_key_rowid: Option<Ed25519PrivateKeyRowID>,
         remote_endpoint_ed25519_public_key_rowid: Option<Ed25519PublicKeyRowID>,
@@ -875,7 +1059,7 @@ mod db {
     ) -> Result<TextMessageRowID, Error> {
         conn.execute(
             "INSERT INTO text_messages (
-                    text,
+                    text
                 ) VALUES (?1)",
             params![text],
         )
@@ -897,13 +1081,13 @@ mod db {
                     file_data_salt_rowid,
                     file_size,
                     file_data_hash_rowid,
-                    file_path,
+                    file_path
                 ) VALUES (?1, ?2, ?3, ?4)",
             params![
                 file_data_salt_rowid,
                 file_size,
                 file_data_hash_rowid,
-                file_path,
+                file_path
             ],
         )
         .map_err(Error::StatementExecuteFailure)?;
@@ -915,9 +1099,9 @@ mod db {
     pub(super) fn insert_salt(conn: &Connection, value: [u8; 32]) -> Result<SaltRowID, Error> {
         conn.execute(
             "INSERT INTO salts (
-                    value,
+                    value
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -927,13 +1111,13 @@ mod db {
 
     pub(super) fn insert_sha256_hash(
         conn: &Connection,
-        value: [u8; 32],
+        value: &[u8; 32],
     ) -> Result<Sha256HashRowID, Error> {
         conn.execute(
             "INSERT INTO sha256_hashes (
                     value,
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -943,13 +1127,13 @@ mod db {
 
     pub(super) fn insert_ed25519_private_key(
         conn: &Connection,
-        value: [u8; 64],
+        value: &[u8; 64],
     ) -> Result<Ed25519PrivateKeyRowID, Error> {
         conn.execute(
             "INSERT INTO ed25519_private_keys (
-                    value,
+                    value
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -959,13 +1143,13 @@ mod db {
 
     pub(super) fn insert_ed25519_public_key(
         conn: &Connection,
-        value: [u8; 32],
+        value: &[u8; 32],
     ) -> Result<Ed25519PublicKeyRowID, Error> {
         conn.execute(
             "INSERT INTO ed25519_public_keys (
-                    value,
+                    value
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -975,13 +1159,13 @@ mod db {
 
     pub(super) fn insert_ed25519_signature(
         conn: &Connection,
-        value: [u8; 64],
+        value: &[u8; 64],
     ) -> Result<Ed25519SignatureRowID, Error> {
         conn.execute(
             "INSERT INTO ed25519_signatures (
-                    value,
+                    value
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -991,13 +1175,13 @@ mod db {
 
     pub(super) fn insert_x25519_private_key(
         conn: &Connection,
-        value: [u8; 32],
+        value: &[u8; 32],
     ) -> Result<X25519PrivateKeyRowID, Error> {
         conn.execute(
             "INSERT INTO x25519_private_keys (
-                    value,
+                    value
                 ) VALUES (?1)",
-            params![value,],
+            params![value],
         )
         .map_err(Error::StatementExecuteFailure)?;
         let rowid = conn.last_insert_rowid();
@@ -1007,7 +1191,7 @@ mod db {
 
     pub(super) fn insert_x25519_public_key(
         conn: &Connection,
-        value: [u8; 32],
+        value: &[u8; 32],
     ) -> Result<X25519PublicKeyRowID, Error> {
         conn.execute(
             "INSERT INTO ed25519_public_keys (
@@ -1021,21 +1205,6 @@ mod db {
         Ok(X25519PublicKeyRowID(rowid))
     }
 }
-
-/*
-#[cfg(feature = "v3-profile")]
-impl TryFrom<v3::profile::Profile> for Profile {
-    type Error = String;
-
-    fn try_from(value: v3::profile::Profile) -> Result<Self, Self::Error> {
-        let identity_key = value.private_key;
-
-        Ok(Self {
-            identity_key
-        })
-    }
-}
-*/
 
 //
 // Tests
@@ -1058,13 +1227,19 @@ mod tests {
         let avatar_rowid = db::insert_avatar(&profile.conn, &[0u8; 256 * 256 * 4])?;
         let user_profile_rowid = db::insert_user_profile(
             &profile.conn,
-            "Alice".to_string(),
+            "Alice",
+            None,
             None,
             Some(avatar_rowid),
             None,
             None,
         )?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_legacy_import() -> anyhow::Result<()> {
         Ok(())
     }
 }
