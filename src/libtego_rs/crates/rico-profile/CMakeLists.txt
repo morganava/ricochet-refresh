@@ -3,6 +3,7 @@ set(rico_profile_depends
     src/lib.rs
     src/v3/mod.rs
     src/v3/profile.rs
+    src/v4/db.rs
     src/v4/error.rs
     src/v4/mod.rs
     src/v4/profile.rs)
