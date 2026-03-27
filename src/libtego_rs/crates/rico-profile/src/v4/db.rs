@@ -3,122 +3,93 @@ use rusqlite::{params, Connection, OpenFlags, Statement};
 
 // internal
 use crate::v4::error::Error;
+use crate::v4::profile;
 
+/// Implements ToSql, FromSql for a wrapper struct around a single value.
+macro_rules! impl_sql_wrapper_type {
+    // struct case
+    ($vis:vis struct $wrapper_type:ident($inner_vis:vis $inner_type:ty)) => {
+        $vis struct $wrapper_type($inner_vis $inner_type);
+
+        impl rusqlite::ToSql for $wrapper_type {
+            fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
+                self.0.to_sql()
+            }
+        }
+
+        impl rusqlite::types::FromSql for $wrapper_type {
+            fn column_result(
+                value: rusqlite::types::ValueRef<'_>,
+            ) -> Result<Self, rusqlite::types::FromSqlError> {
+                <$inner_type>::column_result(value).map(|v| $wrapper_type(v))
+            }
+        }
+    };
+    // enum case
+    (
+        #[repr($repr_type:ty)]
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_type:ident {
+            $($variant:ident = $value:expr),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[repr($repr_type)]
+        #[derive(Clone)]
+        $vis enum $enum_type {
+            $($variant = $value),*
+        }
+
+        impl rusqlite::ToSql for $enum_type {
+            fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
+                let val: $repr_type = self.clone() as $repr_type;
+                Ok(val.into())
+            }
+        }
+
+        impl rusqlite::types::FromSql for $enum_type {
+            fn column_result(
+                value: rusqlite::types::ValueRef<'_>,
+            ) -> Result<Self, rusqlite::types::FromSqlError> {
+                <$repr_type>::column_result(value).and_then(|v| {
+                    match v {
+                        $($value => Ok($enum_type::$variant)),*,
+                        _ => Err(rusqlite::types::FromSqlError::InvalidType),
+                    }
+                })
+            }
+        }
+    };
+}
+
+//
 // RowID types
-pub(super) struct DBVersionRowID(pub i64);
-impl rusqlite::ToSql for DBVersionRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct UserProfileRowID(pub i64);
-impl rusqlite::ToSql for UserProfileRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct AvatarRowID(pub i64);
-impl rusqlite::ToSql for AvatarRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct UserRowID(pub i64);
-impl rusqlite::ToSql for UserRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct ConversationRowID(pub i64);
-impl rusqlite::ToSql for ConversationRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct ConversationMemberRowID(pub i64);
-impl rusqlite::ToSql for ConversationMemberRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct MessageRecordRowID(pub i64);
-impl rusqlite::ToSql for MessageRecordRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct MessageContentRowID(pub i64);
-impl rusqlite::ToSql for MessageContentRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct ModifiedMessageRowID(pub i64);
-impl rusqlite::ToSql for ModifiedMessageRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct TextMessageRowID(pub i64);
-impl rusqlite::ToSql for TextMessageRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct FileShareMessageRowID(pub i64);
-impl rusqlite::ToSql for FileShareMessageRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct SaltRowID(pub i64);
-impl rusqlite::ToSql for SaltRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct Sha256HashRowID(pub i64);
-impl rusqlite::ToSql for Sha256HashRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct Ed25519PrivateKeyRowID(pub i64);
-impl rusqlite::ToSql for Ed25519PrivateKeyRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct Ed25519PublicKeyRowID(pub i64);
-impl rusqlite::ToSql for Ed25519PublicKeyRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct Ed25519SignatureRowID(pub i64);
-impl rusqlite::ToSql for Ed25519SignatureRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct X25519PrivateKeyRowID(pub i64);
-impl rusqlite::ToSql for X25519PrivateKeyRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct X25519PublicKeyRowID(pub i64);
-impl rusqlite::ToSql for X25519PublicKeyRowID {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
+//
+
+impl_sql_wrapper_type!(pub(crate) struct DBVersionRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct UserProfileRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct AvatarRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct UserRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct ConversationRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct ConversationMemberRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct MessageRecordRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct MessageContentRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct ModifiedMessageRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct TextMessageRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct FileShareMessageRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct SaltRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct Sha256HashRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct Ed25519PrivateKeyRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
 
 //
 // DBVersion
 //
 
-pub(super) struct DBVersionRow {
+pub struct DBVersionRow {
     rowid: DBVersionRowID,
     major: i64,
     minor: i64,
@@ -129,7 +100,7 @@ pub(super) struct DBVersionRow {
 // UserProfile
 //
 
-pub(super) struct UserProfileRow {
+pub struct UserProfileRow {
     rowid: UserProfileRowID,
     nickname: String,
     pet_name: Option<String>,
@@ -146,7 +117,7 @@ pub(super) struct UserProfileRow {
 pub(super) struct AvatarRow {
     rowid: AvatarRowID,
     // 256x256 8-bit channel RGBA image in row-major order
-    value: Box<[u8; crate::v4::profile::Avatar::BYTES]>,
+    value: Box<[u8; profile::Avatar::BYTES]>,
 }
 
 //
@@ -169,21 +140,16 @@ pub(super) struct UserRow {
 // UserType
 //
 
-#[derive(Clone)]
-#[repr(i64)]
-pub(super) enum UserType {
-    Owner = 0i64,
-    Allowed = 1i64,
-    Requesting = 2i64,
-    Rejected = 3i64,
-    Blocked = 4i64,
-}
-impl rusqlite::ToSql for UserType {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        let val = self.clone() as i64;
-        Ok(val.into())
+impl_sql_wrapper_type!(
+    #[repr(i64)]
+    pub(super) enum UserType {
+        Owner = 0i64,
+        Allowed = 1i64,
+        Requesting = 2i64,
+        Rejected = 3i64,
+        Blocked = 4i64,
     }
-}
+);
 
 //
 // Conversation
@@ -198,19 +164,14 @@ pub(super) struct ConversationRow {
 // ConversationType
 //
 
-#[derive(Clone)]
-#[repr(i64)]
-pub(super) enum ConversationType {
-    LegacyV3 = 0i64,
-    EphemeralDirectMessage = 1i64,
-    PersistentDirectMessage = 2i64,
-}
-impl rusqlite::ToSql for ConversationType {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        let val = self.clone() as i64;
-        Ok(val.into())
+impl_sql_wrapper_type!(
+    #[repr(i64)]
+    pub(super) enum ConversationType {
+        LegacyV3 = 0i64,
+        EphemeralDirectMessage = 1i64,
+        PersistentDirectMessage = 2i64,
     }
-}
+);
 
 //
 // ConversationMember
@@ -240,36 +201,16 @@ pub(super) struct MessageRecordRow {
     test_message_rowid: Option<TextMessageRowID>,
 }
 
-pub(super) struct MessageSequence(pub i64);
-impl rusqlite::ToSql for MessageSequence {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
+impl_sql_wrapper_type!(pub(super) struct MessageSequence(pub i64));
+impl_sql_wrapper_type!(pub(super) struct RecordSequence(pub i64));
+impl_sql_wrapper_type!(pub(super) struct Timestamp(pub i64));
+impl_sql_wrapper_type!(
+    #[repr(i64)]
+    pub(super) enum MessageType {
+        Empty = 0i64,
+        Text = 1i64,
     }
-}
-pub(super) struct RecordSequence(pub i64);
-impl rusqlite::ToSql for RecordSequence {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-pub(super) struct Timestamp(pub i64);
-impl rusqlite::ToSql for Timestamp {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
-#[derive(Clone)]
-#[repr(i64)]
-pub(super) enum MessageType {
-    Empty = 0i64,
-    Text = 1i64,
-}
-impl rusqlite::ToSql for MessageType {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        let val = self.clone() as i64;
-        Ok(val.into())
-    }
-}
+);
 
 //
 // ModifiedMessage
@@ -290,12 +231,7 @@ pub(super) struct TextMessageRow {
 // FileShareMessage
 //
 
-pub(super) struct FileSize(pub i64);
-impl rusqlite::ToSql for FileSize {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
-        self.0.to_sql()
-    }
-}
+impl_sql_wrapper_type!(pub(super) struct FileSize(pub i64));
 
 pub(super) struct FileShareMessageRow {
     rowid: FileShareMessageRowID,
@@ -592,7 +528,7 @@ pub(super) fn insert_user_profile(
 
 pub(super) fn insert_avatar(
     conn: &Connection,
-    avatar_rgba_data: &[u8; crate::v4::profile::Avatar::BYTES],
+    avatar_rgba_data: &[u8; profile::Avatar::BYTES],
 ) -> Result<AvatarRowID, Error> {
     conn.execute(
         "INSERT INTO avatars (value) VALUES (?1)",
@@ -912,6 +848,25 @@ pub(super) fn insert_x25519_public_key(
     let rowid = conn.last_insert_rowid();
     assert!(rowid > 0);
     Ok(X25519PublicKeyRowID(rowid))
+}
+
+//
+// Row Select Methods
+//
+
+pub(super) fn select_newest_db_version(conn: &Connection) -> Result<profile::Version, Error> {
+    let (major, minor, patch) = conn
+        .query_one(
+            "SELECT major, minor, patch FROM db_versions ORDER BY rowid DESC LIMIT 1;",
+            [],
+            |row| Ok((row.get(0), row.get(1), row.get(2))),
+        )
+        .map_err(Error::QueryFailure)?;
+    let major = major.map_err(Error::QueryFailure)?;
+    let minor = minor.map_err(Error::QueryFailure)?;
+    let patch = patch.map_err(Error::QueryFailure)?;
+
+    profile::Version::new(major, minor, patch)
 }
 
 //

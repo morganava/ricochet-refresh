@@ -3,7 +3,7 @@ use std::boxed::Box;
 use std::path::{Path, PathBuf};
 
 // extern
-use rusqlite::{params, Connection, OpenFlags, Statement};
+use rusqlite::{Connection, OpenFlags};
 use time::UtcDateTime;
 use tor_interface::tor_crypto::{
     Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature, X25519PrivateKey, X25519PublicKey,
@@ -35,7 +35,7 @@ impl Version {
 }
 
 impl Version {
-    const fn new(major: i64, minor: i64, patch: i64) -> Result<Self, Error> {
+    pub(crate) const fn new(major: i64, minor: i64, patch: i64) -> Result<Self, Error> {
         if major < 0 || minor < 0 || patch < 0 {
             Err(Error::InvalidSemanticVersion(major, minor, patch))
         } else {
@@ -205,19 +205,7 @@ impl Profile {
     // Version
     //
     pub fn get_version(&self) -> Result<Version, Error> {
-        let (major, minor, patch) = self
-            .conn
-            .query_one(
-                "SELECT major, minor, patch FROM db_versions ORDER BY rowid DESC LIMIT 1;",
-                [],
-                |row| Ok((row.get(0), row.get(1), row.get(2))),
-            )
-            .map_err(Error::QueryFailure)?;
-        let major = major.map_err(Error::QueryFailure)?;
-        let minor = minor.map_err(Error::QueryFailure)?;
-        let patch = patch.map_err(Error::QueryFailure)?;
-
-        Version::new(major, minor, patch)
+        db::select_newest_db_version(&self.conn)
     }
 
     //
