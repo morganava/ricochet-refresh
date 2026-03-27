@@ -450,6 +450,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         );
         CREATE INDEX idx_message_records_conversation_user_sequence ON message_records(conversation_rowid, user_rowid, message_sequence, record_sequence);
         CREATE INDEX idx_message_records_conversation_user_timestamp_sequence ON message_records(conversation_rowid, user_rowid, create_timestamp, message_sequence, record_sequence);
+        CREATE INDEX idx_message_records_conversation_timestamp_record ON message_records(conversation_rowid, create_timestamp DESC, record_sequence DESC);
 
         -- message_contents
         CREATE TABLE message_contents (

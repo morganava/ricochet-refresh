@@ -12,6 +12,7 @@ rusqlite = { version = "0.38", features = ["bundled-sqlcipher-vendored-openssl"]
 serde = { version = "1.0", features = ["derive"], optional = true}
 serde_json = { version = "1.0", optional = true}
 thiserror = "2.0"
+time = "0.3"
 tor-interface = {version = "0.6.7", features = ["legacy-tor-provider"]}
 
 [dev-dependencies]
