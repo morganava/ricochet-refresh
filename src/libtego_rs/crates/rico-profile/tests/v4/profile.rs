@@ -77,5 +77,89 @@ fn test_legacy_import() -> anyhow::Result<()> {
 
     let v4_profile =
         v4::profile::Profile::new_from_v3_profile(v3_profile, "morgan", &path, "hunter42")?;
+
+    let users = v4_profile.get_users()?;
+    for (user, user_handle) in users {
+        use v4::profile::UserType;
+
+        let user_type = user.user_type;
+        let nickname = user.user_profile.nickname;
+        let pet_name = user.user_profile.pet_name;
+        let pronouns = user.user_profile.pronouns;
+        let avatar = user.user_profile.avatar;
+        let status = user.user_profile.status;
+        let description = user.user_profile.description;
+        let identity_ed25519_public_key = user.identity_ed25519_public_key;
+        let identity_ed25519_private_key = user.identity_ed25519_private_key;
+        let remote_endpoint_ed25519_public_key = user.remote_endpoint_ed25519_public_key;
+        let remote_endpoint_x25519_private_key = user.remote_endpoint_x25519_private_key;
+        let local_endpoint_ed25519_private_key = user.local_endpoint_ed25519_private_key;
+        let local_endpoint_x25519_public_key = user.local_endpoint_x25519_public_key;
+
+        match (user_type, nickname.as_str(), pet_name.as_deref()) {
+            (UserType::Owner, "morgan", None) => {
+                assert_eq!(
+                    Ed25519PublicKey::from_private_key(
+                        identity_ed25519_private_key.as_ref().unwrap()
+                    ),
+                    identity_ed25519_public_key
+                );
+                let service_id = V3OnionServiceId::from_public_key(&identity_ed25519_public_key);
+                assert_eq!(
+                    V3OnionServiceId::from_string(
+                        "yl3jqul6g3x5t7fiy7bhjctqdluqczyksdwjf7yvpw6q4xzxlzqky7yd"
+                    )?,
+                    service_id
+                );
+            }
+            (user_type, nickname, pet_name) => {
+                let service_id = V3OnionServiceId::from_string(nickname)?;
+                assert_eq!(
+                    identity_ed25519_public_key,
+                    Ed25519PublicKey::from_service_id(&service_id)?
+                );
+                assert!(identity_ed25519_private_key.is_none());
+                match (user_type, nickname, pet_name) {
+                    (
+                        UserType::Allowed,
+                        "um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid",
+                        Some("alice"),
+                    ) => (),
+                    (
+                        UserType::Requesting,
+                        "kndfzlfstthybcnf62brkk5dn2ypqlzyra5srheqenpvmesoizodihad",
+                        Some("bridgette"),
+                    ) => (),
+                    (
+                        UserType::Blocked,
+                        "mj4kpnujlesrslrmtqqbyu3yntr7macr6sbtmime5mktl272mdcn36yd",
+                        Some("claire"),
+                    ) => (),
+                    (
+                        UserType::Requesting,
+                        "arn2oq6qp2gvcicolecju5x44x74zv56llno6cujvnxvtlcxyjhwlvid",
+                        Some("danielle"),
+                    ) => (),
+                    (
+                        UserType::Rejected,
+                        "zdqen2zfqcx25fcf4youogtlfjodwq6vx2u44pfr2vtjpktwbirm44yd",
+                        Some("evelyn"),
+                    ) => (),
+                    (user_type, nickname, pet_name) => {
+                        panic!("user_type: {user_type:?}, nickname: {nickname}, pet_name: {pet_name:?}");
+                    }
+                }
+            }
+        }
+        assert!(pronouns.is_none());
+        assert!(avatar.is_none());
+        assert!(status.is_none());
+        assert!(description.is_none());
+        assert!(remote_endpoint_ed25519_public_key.is_none());
+        assert!(remote_endpoint_x25519_private_key.is_none());
+        assert!(local_endpoint_ed25519_private_key.is_none());
+        assert!(local_endpoint_x25519_public_key.is_none());
+    }
+
     Ok(())
 }

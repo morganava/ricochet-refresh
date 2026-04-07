@@ -8,6 +8,7 @@ description = "A library for reading+writing Ricochet-Refresh profile files"
 repository = "https://github.com/blueprint-freespeech/ricochet-refresh"
 
 [dependencies]
+rico-protocol = { path = "../rico-protocol" }
 rusqlite = { version = "0.38", features = ["bundled-sqlcipher-vendored-openssl"], optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true}
 serde_json = { version = "1.0", optional = true}

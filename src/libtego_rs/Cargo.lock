@@ -1395,6 +1395,7 @@ name = "rico-profile"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "rico-protocol",
  "rusqlite",
  "serde",
  "serde_json",

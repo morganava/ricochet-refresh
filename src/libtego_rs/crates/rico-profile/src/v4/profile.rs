@@ -1,5 +1,6 @@
 // std
 use std::boxed::Box;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 // extern
@@ -92,88 +93,116 @@ impl Profile {
         path: &Path,
         password: &str,
     ) -> Result<Profile, Error> {
-        let profile = Profile::new(path, password)?;
-        let conn = &profile.conn;
-
+        // todo, write profile to a temp file and move after successful creation
+        let mut profile = Profile::new(path, password)?;
+        let tx = profile
+            .conn
+            .transaction()
+            .map_err(Error::TransactionCreateFailure)?;
         //
         // Add our host user
         //
-        let identity_private_key = v3_profile.private_key;
-        let identity_public_key = Ed25519PublicKey::from_private_key(&identity_private_key);
 
-        // insert keys into db
-        let identity_private_key_rowid =
-            db::insert_ed25519_private_key(conn, &identity_private_key.to_bytes())?;
-        let identity_public_key_rowid =
-            db::insert_ed25519_public_key(conn, identity_public_key.as_bytes())?;
+        let host_identity_ed25519_private_key = v3_profile.private_key;
+        let nickname = nickname.to_string();
 
-        // create owner's user profile
-        let owner_user_profile_rowid = db::insert_user_profile(
-            conn, nickname, None, // pet_name
-            None, // pronouns
-            None, // avatar
-            None, //status
-            None, //description
-        )?;
+        let host_identity_ed25519_public_key =
+            Ed25519PublicKey::from_private_key(&host_identity_ed25519_private_key);
+        let host_identity_ed25519_private_key = Some(host_identity_ed25519_private_key);
 
-        // insert user
-        db::insert_user(
-            conn,
-            db::UserType::Owner,
-            Some(owner_user_profile_rowid),
-            identity_public_key_rowid,
-            Some(identity_private_key_rowid),
-            None, // remote endpoint ed25519 public key
-            None, // remote endpoint x25519 private key
-            None, // local endpoint ed25519 private key
-            None, // local endpoint x25519 public key
-        )?;
+        let host_user = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname,
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: host_identity_ed25519_public_key.clone(),
+            identity_ed25519_private_key: host_identity_ed25519_private_key,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let host_user_handle = db::insert_user(&tx, &host_user)?;
 
         for (service_id, user) in v3_profile.users {
-            // insert public key
-            let identity_public_key = Ed25519PublicKey::from_service_id(&service_id).unwrap();
-            let identity_public_key_rowid =
-                db::insert_ed25519_public_key(conn, identity_public_key.as_bytes())?;
-
-            //insert user profile
-            let nickname = service_id.to_string();
-            let nickname = nickname.as_str();
-            let pet_name = user.nickname.as_str();
-
-            let user_profile_rowid = db::insert_user_profile(
-                conn,
-                nickname,
-                Some(pet_name),
-                None, // pronouns
-                None, // avatar
-                None, // status
-                None, // description
-            )?;
-
-            // map legacy user types to new user types
+            // map legacy UserType to v4 UserType
             let user_type = user.user_type;
             let user_type = match user_type {
-                v3::profile::UserType::Allowed => db::UserType::Allowed,
+                v3::profile::UserType::Allowed => UserType::Allowed,
                 v3::profile::UserType::Requesting | v3::profile::UserType::Pending => {
-                    db::UserType::Requesting
+                    UserType::Requesting
                 }
-                v3::profile::UserType::Rejected => db::UserType::Rejected,
-                v3::profile::UserType::Blocked => db::UserType::Blocked,
+                v3::profile::UserType::Rejected => UserType::Rejected,
+                v3::profile::UserType::Blocked => UserType::Blocked,
+            };
+            let nickname = service_id.to_string();
+            let pet_name = Some(user.nickname);
+
+            // map legacy user types to new user types
+            let identity_ed25519_public_key =
+                Ed25519PublicKey::from_service_id(&service_id).unwrap();
+
+            let user = User {
+                user_type,
+                user_profile: UserProfile {
+                    nickname,
+                    pet_name,
+                    pronouns: None,
+                    avatar: None,
+                    status: None,
+                    description: None,
+                },
+                identity_ed25519_public_key: identity_ed25519_public_key.clone(),
+                identity_ed25519_private_key: None,
+                remote_endpoint_ed25519_public_key: None,
+                remote_endpoint_x25519_private_key: None,
+                local_endpoint_ed25519_private_key: None,
+                local_endpoint_x25519_public_key: None,
             };
 
             // insert user
-            db::insert_user(
-                conn,
-                user_type.clone(),
-                Some(user_profile_rowid),
-                identity_public_key_rowid,
-                None, // identity ed25519 private key
-                None, // remote endpoint ed25519 public key
-                None, // remote endpoint x25519 private key
-                None, // local endpoint ed25519 private key
-                None, // local endpoint x25519 public key
-            )?;
+            let user_handle = db::insert_user(&tx, &user)?;
+
+            //
+            // insert default conversations
+            //
+            let conversation_members_public_keys: BTreeSet<Ed25519PublicKey> = [
+                host_identity_ed25519_public_key.clone(),
+                identity_ed25519_public_key,
+            ]
+            .into();
+
+            // ephemeral conversation
+            let ephemeral_conversation_key = rico_protocol::v4::payload::conversation_key(
+                ConversationType::EphemeralDirectMessage,
+                &conversation_members_public_keys,
+            );
+            let ephemeral_conversation = Conversation {
+                conversation_type: ConversationType::EphemeralDirectMessage,
+                conversation_members: [host_user_handle, user_handle].into(),
+                conversation_key: Sha256Sum(ephemeral_conversation_key),
+            };
+            db::insert_conversation(&tx, ephemeral_conversation)?;
+
+            // persistent conversation
+            let persistent_conversation_key = rico_protocol::v4::payload::conversation_key(
+                ConversationType::PersistentDirectMessage,
+                &conversation_members_public_keys,
+            );
+            let persistent_conversation = Conversation {
+                conversation_type: ConversationType::PersistentDirectMessage,
+                conversation_members: [host_user_handle, user_handle].into(),
+                conversation_key: Sha256Sum(persistent_conversation_key),
+            };
+            db::insert_conversation(&tx, persistent_conversation)?;
         }
+        tx.commit().map_err(Error::TransactionCommitFailure)?;
 
         Ok(profile)
     }
@@ -216,31 +245,29 @@ impl Profile {
         &mut self,
         conversation: Conversation,
     ) -> Result<ConversationHandle, Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        let conversation_handle = db::insert_conversation(&tx, conversation)?;
+        tx.commit()?;
+        Ok(conversation_handle)
     }
 
     pub fn get_conversations(&self) -> Result<Vec<(Conversation, ConversationHandle)>, Error> {
-        Err(Error::NotImplemented)
+        db::select_all_conversations(&self.conn)
     }
 
-    pub fn delete_conversation(
+    pub fn remove_conversation(
         &mut self,
         conversation_handle: ConversationHandle,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        db::delete_conversation(&tx, conversation_handle)?;
+        tx.commit()?;
+        Ok(())
     }
 
     //
     // Profile
     //
-
-    pub fn add_user_profile(
-        &mut self,
-        user_handle: UserHandle,
-        profile: UserProfile,
-    ) -> Result<UserProfileHandle, Error> {
-        Err(Error::NotImplemented)
-    }
 
     pub fn update_user_profile(
         &mut self,
@@ -254,8 +281,15 @@ impl Profile {
     // User
     //
 
-    pub fn add_user(&mut self, user: User) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+    pub fn add_user(&mut self, user: User) -> Result<UserHandle, Error> {
+        let tx = self.conn.transaction()?;
+        let user_handle = db::insert_user(&tx, &user)?;
+        tx.commit()?;
+        Ok(user_handle)
+    }
+
+    pub fn get_users(&self) -> Result<Vec<(User, UserHandle)>, Error> {
+        db::select_all_users(&self.conn)
     }
 
     pub fn remove_user(
@@ -315,21 +349,23 @@ impl Profile {
 //
 // UserProfile
 //
-pub struct UserProfileHandle(i64);
+pub type UserProfileHandle = db::UserProfileRowID;
+#[derive(Debug)]
 pub struct UserProfile {
-    nickname: String,
-    pet_name: Option<String>,
-    pronouns: Option<String>,
-    avatar: Option<Avatar>,
-    status: Option<String>,
-    description: Option<String>,
+    pub nickname: String,
+    pub pet_name: Option<String>,
+    pub pronouns: Option<String>,
+    pub avatar: Option<Avatar>,
+    pub status: Option<String>,
+    pub description: Option<String>,
 }
 
 // Avatar
-pub struct AvatarHandle(i64);
+pub type AvatarHandle = db::AvatarRowID;
+#[derive(Debug)]
 pub struct Avatar {
     // 256x256 8-bit channel RGBA image in row-major order
-    rgba_data: Box<[u8; Self::BYTES]>,
+    pub rgba_data: Box<[u8; Self::BYTES]>,
 }
 
 impl Avatar {
@@ -342,7 +378,8 @@ impl Avatar {
 //
 // User
 //
-pub struct UserHandle(i64);
+pub type UserHandle = db::UserRowID;
+#[derive(Debug)]
 pub struct User {
     pub user_type: UserType,
     pub user_profile: UserProfile,
@@ -351,9 +388,10 @@ pub struct User {
     pub remote_endpoint_ed25519_public_key: Option<Ed25519PublicKey>,
     pub remote_endpoint_x25519_private_key: Option<X25519PrivateKey>,
     pub local_endpoint_ed25519_private_key: Option<Ed25519PrivateKey>,
-    pub local_endpoint_x25519_public_key: Option<X25519PrivateKey>,
+    pub local_endpoint_x25519_public_key: Option<X25519PublicKey>,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum UserType {
     Owner,
     Allowed,
@@ -362,37 +400,68 @@ pub enum UserType {
     Blocked,
 }
 
-//
-// Conversation
-//
-pub struct ConversationHandle(i64);
-pub struct Conversation {
-    pub conversation_type: ConversationType,
-    pub conversation_members: Vec<Ed25519PublicKey>,
-    pub conversation_key: Sha256Sum,
-}
-
-pub enum ConversationType {
-    LegacyV3,
-    EphemeralDirectMessage,
-    PersistentDirectMessage,
-}
-
-impl From<ConversationType> for i64 {
-    fn from(value: ConversationType) -> i64 {
+impl From<UserType> for i64 {
+    fn from(value: UserType) -> i64 {
         match value {
-            ConversationType::LegacyV3 => 0i64,
-            ConversationType::EphemeralDirectMessage => 1i64,
-            ConversationType::PersistentDirectMessage => 2i64,
+            UserType::Owner => 0i64,
+            UserType::Allowed => 1i64,
+            UserType::Requesting => 2i64,
+            UserType::Rejected => 3i64,
+            UserType::Blocked => 4i64,
         }
     }
 }
 
+impl TryFrom<i64> for UserType {
+    type Error = Error;
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        match value {
+            0i64 => Ok(UserType::Owner),
+            1i64 => Ok(UserType::Allowed),
+            2i64 => Ok(UserType::Requesting),
+            3i64 => Ok(UserType::Rejected),
+            4i64 => Ok(UserType::Blocked),
+            _ => Err(Error::TypeConversionFailed(format!("{value}"), "UserType")),
+        }
+    }
+}
+
+impl rusqlite::ToSql for UserType {
+    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
+        let value: i64 = (*self).into();
+        Ok(value.into())
+    }
+}
+
+impl rusqlite::types::FromSql for UserType {
+    fn column_result(
+        value: rusqlite::types::ValueRef<'_>,
+    ) -> Result<Self, rusqlite::types::FromSqlError> {
+        let value = i64::column_result(value)?;
+        match UserType::try_from(value) {
+            Ok(value) => Ok(value),
+            Err(_) => Err(rusqlite::types::FromSqlError::OutOfRange(value)),
+        }
+    }
+}
+
+//
+// Conversation
+//
+pub type ConversationHandle = db::ConversationRowID;
+pub struct Conversation {
+    pub conversation_type: ConversationType,
+    pub conversation_members: BTreeSet<UserHandle>,
+    pub conversation_key: Sha256Sum,
+}
+
+pub type ConversationType = rico_protocol::v4::ConversationType;
+
 // Messages
 
-pub struct MessageRecordHandle(i64);
-pub struct RecordSequence(i64);
-pub struct MessageSequence(i64);
+pub type MessageRecordHandle = db::MessageRecordRowID;
+pub struct RecordSequence(pub i64);
+pub struct MessageSequence(pub i64);
 pub struct MessageRecord {
     pub conversation_handle: ConversationHandle,
     pub user_handle: UserHandle,
@@ -405,7 +474,7 @@ pub struct MessageRecord {
     pub signature: Ed25519Signature,
 }
 
-pub struct FileSize(i64);
+pub struct FileSize(pub i64);
 pub enum MessageContent {
     Modified {
         original_message_content_hash: Sha256Sum,
@@ -426,11 +495,11 @@ pub enum MessageContent {
 // Salt
 //
 
-pub struct Salt([u8; 32]);
+pub struct Salt(pub [u8; 32]);
 
 //
 // Sha256Sum
 //
 
 #[derive(PartialEq)]
-pub struct Sha256Sum([u8; 32]);
+pub struct Sha256Sum(pub [u8; 32]);
