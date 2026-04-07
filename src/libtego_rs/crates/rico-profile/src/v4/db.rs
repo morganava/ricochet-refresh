@@ -1103,11 +1103,70 @@ pub fn select_all_users(conn: &Connection) -> Result<Vec<(profile::User, UserRow
 // Row delete methods
 //
 
+fn delete_avatar(tx: &Transaction, avatar_rowid: AvatarRowID) -> Result<(), Error> {
+    let _count = tx.execute(
+        "DELETE FROM avatars WHERE rowid = 1?",
+        params![avatar_rowid],
+    )?;
+    Ok(())
+}
+
+fn delete_user_profile(
+    tx: &Transaction<'_>,
+    user_profile_rowid: UserProfileRowID,
+) -> Result<(), Error> {
+    let avatar_rowid = tx.query_one(
+        "DELETE FROM user_profiles WHERE rowid = ?1 RETURNING avatar_rowid",
+        params![user_profile_rowid],
+        |row| row.get::<_, AvatarRowID>(0),
+    )?;
+    delete_avatar(tx, avatar_rowid)?;
+
+    Ok(())
+}
+
+pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), Error> {
+    let user_rowid = user_handle;
+
+    let (user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid) = tx.query_one("DELETE FROM users WHERE rowid = ?1 RETURNING user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid", params![user_rowid], |row| Ok((
+            row.get::<_, UserProfileRowID>(0)?,
+            row.get::<_, Ed25519PublicKeyRowID>(1)?,
+            row.get::<_, Option<Ed25519PrivateKeyRowID>>(2)?,
+            row.get::<_, Option<Ed25519PublicKeyRowID>>(3)?,
+            row.get::<_, Option<X25519PrivateKeyRowID>>(4)?,
+            row.get::<_, Option<Ed25519PrivateKeyRowID>>(5)?,
+            row.get::<_, Option<X25519PublicKeyRowID>>(6)?,
+        )))?;
+
+    delete_user_profile(tx, user_profile_rowid)?;
+    delete_ed25519_public_key(tx, identity_ed25519_public_key_rowid)?;
+    if let Some(identity_ed25519_private_key_rowid) = identity_ed25519_private_key_rowid {
+        delete_ed25519_private_key(tx, identity_ed25519_private_key_rowid)?;
+    }
+    if let Some(remote_endpoint_ed25519_public_key_rowid) = remote_endpoint_ed25519_public_key_rowid
+    {
+        delete_ed25519_public_key(tx, remote_endpoint_ed25519_public_key_rowid)?;
+    }
+    if let Some(remote_endpoint_x25519_private_key_rowid) = remote_endpoint_x25519_private_key_rowid
+    {
+        delete_x25519_private_key(tx, remote_endpoint_x25519_private_key_rowid)?;
+    }
+    if let Some(local_endpoint_ed25519_private_key_rowid) = local_endpoint_ed25519_private_key_rowid
+    {
+        delete_ed25519_private_key(tx, local_endpoint_ed25519_private_key_rowid)?;
+    }
+    if let Some(local_endpoint_x25519_public_key_rowid) = local_endpoint_x25519_public_key_rowid {
+        delete_x25519_public_key(tx, local_endpoint_x25519_public_key_rowid)?;
+    }
+
+    Ok(())
+}
+
 pub fn delete_conversation(
     tx: &Transaction<'_>,
     conversation_handle: ConversationRowID,
 ) -> Result<(), Error> {
-    let conversation_rowid = ConversationRowID(conversation_handle.0);
+    let conversation_rowid = conversation_handle;
 
     // get and delete this conversation's conversation_key and delete the conversation
     let conversation_key_rowid = tx.query_one(
@@ -1229,6 +1288,28 @@ fn delete_sha256_hash(
     Ok(())
 }
 
+fn delete_ed25519_private_key(
+    tx: &Transaction<'_>,
+    ed25519_private_key_rowid: Ed25519PrivateKeyRowID,
+) -> Result<(), Error> {
+    let _count = tx.execute(
+        "DELETE FROM ed25519_private_keys WHERE rowid = 1?",
+        params![ed25519_private_key_rowid],
+    )?;
+    Ok(())
+}
+
+fn delete_ed25519_public_key(
+    tx: &Transaction<'_>,
+    ed25519_public_key_rowid: Ed25519PublicKeyRowID,
+) -> Result<(), Error> {
+    let _count = tx.execute(
+        "DELETE FROM ed25519_public_keys WHERE rowid = 1?",
+        params![ed25519_public_key_rowid],
+    )?;
+    Ok(())
+}
+
 fn delete_ed25519_signature(
     tx: &Transaction<'_>,
     ed25519_signature_rowid: Ed25519SignatureRowID,
@@ -1236,6 +1317,28 @@ fn delete_ed25519_signature(
     let _count = tx.execute(
         "DELETE FROM ed25519_signatures WHERE rowid = 1?",
         params![ed25519_signature_rowid],
+    )?;
+    Ok(())
+}
+
+fn delete_x25519_private_key(
+    tx: &Transaction<'_>,
+    x25519_private_key_rowid: X25519PrivateKeyRowID,
+) -> Result<(), Error> {
+    let _count = tx.execute(
+        "DELETE FROM x25519_private_keys WHERE rowid = 1?",
+        params![x25519_private_key_rowid],
+    )?;
+    Ok(())
+}
+
+fn delete_x25519_public_key(
+    tx: &Transaction<'_>,
+    x25519_public_key_rowid: X25519PublicKeyRowID,
+) -> Result<(), Error> {
+    let _count = tx.execute(
+        "DELETE FROM x25519_public_keys WHERE rowid = 1?",
+        params![x25519_public_key_rowid],
     )?;
     Ok(())
 }

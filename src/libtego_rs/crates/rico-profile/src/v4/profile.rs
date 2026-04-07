@@ -292,11 +292,11 @@ impl Profile {
         db::select_all_users(&self.conn)
     }
 
-    pub fn remove_user(
-        &mut self,
-        identity_ed25519_public_key: &Ed25519PublicKey,
-    ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+    pub fn remove_user(&mut self, user_handle: UserHandle) -> Result<(), Error> {
+        let tx = self.conn.transaction()?;
+        db::delete_user(&tx, user_handle)?;
+        tx.commit()?;
+        Ok(())
     }
 
     pub fn update_user_remote_endpoint_keys(
