@@ -148,9 +148,9 @@ pub(super) struct MessageRecordRow {
     test_message_rowid: Option<TextMessageRowID>,
 }
 
-impl_sql_wrapper_type!(pub(super) struct MessageSequence(pub i64));
-impl_sql_wrapper_type!(pub(super) struct RecordSequence(pub i64));
-impl_sql_wrapper_type!(pub(super) struct Timestamp(pub i64));
+impl_sql_wrapper_type!(pub struct MessageSequence(pub i64));
+impl_sql_wrapper_type!(pub struct RecordSequence(pub i64));
+impl_sql_wrapper_type!(pub struct Timestamp(pub i64));
 
 type MessageType = rico_protocol::v4::MessageType;
 
@@ -573,7 +573,7 @@ pub fn insert_conversation(
     let conversation_type: i64 = conversation.conversation_type.into();
     let conversation_members = conversation.conversation_members;
     let conversation_key = conversation.conversation_key;
-    let conversation_key_rowid = insert_sha256_hash(tx, conversation_key)?;
+    let conversation_key_rowid = insert_sha256_hash(tx, &conversation_key)?;
 
     tx.execute(
         "INSERT INTO conversations (conversation_type, conversation_key_rowid) VALUES (?1, ?2)",
@@ -592,7 +592,7 @@ pub fn insert_conversation(
 }
 
 pub fn insert_conversation_member(
-    tx: &Connection,
+    tx: &Transaction<'_>,
     conversation_rowid: ConversationRowID,
     user_rowid: UserRowID,
 ) -> Result<ConversationRowID, Error> {
@@ -609,28 +609,35 @@ pub fn insert_conversation_member(
     Ok(ConversationRowID(rowid))
 }
 
-/*
-pub(crate) fn insert_message_record(
-    conn: &Connection,
-    conversation_rowid: ConversationRowID,
-    user_rowid: UserRowID,
-    record_sequence: RecordSequence,
-    message_sequence: MessageSequence,
-    create_timestamp: Timestamp,
-    modify_timestamp: Timestamp,
-    message_content_rowid: MessageContentRowID,
-    signature_rowid: Ed25519SignatureRowID,
+pub fn insert_message_record(
+    tx: &Transaction<'_>,
+    message_record: &profile::MessageRecord,
 ) -> Result<MessageRecordRowID, Error> {
-    conn.execute(
+    let conversation_rowid = message_record.conversation_handle;
+    let user_rowid = message_record.user_handle;
+    let record_sequence = message_record.record_sequence;
+    let message_sequence = message_record.message_sequence;
+    let create_timestamp = message_record.create_timestamp.unix_timestamp();
+    let modify_timestamp = message_record.modify_timestamp.unix_timestamp();
+    let message_content_salt = &message_record.message_content_salt;
+    let message_content_salt_rowid = insert_salt(tx, message_content_salt)?;
+    let message_content = &message_record.message_content;
+    let message_content_rowid =
+        insert_message_content(tx, message_content_salt_rowid, message_content)?;
+    let signature = &message_record.signature;
+    let signature_rowid = insert_ed25519_signature(tx, signature)?;
+
+    tx.execute(
         "INSERT INTO message_records (
-               conversation_rowid,
-               user_rowid,
-               record_sequence,
-               message_sequence,
-               create_timestamp,
-               modify_timestamp,
-               message_content_rowid,
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            conversation_rowid,
+            user_rowid,
+            record_sequence,
+            message_sequence,
+            create_timestamp,
+            modify_timestamp,
+            message_content_rowid,
+            signature_rowid
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             conversation_rowid,
             user_rowid,
@@ -639,124 +646,129 @@ pub(crate) fn insert_message_record(
             create_timestamp,
             modify_timestamp,
             message_content_rowid,
+            signature_rowid
         ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+    )?;
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
+
     Ok(MessageRecordRowID(rowid))
 }
 
-pub(crate) fn insert_message_content(
-    conn: &Connection,
+fn insert_message_content(
+    tx: &Transaction<'_>,
     salt_rowid: SaltRowID,
-    message_type: MessageType,
-    modified_message_rowid: Option<ModifiedMessageRowID>,
-    text_message_rowid: Option<TextMessageRowID>,
-    file_share_message_rowid: Option<FileShareMessageRowID>,
+    message_content: &profile::MessageContent,
 ) -> Result<MessageContentRowID, Error> {
-    conn.execute(
-        "INSERT INTO message_contents (
-                salt_rowid,
-                message_type,
-                modified_message_rowid,
-                text_message_rowid,
-                file_share_message_rowid,
-            ) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![
-            salt_rowid,
-            message_type,
-            modified_message_rowid,
-            text_message_rowid,
-            file_share_message_rowid,
-        ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+    use profile::MessageContent;
+    let (message_type, modified_message_rowid, text_message_rowid, file_share_message_rowid) =
+        match message_content {
+            MessageContent::Modified {
+                original_message_content_hash,
+                original_message_record_signature,
+            } => {
+                let rowid = insert_modified_message(
+                    tx,
+                    original_message_content_hash,
+                    original_message_record_signature,
+                )?;
+                (MessageType::Modified, Some(rowid), None, None)
+            }
+            MessageContent::Text { text } => {
+                let rowid = insert_text_message(tx, text.as_str())?;
+                (MessageType::Text, None, Some(rowid), None)
+            }
+            MessageContent::FileShare {
+                file_data_salt,
+                file_size,
+                file_data_hash,
+                file_path,
+            } => {
+                let rowid = insert_file_share_message(
+                    tx,
+                    file_data_salt,
+                    file_size,
+                    file_data_hash,
+                    file_path,
+                )?;
+                (MessageType::FileShare, None, None, Some(rowid))
+            }
+        };
+
+    tx.execute("INSERT INTO message_contents (salt_rowid, message_type, modified_message_rowid, text_message_rowid, file_share_message_rowid) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![salt_rowid, message_type, modified_message_rowid, text_message_rowid, file_share_message_rowid])?;
+
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(MessageContentRowID(rowid))
 }
 
-pub(crate) fn insert_modified_message(
-    conn: &Connection,
-    original_message_content_hash_rowid: Sha256HashRowID,
-    original_message_record_signature_rowid: Ed25519SignatureRowID,
+fn insert_modified_message(
+    tx: &Transaction<'_>,
+    original_message_content_hash: &profile::Sha256Sum,
+    original_message_record_signature: &Ed25519Signature,
 ) -> Result<ModifiedMessageRowID, Error> {
-    conn.execute(
-        "INSERT INTO modified_messages (
-                original_message_content_hash_rowid,
-                original_message_record_signature_rowid,
-            ) VALUES (?1, ?2)",
-        params![
-            original_message_content_hash_rowid,
-            original_message_record_signature_rowid,
-        ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+    let original_message_content_hash_rowid =
+        insert_sha256_hash(tx, original_message_content_hash)?;
+    let original_message_record_signature_rowid =
+        insert_ed25519_signature(tx, original_message_record_signature)?;
+
+    tx.execute("INSERT INTO modified_messages (original_message_content_hash_rowid, original_message_record_signature_rowid) VALUES (?1, ?2)",
+        params![original_message_content_hash_rowid, original_message_record_signature_rowid])?;
+
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(ModifiedMessageRowID(rowid))
 }
 
-pub(crate) fn insert_text_message(
-    conn: &Connection,
-    text: String,
-) -> Result<TextMessageRowID, Error> {
-    conn.execute(
-        "INSERT INTO text_messages (
-                text
-            ) VALUES (?1)",
+fn insert_text_message(tx: &Transaction<'_>, text: &str) -> Result<TextMessageRowID, Error> {
+    tx.execute(
+        "INSERT INTO text_messages (text) VALUES (?1)",
         params![text],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+    )?;
+
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(TextMessageRowID(rowid))
 }
 
-pub(crate) fn insert_file_share_message(
-    conn: &Connection,
-    file_data_salt_rowid: SaltRowID,
-    file_size: FileSize,
-    file_data_hash_rowid: Sha256HashRowID,
-    file_path: Option<String>,
+fn insert_file_share_message(
+    tx: &Transaction<'_>,
+    file_data_salt: &profile::Salt,
+    file_size: &profile::FileSize,
+    file_data_hash: &profile::Sha256Sum,
+    file_path: &Option<std::path::PathBuf>,
 ) -> Result<FileShareMessageRowID, Error> {
-    conn.execute(
-        "INSERT INTO file_share_messages (
-                file_data_salt_rowid,
-                file_size,
-                file_data_hash_rowid,
-                file_path
-            ) VALUES (?1, ?2, ?3, ?4)",
-        params![
-            file_data_salt_rowid,
-            file_size,
-            file_data_hash_rowid,
-            file_path
-        ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+    let file_data_salt_rowid = insert_salt(tx, file_data_salt)?;
+    let file_data_hash_rowid = insert_sha256_hash(tx, file_data_hash)?;
+    let file_path = match file_path {
+        Some(file_path) => file_path.to_str(),
+        None => None,
+    };
+
+    tx.execute("INSERT INTO file_share_messages (file_data_salt_rowid, file_size, file_data_hash_rowid, file_path) VALUES (?1, ?2, ?3, ?4)",
+        params![file_data_salt_rowid, file_size, file_data_hash_rowid, file_path])?;
+
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(FileShareMessageRowID(rowid))
 }
 
-pub(crate) fn insert_salt(conn: &Connection, value: [u8; 32]) -> Result<SaltRowID, Error> {
-    conn.execute(
+fn insert_salt(tx: &Transaction<'_>, value: &profile::Salt) -> Result<SaltRowID, Error> {
+    tx.execute(
         "INSERT INTO salts (
                 value
             ) VALUES (?1)",
-        params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
-    let rowid = conn.last_insert_rowid();
+        params![value.0],
+    )?;
+    let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(SaltRowID(rowid))
 }
-*/
+
 pub(crate) fn insert_sha256_hash(
     tx: &Transaction<'_>,
-    value: profile::Sha256Sum,
+    value: &profile::Sha256Sum,
 ) -> Result<Sha256HashRowID, Error> {
     tx.execute(
         "INSERT INTO sha256_hashes (
@@ -856,6 +868,69 @@ pub(crate) fn insert_x25519_public_key(
 }
 
 //
+// Row Update Methods
+//
+
+pub fn update_user_profile(
+    tx: &Transaction<'_>,
+    user_handle: profile::UserHandle,
+    user_profile: profile::UserProfile,
+) -> Result<(), Error> {
+    let user_rowid = user_handle;
+    let user_profile_rowid = select_user_profile_rowid_by_user_rowid(tx, user_rowid)?;
+
+    let old_avatar_rowid = tx.query_one(
+        "SELECT avatar_rowid FROM user_profiles WHERE rowid = ?1",
+        params![user_profile_rowid],
+        |row| row.get::<_, Option<AvatarRowID>>(0),
+    )?;
+
+    let nickname = user_profile.nickname;
+    let pet_name = user_profile.pet_name;
+    let pronouns = user_profile.pronouns;
+    let avatar_rowid = match user_profile.avatar {
+        Some(avatar) => Some(insert_avatar(tx, &avatar)?),
+        None => None,
+    };
+    let status = user_profile.status;
+    let description = user_profile.description;
+    tx.execute("UPDATE user_profiles SET nickname = ?2, pet_name = ?3, pronouns = ?4, avatar_rowid = ?5, status = ?6, description = ?7 WHERE rowid = ?1",
+        params![user_profile_rowid, nickname, pet_name, pronouns, avatar_rowid, status, description])?;
+
+    if let Some(avatar_rowid) = old_avatar_rowid {
+        delete_avatar(tx, avatar_rowid)?;
+    }
+
+    Ok(())
+}
+
+pub fn update_remote_endpoint_keys(
+    tx: &Transaction<'_>,
+    user_handle: profile::UserHandle,
+    remote_endpoint_ed25519_public_key: Ed25519PublicKey,
+    remote_endpoint_x25519_private_key: X25519PrivateKey,
+) -> Result<(), Error> {
+    let user_rowid = user_handle;
+    tx.execute("UPDATE users SET remote_endpoint_ed25519_public_key_rowid = ?2, remote_endpoint_x25519_private_key_rowid = ?3 WHERE rowid = ?1",
+        params![user_rowid, remote_endpoint_ed25519_public_key.as_bytes(), remote_endpoint_x25519_private_key.to_bytes()])?;
+
+    Ok(())
+}
+
+pub fn update_local_endpoint_keys(
+    tx: &Transaction<'_>,
+    user_handle: profile::UserHandle,
+    local_endpoint_ed25519_private_key: Ed25519PrivateKey,
+    local_endpoint_x25519_public_key: X25519PublicKey,
+) -> Result<(), Error> {
+    let user_rowid = user_handle;
+    tx.execute("UPDATE users SET local_endpoint_ed25519_private_key = ?2, local_endpoint_x25519_public_key = ?3 WHERE rowid = ?1",
+        params![user_rowid, local_endpoint_ed25519_private_key.to_bytes(), local_endpoint_x25519_public_key.as_bytes()])?;
+
+    Ok(())
+}
+
+//
 // Row Select Methods
 //
 
@@ -873,6 +948,16 @@ pub fn select_newest_db_version(conn: &Connection) -> Result<profile::Version, E
     )?;
 
     profile::Version::new(major, minor, patch)
+}
+
+pub fn select_user_profile_by_user_handle(
+    conn: &Connection,
+    user_handle: profile::UserHandle,
+) -> Result<profile::UserProfile, Error> {
+    let user_rowid = user_handle;
+    let user_profile_rowid = select_user_profile_rowid_by_user_rowid(conn, user_rowid)?;
+
+    select_user_profile(conn, user_profile_rowid)
 }
 
 pub fn select_all_conversations(
@@ -1099,13 +1184,71 @@ pub fn select_all_users(conn: &Connection) -> Result<Vec<(profile::User, UserRow
     Ok(result)
 }
 
+fn select_user_profile(
+    conn: &Connection,
+    user_profile_rowid: UserProfileRowID,
+) -> Result<profile::UserProfile, Error> {
+    let mut select_user_profile_stmt = conn.prepare("SELECT nickname, pet_name, pronouns, avatar_rowid, status, description FROM user_profiles WHERE rowid = ?1")?;
+
+    let mut select_avatar_stmt = conn.prepare("SELECT value FROM avatars WHERE rowid = ?1")?;
+
+    // construct user's profile
+    let (nickname, pet_name, pronouns, avatar_rowid, status, description) =
+        select_user_profile_stmt.query_one(params![user_profile_rowid], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, Option<String>>(1)?,
+                row.get::<_, Option<String>>(2)?,
+                row.get::<_, Option<AvatarRowID>>(3)?,
+                row.get::<_, Option<String>>(4)?,
+                row.get::<_, Option<String>>(5)?,
+            ))
+        })?;
+
+    let avatar = match avatar_rowid {
+        Some(avatar_rowid) => {
+            let rgba_data =
+                Box::new(select_avatar_stmt.query_one(params![avatar_rowid], |row| {
+                    row.get::<_, [u8; profile::Avatar::BYTES]>(0)
+                })?);
+            let avatar = profile::Avatar { rgba_data };
+            Some(avatar)
+        }
+        None => None,
+    };
+
+    let user_profile = profile::UserProfile {
+        nickname,
+        pet_name,
+        pronouns,
+        avatar,
+        status,
+        description,
+    };
+
+    Ok(user_profile)
+}
+
+fn select_user_profile_rowid_by_user_rowid(
+    conn: &Connection,
+    user_rowid: UserRowID,
+) -> Result<UserProfileRowID, Error> {
+    let user_profile_rowid = conn.query_one(
+        "SELECT user_profile_rowid FROM users WHERE rowid = ?1",
+        params![user_rowid],
+        |row| row.get::<_, UserProfileRowID>(0),
+    )?;
+
+    Ok(user_profile_rowid)
+}
+
 //
 // Row delete methods
 //
 
 fn delete_avatar(tx: &Transaction, avatar_rowid: AvatarRowID) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM avatars WHERE rowid = 1?",
+        "DELETE FROM avatars WHERE rowid = ?1",
         params![avatar_rowid],
     )?;
     Ok(())
@@ -1118,9 +1261,11 @@ fn delete_user_profile(
     let avatar_rowid = tx.query_one(
         "DELETE FROM user_profiles WHERE rowid = ?1 RETURNING avatar_rowid",
         params![user_profile_rowid],
-        |row| row.get::<_, AvatarRowID>(0),
+        |row| row.get::<_, Option<AvatarRowID>>(0),
     )?;
-    delete_avatar(tx, avatar_rowid)?;
+    if let Some(avatar_rowid) = avatar_rowid {
+        delete_avatar(tx, avatar_rowid)?;
+    }
 
     Ok(())
 }
@@ -1128,15 +1273,28 @@ fn delete_user_profile(
 pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), Error> {
     let user_rowid = user_handle;
 
+    // delete all of the user's conversations
+    let mut select_conversations_stmt = tx.prepare(
+        "SELECT DISTINCT conversation_rowid FROM conversation_members WHERE user_rowid = ?1",
+    )?;
+    let conversation_rowids = select_conversations_stmt.query_map(params![user_rowid], |row| {
+        row.get::<_, ConversationRowID>(0)
+    })?;
+
+    for conversation_rowid in conversation_rowids {
+        let conversation_rowid = conversation_rowid?;
+        delete_conversation(tx, conversation_rowid)?;
+    }
+    // /*
     let (user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid) = tx.query_one("DELETE FROM users WHERE rowid = ?1 RETURNING user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid", params![user_rowid], |row| Ok((
-            row.get::<_, UserProfileRowID>(0)?,
-            row.get::<_, Ed25519PublicKeyRowID>(1)?,
-            row.get::<_, Option<Ed25519PrivateKeyRowID>>(2)?,
-            row.get::<_, Option<Ed25519PublicKeyRowID>>(3)?,
-            row.get::<_, Option<X25519PrivateKeyRowID>>(4)?,
-            row.get::<_, Option<Ed25519PrivateKeyRowID>>(5)?,
-            row.get::<_, Option<X25519PublicKeyRowID>>(6)?,
-        )))?;
+                row.get::<_, UserProfileRowID>(0)?,
+                row.get::<_, Ed25519PublicKeyRowID>(1)?,
+                row.get::<_, Option<Ed25519PrivateKeyRowID>>(2)?,
+                row.get::<_, Option<Ed25519PublicKeyRowID>>(3)?,
+                row.get::<_, Option<X25519PrivateKeyRowID>>(4)?,
+                row.get::<_, Option<Ed25519PrivateKeyRowID>>(5)?,
+                row.get::<_, Option<X25519PublicKeyRowID>>(6)?,
+            )))?;
 
     delete_user_profile(tx, user_profile_rowid)?;
     delete_ed25519_public_key(tx, identity_ed25519_public_key_rowid)?;
@@ -1158,7 +1316,6 @@ pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), E
     if let Some(local_endpoint_x25519_public_key_rowid) = local_endpoint_x25519_public_key_rowid {
         delete_x25519_public_key(tx, local_endpoint_x25519_public_key_rowid)?;
     }
-
     Ok(())
 }
 
@@ -1170,15 +1327,14 @@ pub fn delete_conversation(
 
     // get and delete this conversation's conversation_key and delete the conversation
     let conversation_key_rowid = tx.query_one(
-        "DELETE FROM conversations WHERE conversations_rowid = ?1 RETURNING conversation_key_rowid",
+        "SELECT conversation_key_rowid FROM conversations WHERE rowid = ?1",
         params![conversation_rowid],
         |row| row.get::<_, Sha256HashRowID>(0),
     )?;
-    delete_sha256_hash(tx, conversation_key_rowid)?;
 
     // and delete all of the conversation members
     let _count = tx.execute(
-        "DELETE FROM conversation_members WHERE conversation_rowid = 1?",
+        "DELETE FROM conversation_members WHERE conversation_rowid = ?1",
         params![conversation_rowid],
     )?;
 
@@ -1200,14 +1356,20 @@ pub fn delete_conversation(
         delete_ed25519_signature(tx, signature_rowid)?;
     }
 
-    Err(Error::NotImplemented)
+    tx.execute(
+        "DELETE FROM conversations WHERE rowid = ?1",
+        params![conversation_rowid],
+    )?;
+    delete_sha256_hash(tx, conversation_key_rowid)?;
+
+    Ok(())
 }
 
 fn delete_message_content(
     tx: &Transaction<'_>,
     message_content_rowid: MessageContentRowID,
 ) -> Result<(), Error> {
-    let (salt_rowid, modified_message_rowid, text_message_rowid, file_share_message_rowid) = tx.query_one("DELETE FROM message_contents WHERE rowid = 1? RETURNING salt_rowid, modified_message_rowid, text_message_rowid, file_share_message_rowid", params![message_content_rowid], |row| Ok((
+    let (salt_rowid, modified_message_rowid, text_message_rowid, file_share_message_rowid) = tx.query_one("DELETE FROM message_contents WHERE rowid = ?1 RETURNING salt_rowid, modified_message_rowid, text_message_rowid, file_share_message_rowid", params![message_content_rowid], |row| Ok((
             row.get::<_, SaltRowID>(0)?,
             row.get::<_, Option<ModifiedMessageRowID>>(1)?,
             row.get::<_, Option<TextMessageRowID>>(2)?,
@@ -1234,7 +1396,7 @@ fn delete_modified_message(
     tx: &Transaction<'_>,
     modified_message_rowid: ModifiedMessageRowID,
 ) -> Result<(), Error> {
-    let (original_message_content_hash_rowid, original_message_record_signature_rowid) = tx.query_one("DELETE FROM modified_messages WHERE rowid = 1? RETURNING original_message_content_hash_rowid, original_message_record_signature_rowid", params![modified_message_rowid], |row| Ok((
+    let (original_message_content_hash_rowid, original_message_record_signature_rowid) = tx.query_one("DELETE FROM modified_messages WHERE rowid = ?1 RETURNING original_message_content_hash_rowid, original_message_record_signature_rowid", params![modified_message_rowid], |row| Ok((
             row.get::<_, Sha256HashRowID>(0)?,
             row.get::<_, Ed25519SignatureRowID>(1)?,
         )))?;
@@ -1250,7 +1412,7 @@ fn delete_text_message(
     text_message_rowid: TextMessageRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM text_messages WHERE rowid = 1?",
+        "DELETE FROM text_messages WHERE rowid = ?1",
         params![text_message_rowid],
     )?;
 
@@ -1261,7 +1423,7 @@ fn delete_file_share_message(
     tx: &Transaction<'_>,
     file_share_message_rowid: FileShareMessageRowID,
 ) -> Result<(), Error> {
-    let (file_data_salt_rowid, file_data_hash_rowid) = tx.query_one("DELETE FROM file_share_messages WHERE rowid = 1? RETURNING file_data_salt_rowid, file_data_hash_rowid", params![file_share_message_rowid], |row| Ok((
+    let (file_data_salt_rowid, file_data_hash_rowid) = tx.query_one("DELETE FROM file_share_messages WHERE rowid = ?1 RETURNING file_data_salt_rowid, file_data_hash_rowid", params![file_share_message_rowid], |row| Ok((
             row.get::<_, SaltRowID>(0)?,
             row.get::<_, Sha256HashRowID>(1)?,
         )))?;
@@ -1273,7 +1435,7 @@ fn delete_file_share_message(
 }
 
 fn delete_salt(tx: &Transaction<'_>, salt_rowid: SaltRowID) -> Result<(), Error> {
-    let _count = tx.execute("DELETE FROM salts WHERE rowid = 1?", params![salt_rowid])?;
+    let _count = tx.execute("DELETE FROM salts WHERE rowid = ?1", params![salt_rowid])?;
     Ok(())
 }
 
@@ -1282,7 +1444,7 @@ fn delete_sha256_hash(
     sha256_hash_rowid: Sha256HashRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM sha256_hashes WHERE rowid = 1?",
+        "DELETE FROM sha256_hashes WHERE rowid = ?1",
         params![sha256_hash_rowid],
     )?;
     Ok(())
@@ -1293,7 +1455,7 @@ fn delete_ed25519_private_key(
     ed25519_private_key_rowid: Ed25519PrivateKeyRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM ed25519_private_keys WHERE rowid = 1?",
+        "DELETE FROM ed25519_private_keys WHERE rowid = ?1",
         params![ed25519_private_key_rowid],
     )?;
     Ok(())
@@ -1304,7 +1466,7 @@ fn delete_ed25519_public_key(
     ed25519_public_key_rowid: Ed25519PublicKeyRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM ed25519_public_keys WHERE rowid = 1?",
+        "DELETE FROM ed25519_public_keys WHERE rowid = ?1",
         params![ed25519_public_key_rowid],
     )?;
     Ok(())
@@ -1315,7 +1477,7 @@ fn delete_ed25519_signature(
     ed25519_signature_rowid: Ed25519SignatureRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM ed25519_signatures WHERE rowid = 1?",
+        "DELETE FROM ed25519_signatures WHERE rowid = ?1",
         params![ed25519_signature_rowid],
     )?;
     Ok(())
@@ -1326,7 +1488,7 @@ fn delete_x25519_private_key(
     x25519_private_key_rowid: X25519PrivateKeyRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM x25519_private_keys WHERE rowid = 1?",
+        "DELETE FROM x25519_private_keys WHERE rowid = ?1",
         params![x25519_private_key_rowid],
     )?;
     Ok(())
@@ -1337,7 +1499,7 @@ fn delete_x25519_public_key(
     x25519_public_key_rowid: X25519PublicKeyRowID,
 ) -> Result<(), Error> {
     let _count = tx.execute(
-        "DELETE FROM x25519_public_keys WHERE rowid = 1?",
+        "DELETE FROM x25519_public_keys WHERE rowid = ?1",
         params![x25519_public_key_rowid],
     )?;
     Ok(())

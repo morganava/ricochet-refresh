@@ -269,12 +269,19 @@ impl Profile {
     // Profile
     //
 
-    pub fn update_user_profile(
+    pub fn get_user_profile(&self, user_handle: UserHandle) -> Result<UserProfile, Error> {
+        db::select_user_profile_by_user_handle(&self.conn, user_handle)
+    }
+
+    pub fn set_user_profile(
         &mut self,
-        profile_handle: UserProfileHandle,
-        profile: UserProfile,
+        user_handle: UserHandle,
+        user_profile: UserProfile,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        db::update_user_profile(&tx, user_handle, user_profile)?;
+        tx.commit()?;
+        Ok(())
     }
 
     //
@@ -299,20 +306,38 @@ impl Profile {
         Ok(())
     }
 
-    pub fn update_user_remote_endpoint_keys(
+    pub fn set_user_remote_endpoint_keys(
         &mut self,
+        user_handle: UserHandle,
         remote_endpoint_ed25519_public_key: Ed25519PublicKey,
         remote_endpoint_x25519_private_key: X25519PrivateKey,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        db::update_remote_endpoint_keys(
+            &tx,
+            user_handle,
+            remote_endpoint_ed25519_public_key,
+            remote_endpoint_x25519_private_key,
+        )?;
+        tx.commit()?;
+        Ok(())
     }
 
-    pub fn update_user_local_endpoint_keys(
+    pub fn set_user_local_endpoint_keys(
         &mut self,
+        user_handle: UserHandle,
         local_endpoint_ed25519_private_key: Ed25519PrivateKey,
         local_endpoint_x25519_public_key: X25519PublicKey,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        db::update_local_endpoint_keys(
+            &tx,
+            user_handle,
+            local_endpoint_ed25519_private_key,
+            local_endpoint_x25519_public_key,
+        )?;
+        tx.commit()?;
+        Ok(())
     }
 
     //
@@ -323,7 +348,10 @@ impl Profile {
         &mut self,
         message_record: MessageRecord,
     ) -> Result<MessageRecordHandle, Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        let message_record_handle = db::insert_message_record(&tx, &message_record)?;
+        tx.commit()?;
+        Ok(message_record_handle)
     }
 
     // get all the message records in conversation sorted by created_timestamp optionally:
@@ -460,8 +488,8 @@ pub type ConversationType = rico_protocol::v4::ConversationType;
 // Messages
 
 pub type MessageRecordHandle = db::MessageRecordRowID;
-pub struct RecordSequence(pub i64);
-pub struct MessageSequence(pub i64);
+pub type RecordSequence = db::RecordSequence;
+pub type MessageSequence = db::MessageSequence;
 pub struct MessageRecord {
     pub conversation_handle: ConversationHandle,
     pub user_handle: UserHandle,
@@ -474,7 +502,7 @@ pub struct MessageRecord {
     pub signature: Ed25519Signature,
 }
 
-pub struct FileSize(pub i64);
+pub type FileSize = db::FileSize;
 pub enum MessageContent {
     Modified {
         original_message_content_hash: Sha256Sum,
