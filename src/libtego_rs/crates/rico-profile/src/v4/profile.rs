@@ -354,22 +354,27 @@ impl Profile {
         Ok(message_record_handle)
     }
 
-    // get all the message records in conversation sorted by created_timestamp optionally:
-    // - author'd by a particular user
-    // - older than a particular creation timestampp AND
-    // - older than a particular MessageRecordHandle AND
-    // - limit number of returned records
-    //
-    // returns messages and the oldest MessageRecordHandle in the set
-    // in creation order
-    pub fn get_message_records(
+    pub fn get_message_records_from_conversation(
         &self,
         conversation_handle: ConversationHandle,
-        author: Option<UserHandle>,
         older_than_creation_timestamp: Option<UtcDateTime>,
+        limit: Option<u32>,
+    ) -> Result<Vec<MessageRecord>, Error> {
+        db::select_message_records_from_conversation(
+            &self.conn,
+            conversation_handle,
+            older_than_creation_timestamp,
+            limit,
+        )
+    }
+
+    pub fn get_message_records_from_conversation_by_user(
+        &self,
+        conversation_handle: ConversationHandle,
+        author: UserHandle,
         older_than_message_record_handle: Option<MessageRecordHandle>,
-        limit: Option<usize>,
-    ) -> Result<(Vec<MessageRecord>, MessageRecordHandle), Error> {
+        limit: Option<u32>,
+    ) -> Result<(), Error> {
         Err(Error::NotImplemented)
     }
 }
@@ -523,11 +528,17 @@ pub enum MessageContent {
 // Salt
 //
 
-pub struct Salt(pub [u8; 32]);
+pub struct Salt(pub [u8; Self::BYTES]);
+impl Salt {
+    pub const BYTES: usize = 32;
+}
 
 //
 // Sha256Sum
 //
 
 #[derive(PartialEq)]
-pub struct Sha256Sum(pub [u8; 32]);
+pub struct Sha256Sum(pub [u8; Self::BYTES]);
+impl Sha256Sum {
+    pub const BYTES: usize = 32;
+}

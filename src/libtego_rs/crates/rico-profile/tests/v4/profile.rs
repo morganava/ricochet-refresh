@@ -67,6 +67,14 @@ fn test_legacy_import() -> anyhow::Result<()> {
     let mut v4_profile =
         v4::profile::Profile::new_from_v3_profile(v3_profile, "morgan", &path, "hunter42")?;
 
+    let conversations = v4_profile.get_conversations()?;
+    assert_eq!(conversations.len(), 5 * 2);
+    for (conversation, conversation_handle) in conversations {
+        let message_records =
+            v4_profile.get_message_records_from_conversation(conversation_handle, None, None)?;
+        assert_eq!(message_records.len(), 0);
+    }
+
     let users = v4_profile.get_users()?;
     for (user, user_handle) in users {
         use v4::profile::UserType;

@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 
 // extern
 use rusqlite::{params, Connection, OpenFlags, Statement, Transaction};
+use time::UtcDateTime;
 use tor_interface::tor_crypto::{
     Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature, X25519PrivateKey, X25519PublicKey,
     ED25519_PRIVATE_KEY_SIZE, ED25519_PUBLIC_KEY_SIZE, ED25519_SIGNATURE_SIZE,
@@ -44,7 +45,7 @@ impl_sql_wrapper_type!(pub(crate) struct DBVersionRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct UserProfileRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct AvatarRowID(pub i64));
 impl_sql_wrapper_type!(pub struct UserRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct ConversationRowID(pub i64));
+impl_sql_wrapper_type!(pub struct ConversationRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct ConversationMemberRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct MessageRecordRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct MessageContentRowID(pub i64));
@@ -58,183 +59,13 @@ impl_sql_wrapper_type!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
-
-//
-// DBVersion
-//
-
-pub struct DBVersionRow {
-    rowid: DBVersionRowID,
-    major: i64,
-    minor: i64,
-    patch: i64,
-}
-
-//
-// UserProfile
-//
-
-pub struct UserProfileRow {
-    rowid: UserProfileRowID,
-    nickname: String,
-    pet_name: Option<String>,
-    pronouns: Option<String>,
-    avatar_rowid: Option<AvatarRowID>,
-    status: Option<String>,
-    description: Option<String>,
-}
-
-//
-// Avatar
-//
-
-pub(super) struct AvatarRow {
-    rowid: AvatarRowID,
-    // 256x256 8-bit channel RGBA image in row-major order
-    value: Box<[u8; profile::Avatar::BYTES]>,
-}
-
-//
-// User
-//
-
-pub(super) struct UserRow {
-    rowid: UserRowID,
-    user_type: crate::v4::profile::UserType,
-    user_profile_rowid: Option<UserProfileRowID>,
-    identity_ed25519_public_key_rowid: Ed25519PublicKeyRowID,
-    identity_ed25519_private_key_rowid: Option<Ed25519PrivateKeyRowID>,
-    remote_endpoint_ed25519_public_key_rowid: Option<Ed25519PublicKeyRowID>,
-    remote_endpoint_x25519_private_key_rowid: Option<X25519PrivateKeyRowID>,
-    local_endpoint_ed25519_private_key_rowid: Option<Ed25519PrivateKeyRowID>,
-    local_endpoint_x25519_public_key_rowid: Option<X25519PublicKeyRowID>,
-}
-
-//
-// Conversation
-//
-
-pub(super) struct ConversationRow {
-    rowid: ConversationRowID,
-    conversation_type: profile::ConversationType,
-    conversation_key_rowid: Sha256HashRowID,
-}
-
-//
-// ConversationMember
-//
-
-pub(super) struct ConversationMemberRow {
-    rowid: ConversationMemberRowID,
-    conversation_rowid: ConversationRowID,
-    user_rowid: UserRowID,
-}
-
-//
-// MessageRecord
-//
-
-pub(super) struct MessageRecordRow {
-    rowid: MessageRecordRowID,
-    conversation_rowid: ConversationRowID,
-    user_rowid: UserRowID,
-    message_sequence: MessageSequence,
-    record_sequence: RecordSequence,
-    initial_timestamp: Timestamp,
-    edit_timestamp: Timestamp,
-    message_record_salt_rowid: SaltRowID,
-    signature_rowid: Ed25519SignatureRowID,
-    message_type: MessageType,
-    test_message_rowid: Option<TextMessageRowID>,
-}
-
 impl_sql_wrapper_type!(pub struct MessageSequence(pub i64));
 impl_sql_wrapper_type!(pub struct RecordSequence(pub i64));
 impl_sql_wrapper_type!(pub struct Timestamp(pub i64));
 
 type MessageType = rico_protocol::v4::MessageType;
 
-//
-// ModifiedMessage
-//
-
-pub(super) struct ModifiedMessageRow {}
-
-//
-// TextMessage
-//
-
-pub(super) struct TextMessageRow {
-    rowid: TextMessageRowID,
-    text: String,
-}
-
-//
-// FileShareMessage
-//
-
 impl_sql_wrapper_type!(pub(super) struct FileSize(pub i64));
-
-pub(super) struct FileShareMessageRow {
-    rowid: FileShareMessageRowID,
-    file_size: FileSize,
-    file_data_hash_rowid: Sha256HashRowID,
-    file_path: Option<String>,
-}
-
-//
-// Salt
-//
-
-pub(super) struct SaltRow {
-    rowid: SaltRowID,
-    value: [u8; 32],
-}
-
-//
-// Ed25519PublicKey
-//
-
-pub(super) struct Ed25519PublicKeyRow {
-    rowid: Ed25519PublicKeyRowID,
-    value: String,
-}
-
-//
-// Ed25519PrivateKey
-//
-
-pub(super) struct Ed25519PrivateKeyRow {
-    rowid: Ed25519PrivateKeyRowID,
-    value: [u8; 64],
-}
-
-//
-// Ed25519Signature
-//
-
-pub(super) struct Ed25519SignatureRow {
-    rowid: Ed25519SignatureRowID,
-    value: [u8; 64],
-}
-
-//
-// X25519PrivateKey
-//
-
-pub(super) struct X25519PrivateKeyRow {
-    rowid: X25519PrivateKeyRowID,
-    value: [u8; 32],
-}
-
-//
-// X25519PublicKey
-//
-
-pub(super) struct X25519PublicKeyRow {
-    rowid: X25519PublicKeyRowID,
-    value: [u8; 32],
-}
 
 //
 // Set the table's password for decryption key
@@ -329,6 +160,39 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         CREATE INDEX idx_message_records_conversation_user_sequence ON message_records(conversation_rowid, user_rowid, message_sequence, record_sequence);
         CREATE INDEX idx_message_records_conversation_user_timestamp_sequence ON message_records(conversation_rowid, user_rowid, create_timestamp, message_sequence, record_sequence);
         CREATE INDEX idx_message_records_conversation_timestamp_record ON message_records(conversation_rowid, create_timestamp DESC, record_sequence DESC);
+
+        -- meessage_records_view
+        CREATE VIEW message_records_view AS
+        SELECT
+          mr.rowid AS mr_rowid,
+          mr.conversation_rowid AS mr_conversation_rowid,
+          mr.user_rowid AS mr_user_rowid,
+          mr.record_sequence AS mr_record_sequence,
+          mr.message_sequence AS mr_message_sequence,
+          mr.create_timestamp AS mr_create_timestamp,
+          mr.modify_timestamp AS mr_modify_timestamp,
+          mc_salt.value AS mc_salt,
+          mc.message_type AS mc_message_type,
+          mm_hash.value AS mm_original_message_content_hash,
+          mm_sig.value AS mm_original_message_record_signature,
+          tm.text AS tm_text,
+          fsm_salt.value AS fsm_file_data_salt,
+          fsm.file_size AS fsm_file_size,
+          fsm_hash.value AS fsm_file_data_hash,
+          fsm.file_path AS fsm_file_path,
+          es.value AS mr_signature
+        FROM message_records mr
+        JOIN conversations c ON mr.conversation_rowid = c.rowid
+        JOIN message_contents mc ON mr.message_content_rowid = mc.rowid
+        JOIN salts mc_salt ON mc.salt_rowid = mc_salt.rowid
+        JOIN ed25519_signatures es ON mr.signature_rowid = es.rowid
+        LEFT JOIN modified_messages mm ON mc.modified_message_rowid = mm.rowid
+        LEFT JOIN sha256_hashes mm_hash ON mm.original_message_content_hash_rowid = mm_hash.rowid
+        LEFT JOIN ed25519_signatures mm_sig ON mm.original_message_record_signature_rowid = mm_sig.rowid
+        LEFT JOIN text_messages tm ON mc.text_message_rowid = tm.rowid
+        LEFT JOIN file_share_messages fsm ON mc.file_share_message_rowid = fsm.rowid
+        LEFT JOIN salts fsm_salt ON fsm.file_data_salt_rowid = fsm_salt.rowid
+        LEFT JOIN sha256_hashes fsm_hash ON fsm.file_data_hash_rowid = fsm_hash.rowid;
 
         -- message_contents
         CREATE TABLE message_contents (
@@ -766,7 +630,7 @@ fn insert_salt(tx: &Transaction<'_>, value: &profile::Salt) -> Result<SaltRowID,
     Ok(SaltRowID(rowid))
 }
 
-pub(crate) fn insert_sha256_hash(
+fn insert_sha256_hash(
     tx: &Transaction<'_>,
     value: &profile::Sha256Sum,
 ) -> Result<Sha256HashRowID, Error> {
@@ -782,7 +646,7 @@ pub(crate) fn insert_sha256_hash(
     Ok(Sha256HashRowID(rowid))
 }
 
-pub(crate) fn insert_ed25519_private_key(
+fn insert_ed25519_private_key(
     tx: &Transaction<'_>,
     value: &Ed25519PrivateKey,
 ) -> Result<Ed25519PrivateKeyRowID, Error> {
@@ -799,7 +663,7 @@ pub(crate) fn insert_ed25519_private_key(
     Ok(Ed25519PrivateKeyRowID(rowid))
 }
 
-pub(crate) fn insert_ed25519_public_key(
+fn insert_ed25519_public_key(
     tx: &Transaction<'_>,
     value: &Ed25519PublicKey,
 ) -> Result<Ed25519PublicKeyRowID, Error> {
@@ -816,7 +680,7 @@ pub(crate) fn insert_ed25519_public_key(
     Ok(Ed25519PublicKeyRowID(rowid))
 }
 
-pub(crate) fn insert_ed25519_signature(
+fn insert_ed25519_signature(
     tx: &Transaction<'_>,
     value: &Ed25519Signature,
 ) -> Result<Ed25519SignatureRowID, Error> {
@@ -833,7 +697,7 @@ pub(crate) fn insert_ed25519_signature(
     Ok(Ed25519SignatureRowID(rowid))
 }
 
-pub(crate) fn insert_x25519_private_key(
+fn insert_x25519_private_key(
     tx: &Transaction<'_>,
     value: &X25519PrivateKey,
 ) -> Result<X25519PrivateKeyRowID, Error> {
@@ -850,7 +714,7 @@ pub(crate) fn insert_x25519_private_key(
     Ok(X25519PrivateKeyRowID(rowid))
 }
 
-pub(crate) fn insert_x25519_public_key(
+fn insert_x25519_public_key(
     tx: &Transaction<'_>,
     value: &X25519PublicKey,
 ) -> Result<X25519PublicKeyRowID, Error> {
@@ -871,7 +735,7 @@ pub(crate) fn insert_x25519_public_key(
 // Row Update Methods
 //
 
-pub fn update_user_profile(
+pub(crate) fn update_user_profile(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
     user_profile: profile::UserProfile,
@@ -904,7 +768,7 @@ pub fn update_user_profile(
     Ok(())
 }
 
-pub fn update_remote_endpoint_keys(
+pub(crate) fn update_remote_endpoint_keys(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
     remote_endpoint_ed25519_public_key: Ed25519PublicKey,
@@ -917,7 +781,7 @@ pub fn update_remote_endpoint_keys(
     Ok(())
 }
 
-pub fn update_local_endpoint_keys(
+pub(crate) fn update_local_endpoint_keys(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
     local_endpoint_ed25519_private_key: Ed25519PrivateKey,
@@ -934,7 +798,7 @@ pub fn update_local_endpoint_keys(
 // Row Select Methods
 //
 
-pub fn select_newest_db_version(conn: &Connection) -> Result<profile::Version, Error> {
+pub(crate) fn select_newest_db_version(conn: &Connection) -> Result<profile::Version, Error> {
     let (major, minor, patch) = conn.query_one(
         "SELECT major, minor, patch FROM db_versions ORDER BY rowid DESC LIMIT 1;",
         [],
@@ -950,7 +814,7 @@ pub fn select_newest_db_version(conn: &Connection) -> Result<profile::Version, E
     profile::Version::new(major, minor, patch)
 }
 
-pub fn select_user_profile_by_user_handle(
+pub(crate) fn select_user_profile_by_user_handle(
     conn: &Connection,
     user_handle: profile::UserHandle,
 ) -> Result<profile::UserProfile, Error> {
@@ -960,7 +824,7 @@ pub fn select_user_profile_by_user_handle(
     select_user_profile(conn, user_profile_rowid)
 }
 
-pub fn select_all_conversations(
+pub(crate) fn select_all_conversations(
     conn: &Connection,
 ) -> Result<Vec<(profile::Conversation, ConversationRowID)>, Error> {
     let mut result: Vec<(profile::Conversation, ConversationRowID)> = Default::default();
@@ -992,7 +856,7 @@ pub fn select_all_conversations(
         // get conversation members
         let mut conversation_members: BTreeSet<UserRowID> = Default::default();
         let conversation_member_rows = select_conversation_members_stmt
-            .query_map(params![], |row| row.get::<_, UserRowID>(0))?;
+            .query_map(params![rowid], |row| row.get::<_, UserRowID>(0))?;
         for conversation_member in conversation_member_rows {
             conversation_members.insert(conversation_member?);
         }
@@ -1017,7 +881,9 @@ pub fn select_all_conversations(
     Ok(result)
 }
 
-pub fn select_all_users(conn: &Connection) -> Result<Vec<(profile::User, UserRowID)>, Error> {
+pub(crate) fn select_all_users(
+    conn: &Connection,
+) -> Result<Vec<(profile::User, UserRowID)>, Error> {
     // create our prepared statement
     let mut select_users_stmt = conn.prepare("SELECT rowid, user_type, user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid FROM users")?;
 
@@ -1242,6 +1108,175 @@ fn select_user_profile_rowid_by_user_rowid(
     Ok(user_profile_rowid)
 }
 
+pub(crate) fn select_message_records_from_conversation(
+    conn: &Connection,
+    conversation_rowid: ConversationRowID,
+    older_than_creation_timestamp: Option<UtcDateTime>,
+    limit: Option<u32>,
+) -> Result<Vec<profile::MessageRecord>, Error> {
+    let mut query = String::from(
+        "SELECT
+          mr_conversation_rowid,
+          mr_user_rowid,
+          mr_record_sequence,
+          mr_message_sequence,
+          mr_create_timestamp,
+          mr_modify_timestamp,
+          mc_salt,
+          mc_message_type,
+          mm_original_message_content_hash,
+          mm_original_message_record_signature,
+          tm_text,
+          fsm_file_data_salt,
+          fsm_file_size,
+          fsm_file_data_hash,
+          fsm_file_path,
+          mr_signature
+        FROM message_records_view WHERE mr_conversation_rowid = ?",
+    );
+
+    if older_than_creation_timestamp.is_some() {
+        query.push_str(" AND mr_create_timestamp < ?");
+    }
+
+    query.push_str(" ORDER BY mr_create_timestamp DESC, mr_record_sequence DESC");
+
+    if limit.is_some() {
+        query.push_str(" LIMIT ?");
+    }
+
+    let mut stmt = conn.prepare(&query)?;
+    let mut param_index = 1;
+    stmt.raw_bind_parameter(param_index, conversation_rowid.0)?;
+
+    if let Some(older_than_creation_timestamp) = older_than_creation_timestamp {
+        param_index += 1;
+        let older_than_creation_timestamp: i64 = older_than_creation_timestamp.unix_timestamp();
+        stmt.raw_bind_parameter(param_index, older_than_creation_timestamp)?;
+    }
+
+    if let Some(limit) = limit {
+        param_index += 1;
+        stmt.raw_bind_parameter(param_index, limit as i64)?;
+    }
+
+    let mut results: Vec<profile::MessageRecord> = Default::default();
+    while let Some(row) = stmt.raw_query().next()? {
+        let (
+            conversation_handle,
+            user_handle,
+            record_sequence,
+            message_sequence,
+            create_timestamp,
+            modify_timestamp,
+            message_content_salt,
+            message_type,
+            original_message_content_hash,
+            original_message_record_signature,
+            text,
+            file_data_salt,
+            file_size,
+            file_data_hash,
+            file_path,
+            signature,
+        ) = (
+            row.get::<_, ConversationRowID>(0)?,
+            row.get::<_, UserRowID>(1)?,
+            row.get::<_, RecordSequence>(2)?,
+            row.get::<_, MessageSequence>(3)?,
+            row.get::<_, Timestamp>(4)?,
+            row.get::<_, Timestamp>(5)?,
+            row.get::<_, [u8; profile::Salt::BYTES]>(6)?,
+            row.get::<_, MessageType>(7)?,
+            row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(8)?,
+            row.get::<_, Option<[u8; ED25519_SIGNATURE_SIZE]>>(9)?,
+            row.get::<_, Option<String>>(10)?,
+            row.get::<_, Option<[u8; profile::Salt::BYTES]>>(11)?,
+            row.get::<_, Option<FileSize>>(12)?,
+            row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(13)?,
+            row.get::<_, Option<String>>(14)?,
+            row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(15)?,
+        );
+
+        let create_timestamp = UtcDateTime::from_unix_timestamp(create_timestamp.0)?;
+        let modify_timestamp = UtcDateTime::from_unix_timestamp(modify_timestamp.0)?;
+        let message_content_salt = profile::Salt(message_content_salt);
+
+        let message_content = match (
+            message_type,
+            original_message_content_hash,
+            original_message_record_signature,
+            text,
+            file_data_salt,
+            file_size,
+            file_data_hash,
+            file_path,
+        ) {
+            (
+                MessageType::Modified,
+                Some(original_message_content_hash),
+                Some(original_message_record_signature),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ) => {
+                let original_message_content_hash =
+                    profile::Sha256Sum(original_message_content_hash);
+                let original_message_record_signature =
+                    Ed25519Signature::from_raw(&original_message_record_signature)?;
+                profile::MessageContent::Modified {
+                    original_message_content_hash,
+                    original_message_record_signature,
+                }
+            }
+            (MessageType::Text, None, None, Some(text), None, None, None, None) => {
+                profile::MessageContent::Text { text }
+            }
+            (
+                MessageType::FileShare,
+                None,
+                None,
+                None,
+                Some(file_data_salt),
+                Some(file_size),
+                Some(file_data_hash),
+                file_path,
+            ) => {
+                let file_data_salt = profile::Salt(file_data_salt);
+                let file_data_hash = profile::Sha256Sum(file_data_hash);
+                let file_path = match file_path {
+                    Some(file_path) => Some(file_path.into()),
+                    None => None,
+                };
+                profile::MessageContent::FileShare {
+                    file_data_salt,
+                    file_size,
+                    file_data_hash,
+                    file_path,
+                }
+            }
+            _ => unreachable!("unexpected message_content"),
+        };
+        let signature = Ed25519Signature::from_raw(&signature)?;
+
+        results.push(profile::MessageRecord {
+            conversation_handle,
+            user_handle,
+            record_sequence,
+            message_sequence,
+            create_timestamp,
+            modify_timestamp,
+            message_content_salt,
+            message_content,
+            signature,
+        });
+    }
+
+    Ok(results)
+}
+
 //
 // Row delete methods
 //
@@ -1270,7 +1305,7 @@ fn delete_user_profile(
     Ok(())
 }
 
-pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), Error> {
+pub(crate) fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), Error> {
     let user_rowid = user_handle;
 
     // delete all of the user's conversations
@@ -1285,7 +1320,7 @@ pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), E
         let conversation_rowid = conversation_rowid?;
         delete_conversation(tx, conversation_rowid)?;
     }
-    // /*
+
     let (user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid) = tx.query_one("DELETE FROM users WHERE rowid = ?1 RETURNING user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid", params![user_rowid], |row| Ok((
                 row.get::<_, UserProfileRowID>(0)?,
                 row.get::<_, Ed25519PublicKeyRowID>(1)?,
@@ -1319,7 +1354,7 @@ pub fn delete_user(tx: &Transaction<'_>, user_handle: UserRowID) -> Result<(), E
     Ok(())
 }
 
-pub fn delete_conversation(
+pub(crate) fn delete_conversation(
     tx: &Transaction<'_>,
     conversation_handle: ConversationRowID,
 ) -> Result<(), Error> {

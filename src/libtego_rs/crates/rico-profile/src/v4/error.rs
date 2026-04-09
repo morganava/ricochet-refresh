@@ -34,6 +34,9 @@ pub enum Error {
     ColumnGetFailure(#[source] rusqlite::Error),
 
     #[error(transparent)]
+    ComponentRange(#[from] time::error::ComponentRange),
+
+    #[error(transparent)]
     TorCrypto(#[from] tor_interface::tor_crypto::Error),
 
     #[error(transparent)]
