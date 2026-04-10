@@ -186,7 +186,7 @@ impl Profile {
             let ephemeral_conversation = Conversation {
                 conversation_type: ConversationType::EphemeralDirectMessage,
                 conversation_members: [host_user_handle, user_handle].into(),
-                conversation_key: Sha256Sum(ephemeral_conversation_key),
+                conversation_key: ephemeral_conversation_key,
             };
             db::insert_conversation(&tx, ephemeral_conversation)?;
 
@@ -198,7 +198,7 @@ impl Profile {
             let persistent_conversation = Conversation {
                 conversation_type: ConversationType::PersistentDirectMessage,
                 conversation_members: [host_user_handle, user_handle].into(),
-                conversation_key: Sha256Sum(persistent_conversation_key),
+                conversation_key: persistent_conversation_key,
             };
             db::insert_conversation(&tx, persistent_conversation)?;
         }
@@ -488,13 +488,13 @@ pub struct Conversation {
     pub conversation_key: Sha256Sum,
 }
 
-pub type ConversationType = rico_protocol::v4::ConversationType;
+pub use rico_protocol::v4::ConversationType;
 
 // Messages
 
 pub type MessageRecordHandle = db::MessageRecordRowID;
-pub type RecordSequence = db::RecordSequence;
-pub type MessageSequence = db::MessageSequence;
+pub use rico_protocol::v4::MessageSequence;
+pub use rico_protocol::v4::RecordSequence;
 pub struct MessageRecord {
     pub conversation_handle: ConversationHandle,
     pub user_handle: UserHandle,
@@ -507,38 +507,12 @@ pub struct MessageRecord {
     pub signature: Ed25519Signature,
 }
 
-pub type FileSize = db::FileSize;
-pub enum MessageContent {
-    Modified {
-        original_message_content_hash: Sha256Sum,
-        original_message_record_signature: Ed25519Signature,
-    },
-    Text {
-        text: String,
-    },
-    FileShare {
-        file_data_salt: Salt,
-        file_size: FileSize,
-        file_data_hash: Sha256Sum,
-        file_path: Option<PathBuf>,
-    },
-}
+pub use rico_protocol::v4::FileSize;
+pub use rico_protocol::v4::MessageContent;
 
 //
 // Salt
 //
 
-pub struct Salt(pub [u8; Self::BYTES]);
-impl Salt {
-    pub const BYTES: usize = 32;
-}
-
-//
-// Sha256Sum
-//
-
-#[derive(PartialEq)]
-pub struct Sha256Sum(pub [u8; Self::BYTES]);
-impl Sha256Sum {
-    pub const BYTES: usize = 32;
-}
+pub use rico_protocol::v4::Salt;
+pub use rico_protocol::v4::Sha256Sum;

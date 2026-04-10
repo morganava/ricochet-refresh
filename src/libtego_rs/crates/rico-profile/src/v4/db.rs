@@ -60,12 +60,9 @@ impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub struct MessageSequence(pub i64));
-impl_sql_wrapper_type!(pub struct RecordSequence(pub i64));
 impl_sql_wrapper_type!(pub struct Timestamp(pub i64));
 
 type MessageType = rico_protocol::v4::MessageType;
-
-impl_sql_wrapper_type!(pub(super) struct FileSize(pub i64));
 
 //
 // Set the table's password for decryption key
@@ -1182,8 +1179,8 @@ pub(crate) fn select_message_records_from_conversation(
         ) = (
             row.get::<_, ConversationRowID>(0)?,
             row.get::<_, UserRowID>(1)?,
-            row.get::<_, RecordSequence>(2)?,
-            row.get::<_, MessageSequence>(3)?,
+            row.get::<_, profile::RecordSequence>(2)?,
+            row.get::<_, profile::MessageSequence>(3)?,
             row.get::<_, Timestamp>(4)?,
             row.get::<_, Timestamp>(5)?,
             row.get::<_, [u8; profile::Salt::BYTES]>(6)?,
@@ -1192,7 +1189,7 @@ pub(crate) fn select_message_records_from_conversation(
             row.get::<_, Option<[u8; ED25519_SIGNATURE_SIZE]>>(9)?,
             row.get::<_, Option<String>>(10)?,
             row.get::<_, Option<[u8; profile::Salt::BYTES]>>(11)?,
-            row.get::<_, Option<FileSize>>(12)?,
+            row.get::<_, Option<profile::FileSize>>(12)?,
             row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(13)?,
             row.get::<_, Option<String>>(14)?,
             row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(15)?,
