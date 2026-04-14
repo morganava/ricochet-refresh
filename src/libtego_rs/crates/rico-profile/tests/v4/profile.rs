@@ -8,7 +8,6 @@ use tor_interface::tor_crypto::*;
 #[cfg(feature = "v3-profile")]
 use rico_profile::v3;
 use rico_profile::v4;
-use rico_profile::v4::profile::*;
 
 #[test]
 fn test_construction() -> anyhow::Result<()> {
@@ -64,7 +63,7 @@ fn test_legacy_import() -> anyhow::Result<()> {
     // All of our conversations must be empty
     // We start initially with 2 conversations per user
     assert_eq!(conversations.len(), 5 * 2);
-    for (conversation, conversation_handle) in conversations {
+    for (_conversation, conversation_handle) in conversations {
         let message_records =
             v4_profile.get_message_records_from_conversation(conversation_handle, None, None)?;
         assert_eq!(message_records.len(), 0);

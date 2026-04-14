@@ -2,7 +2,7 @@
 use std::collections::BTreeSet;
 
 // extern
-use rusqlite::{params, Connection, OpenFlags, Statement, Transaction};
+use rusqlite::{params, Connection, Transaction};
 use time::UtcDateTime;
 use tor_interface::tor_crypto::{
     Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature, X25519PrivateKey, X25519PublicKey,
@@ -42,12 +42,11 @@ macro_rules! impl_sql_wrapper_type {
 //
 
 impl_sql_wrapper_type!(pub(crate) struct DBVersionRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct UserProfileRowID(pub i64));
+impl_sql_wrapper_type!(pub struct UserProfileRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct AvatarRowID(pub i64));
 impl_sql_wrapper_type!(pub struct UserRowID(pub i64));
 impl_sql_wrapper_type!(pub struct ConversationRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct ConversationMemberRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct MessageRecordRowID(pub i64));
+impl_sql_wrapper_type!(pub struct MessageRecordRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct MessageContentRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct ModifiedMessageRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct TextMessageRowID(pub i64));
@@ -59,7 +58,6 @@ impl_sql_wrapper_type!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
-impl_sql_wrapper_type!(pub struct MessageSequence(pub i64));
 impl_sql_wrapper_type!(pub struct Timestamp(pub i64));
 
 type MessageType = rico_protocol::v4::MessageType;
@@ -1555,37 +1553,4 @@ fn delete_x25519_public_key(
         params![x25519_public_key_rowid],
     )?;
     Ok(())
-}
-
-//
-// Tests
-//
-
-mod tests {
-    use crate::v4::db;
-    use crate::v4::profile::*;
-
-    #[test]
-    fn test_database_round_trips() -> anyhow::Result<()> {
-        let mut path = std::env::temp_dir();
-        path.push("test_database_round_trips.ricochet-profile");
-        if std::path::Path::exists(&path) {
-            std::fs::remove_file(&path)?;
-        }
-
-        println!("path: {path:?}");
-
-        let mut profile = Profile::new(&path, "hunter42")?;
-        let tx = profile.conn.transaction()?;
-
-        let avatar = Avatar {
-            rgba_data: Box::new([0u8; 256 * 256 * 4]),
-        };
-
-        let avatar_rowid = db::insert_avatar(&tx, &avatar)?;
-
-        tx.commit()?;
-
-        Ok(())
-    }
 }

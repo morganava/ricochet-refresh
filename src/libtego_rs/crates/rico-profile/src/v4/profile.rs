@@ -1,7 +1,6 @@
 // std
 use std::boxed::Box;
 use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
 
 // extern
 use rusqlite::{Connection, OpenFlags};
@@ -64,7 +63,7 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub fn new(path: &Path, password: &str) -> Result<Profile, Error> {
+    pub fn new(path: &std::path::Path, password: &str) -> Result<Profile, Error> {
         let open_flags: OpenFlags = OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -90,7 +89,7 @@ impl Profile {
     pub fn new_from_v3_profile(
         v3_profile: v3::profile::Profile,
         nickname: &str,
-        path: &Path,
+        path: &std::path::Path,
         password: &str,
     ) -> Result<Profile, Error> {
         // todo, write profile to a temp file and move after successful creation
@@ -207,7 +206,7 @@ impl Profile {
         Ok(profile)
     }
 
-    pub fn open(path: &Path, password: &str) -> Result<Profile, Error> {
+    pub fn open(path: &std::path::Path, password: &str) -> Result<Profile, Error> {
         let open_flags: OpenFlags =
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
 
@@ -370,10 +369,10 @@ impl Profile {
 
     pub fn get_message_records_from_conversation_by_user(
         &self,
-        conversation_handle: ConversationHandle,
-        author: UserHandle,
-        older_than_message_record_handle: Option<MessageRecordHandle>,
-        limit: Option<u32>,
+        _conversation_handle: ConversationHandle,
+        _author: UserHandle,
+        _older_than_message_record_handle: Option<MessageRecordHandle>,
+        _limit: Option<u32>,
     ) -> Result<(), Error> {
         Err(Error::NotImplemented)
     }
@@ -395,7 +394,6 @@ pub struct UserProfile {
 }
 
 // Avatar
-pub type AvatarHandle = db::AvatarRowID;
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 pub struct Avatar {
@@ -535,8 +533,6 @@ pub mod test {
         println!("created profile: {path:?}");
         Ok(profile)
     }
-
-    use tor_interface::tor_crypto::*;
 
     pub fn generate_test_keys() -> (
         Ed25519PublicKey,
