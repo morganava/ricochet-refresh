@@ -570,10 +570,9 @@ pub mod test {
 
     #[test]
     fn test_add_get_remove_user() -> anyhow::Result<()> {
-        // Setup: Create a temporary profile
         let mut profile = create_test_profile("test_add_get_remove_user.ricochet-profile")?;
 
-        // Test 1: add_user() - Add Owner user (must have identity_ed25519_private_key)
+        // Test: add_user() - Add Owner user (must have identity_ed25519_private_key)
         let (
             identity_ed25519_pub1,
             identity_ed25519_priv1,
@@ -603,7 +602,7 @@ pub mod test {
 
         let user1_handle = profile.add_user(&user1)?;
 
-        // Test 2: get_users() - Verify the user was added
+        // Test: get_users() - Verify the user was added
         let users = profile.get_users()?;
         assert_eq!(users.len(), 1);
         let (retrieved_user, retrieved_handle) = &users[0];
@@ -630,7 +629,7 @@ pub mod test {
             user1.user_profile.description,
         );
 
-        // Test 3: add_user() - Add Allowed user (non-Owner: no identity_ed25519_private_key)
+        // Test: add_user() - Add Allowed user (non-Owner: no identity_ed25519_private_key)
         let (
             identity_ed25519_pub2,
             _identity_ed25519_priv2,
@@ -661,11 +660,11 @@ pub mod test {
         let user2_handle = profile.add_user(&user2)?;
         assert_ne!(user1_handle, user2_handle);
 
-        // Test 4: get_users() - Verify both users are present
+        // Test: get_users() - Verify both users are present
         let users = profile.get_users()?;
         assert_eq!(users.len(), 2);
 
-        // Test 5: remove_user() - Remove the first user
+        // Test: remove_user() - Remove the first user
         profile.remove_user(user1_handle)?;
         let users = profile.get_users()?;
         assert_eq!(users.len(), 1);
@@ -673,11 +672,287 @@ pub mod test {
         assert_eq!(*remaining_handle, user2_handle,);
         assert_eq!(remaining_user.user_profile.nickname, "bob",);
 
-        // Test 6: remove_user() - Remove the second user
+        // Test: remove_user() - Remove the second user
         profile.remove_user(user2_handle)?;
         let users = profile.get_users()?;
         assert_eq!(users.len(), 0);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_user_profile_management() -> anyhow::Result<()> {
+        let mut profile = create_test_profile("test_user_profile_management.ricochet-profile")?;
+
+        // Generate keys for the test user
+        let (identity_ed25519_public_key, identity_ed25519_private_key, _, _, _, _) =
+            generate_test_keys();
+
+        // Create and add a user
+        let user = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname: "alice".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_public_key.clone(),
+            identity_ed25519_private_key: Some(identity_ed25519_private_key),
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let user_handle = profile.add_user(&user)?;
+
+        // Test: Retrieve user profile and verify initial state
+        let retrieved_profile = profile.get_user_profile(user_handle)?;
+        assert_eq!(retrieved_profile.nickname, "alice");
+        assert_eq!(retrieved_profile.pet_name, None);
+        assert_eq!(retrieved_profile.pronouns, None);
+        assert_eq!(retrieved_profile.avatar, None);
+        assert_eq!(retrieved_profile.status, None);
+        assert_eq!(retrieved_profile.description, None);
+
+        // Test: Update profile with all fields populated
+        let updated_profile = UserProfile {
+            nickname: "alice".to_string(),
+            pet_name: Some("Ally".to_string()),
+            pronouns: Some("she/her".to_string()),
+            avatar: None, // Avatar creation is complex; test separately if needed
+            status: Some("Available".to_string()),
+            description: Some("Alice is a developer".to_string()),
+        };
+
+        profile.set_user_profile(user_handle, &updated_profile)?;
+
+        // Verify the update persisted
+        let retrieved_profile = profile.get_user_profile(user_handle)?;
+        assert_eq!(retrieved_profile.nickname, "alice");
+        assert_eq!(retrieved_profile.pet_name, Some("Ally".to_string()));
+        assert_eq!(retrieved_profile.pronouns, Some("she/her".to_string()));
+        assert_eq!(retrieved_profile.status, Some("Available".to_string()));
+        assert_eq!(
+            retrieved_profile.description,
+            Some("Alice is a developer".to_string())
+        );
+
+        // Test: Update profile with cleared optional fields
+        let cleared_profile = UserProfile {
+            nickname: "alice".to_string(),
+            pet_name: None,
+            pronouns: None,
+            avatar: None,
+            status: None,
+            description: None,
+        };
+
+        profile.set_user_profile(user_handle, &cleared_profile)?;
+
+        // Verify optional fields were cleared
+        let retrieved_profile = profile.get_user_profile(user_handle)?;
+        assert_eq!(retrieved_profile.pet_name, None);
+        assert_eq!(retrieved_profile.pronouns, None);
+        assert_eq!(retrieved_profile.status, None);
+        assert_eq!(retrieved_profile.description, None);
+
+        // Test: Update only the nickname
+        let nickname_only = UserProfile {
+            nickname: "alice_v2".to_string(),
+            pet_name: None,
+            pronouns: None,
+            avatar: None,
+            status: None,
+            description: None,
+        };
+
+        profile.set_user_profile(user_handle, &nickname_only)?;
+
+        let retrieved_profile = profile.get_user_profile(user_handle)?;
+        assert_eq!(retrieved_profile.nickname, "alice_v2");
+        assert_eq!(retrieved_profile.pet_name, None);
+        assert_eq!(retrieved_profile.pronouns, None);
+        assert_eq!(retrieved_profile.status, None);
+        assert_eq!(retrieved_profile.description, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_user_endpoint_keys() -> anyhow::Result<()> {
+        let mut profile = create_test_profile("test_user_endpoint_keys.ricochet-profile")?;
+
+        // Generate keys for the test user
+        let (identity_ed25519_public_key, _, _, _, _, _) = generate_test_keys();
+
+        // Create and add a user with no endpoint keys
+        let user = User {
+            user_type: UserType::Allowed,
+            user_profile: UserProfile {
+                nickname: "bob".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_public_key.clone(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let user_handle = profile.add_user(&user)?;
+
+        // Verify initial state: no endpoint keys
+        let users = profile.get_users()?;
+        let found_user = users
+            .iter()
+            .find(|(_, handle)| *handle == user_handle)
+            .expect("User not found");
+
+        assert!(found_user.0.remote_endpoint_ed25519_public_key.is_none());
+        assert!(found_user.0.remote_endpoint_x25519_private_key.is_none());
+        assert!(found_user.0.local_endpoint_ed25519_private_key.is_none());
+        assert!(found_user.0.local_endpoint_x25519_public_key.is_none());
+
+        // Test: Set remote endpoint keys
+        let (_, _, remote_ed25519_public_key, remote_x25519_private_key, _, _) =
+            generate_test_keys();
+
+        profile.set_user_remote_endpoint_keys(
+            user_handle,
+            &remote_ed25519_public_key,
+            &remote_x25519_private_key,
+        )?;
+
+        // Verify remote endpoint keys were persisted
+        let users = profile.get_users()?;
+        let found_user = users
+            .iter()
+            .find(|(_, handle)| *handle == user_handle)
+            .expect("User not found");
+
+        assert_eq!(
+            found_user.0.remote_endpoint_ed25519_public_key,
+            Some(remote_ed25519_public_key.clone())
+        );
+        assert_eq!(
+            found_user.0.remote_endpoint_x25519_private_key,
+            Some(remote_x25519_private_key.clone())
+        );
+        // Local endpoint keys should still be None
+        assert!(found_user.0.local_endpoint_ed25519_private_key.is_none());
+        assert!(found_user.0.local_endpoint_x25519_public_key.is_none());
+
+        // Test: Set local endpoint keys
+        let (_, _, _, _, local_ed25519_private_key, local_x25519_public_key) = generate_test_keys();
+
+        profile.set_user_local_endpoint_keys(
+            user_handle,
+            &local_ed25519_private_key,
+            &local_x25519_public_key,
+        )?;
+
+        // Verify local endpoint keys were persisted
+        let users = profile.get_users()?;
+        let found_user = users
+            .iter()
+            .find(|(_, handle)| *handle == user_handle)
+            .expect("User not found");
+        assert_eq!(
+            found_user.0.local_endpoint_ed25519_private_key,
+            Some(local_ed25519_private_key.clone())
+        );
+        assert_eq!(
+            found_user.0.local_endpoint_x25519_public_key,
+            Some(local_x25519_public_key.clone())
+        );
+        // Remote endpoint keys should still be set
+        assert_eq!(
+            found_user.0.remote_endpoint_ed25519_public_key,
+            Some(remote_ed25519_public_key.clone())
+        );
+        assert_eq!(
+            found_user.0.remote_endpoint_x25519_private_key,
+            Some(remote_x25519_private_key.clone())
+        );
+
+        // Test: Update remote endpoint keys to new values
+        let (_, _, remote_ed25519_public_key_v2, remote_x25519_private_key_v2, _, _) =
+            generate_test_keys();
+
+        profile.set_user_remote_endpoint_keys(
+            user_handle,
+            &remote_ed25519_public_key_v2,
+            &remote_x25519_private_key_v2,
+        )?;
+
+        // Verify remote keys were updated
+        let users = profile.get_users()?;
+        let found_user = users
+            .iter()
+            .find(|(_, handle)| *handle == user_handle)
+            .expect("User not found");
+
+        assert_eq!(
+            found_user.0.remote_endpoint_ed25519_public_key,
+            Some(remote_ed25519_public_key_v2.clone())
+        );
+        assert_eq!(
+            found_user.0.remote_endpoint_x25519_private_key,
+            Some(remote_x25519_private_key_v2.clone())
+        );
+        // Local keys should remain unchanged
+        assert_eq!(
+            found_user.0.local_endpoint_ed25519_private_key,
+            Some(local_ed25519_private_key.clone())
+        );
+        assert_eq!(
+            found_user.0.local_endpoint_x25519_public_key,
+            Some(local_x25519_public_key.clone())
+        );
+
+        // Test: Update local endpoint keys to new values
+        let (_, _, _, _, local_ed25519_private_key_v2, local_x25519_public_key_v2) =
+            generate_test_keys();
+
+        profile.set_user_local_endpoint_keys(
+            user_handle,
+            &local_ed25519_private_key_v2,
+            &local_x25519_public_key_v2,
+        )?;
+
+        // Verify local keys were updated
+        let users = profile.get_users()?;
+        let found_user = users
+            .iter()
+            .find(|(_, handle)| *handle == user_handle)
+            .expect("User not found");
+
+        assert_eq!(
+            found_user.0.local_endpoint_ed25519_private_key,
+            Some(local_ed25519_private_key_v2.clone())
+        );
+        assert_eq!(
+            found_user.0.local_endpoint_x25519_public_key,
+            Some(local_x25519_public_key_v2.clone())
+        );
+        // Remote keys should remain updated to v2
+        assert_eq!(
+            found_user.0.remote_endpoint_ed25519_public_key,
+            Some(remote_ed25519_public_key_v2.clone())
+        );
+        assert_eq!(
+            found_user.0.remote_endpoint_x25519_private_key,
+            Some(remote_x25519_private_key_v2.clone())
+        );
         Ok(())
     }
 }

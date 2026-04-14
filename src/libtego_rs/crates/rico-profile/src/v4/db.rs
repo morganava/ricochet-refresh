@@ -771,8 +771,13 @@ pub(crate) fn update_remote_endpoint_keys(
     remote_endpoint_x25519_private_key: &X25519PrivateKey,
 ) -> Result<(), Error> {
     let user_rowid = user_handle;
-    tx.execute("UPDATE users SET remote_endpoint_ed25519_public_key_rowid = ?2, remote_endpoint_x25519_private_key_rowid = ?3 WHERE rowid = ?1",
-        params![user_rowid, remote_endpoint_ed25519_public_key.as_bytes(), remote_endpoint_x25519_private_key.to_bytes()])?;
+    let remote_endpoint_ed25519_public_key_rowid =
+        insert_ed25519_public_key(tx, remote_endpoint_ed25519_public_key)?;
+    let remote_endpoint_x25519_private_key_rowid =
+        insert_x25519_private_key(tx, remote_endpoint_x25519_private_key)?;
+
+    tx.execute("UPDATE users SET remote_endpoint_ed25519_public_key_rowid = ?1, remote_endpoint_x25519_private_key_rowid = ?2 WHERE rowid = ?3",
+        params![remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, user_rowid])?;
 
     Ok(())
 }
@@ -784,8 +789,12 @@ pub(crate) fn update_local_endpoint_keys(
     local_endpoint_x25519_public_key: &X25519PublicKey,
 ) -> Result<(), Error> {
     let user_rowid = user_handle;
-    tx.execute("UPDATE users SET local_endpoint_ed25519_private_key = ?2, local_endpoint_x25519_public_key = ?3 WHERE rowid = ?1",
-        params![user_rowid, local_endpoint_ed25519_private_key.to_bytes(), local_endpoint_x25519_public_key.as_bytes()])?;
+    let local_endpoint_ed25519_private_key_rowid =
+        insert_ed25519_private_key(tx, local_endpoint_ed25519_private_key)?;
+    let local_endpoint_x25519_public_key_rowid =
+        insert_x25519_public_key(tx, local_endpoint_x25519_public_key)?;
+    tx.execute("UPDATE users SET local_endpoint_ed25519_private_key_rowid = ?1, local_endpoint_x25519_public_key_rowid = ?2 WHERE rowid = ?3",
+        params![local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid, user_rowid])?;
 
     Ok(())
 }
