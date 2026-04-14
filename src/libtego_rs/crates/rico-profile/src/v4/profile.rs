@@ -188,7 +188,7 @@ impl Profile {
                 conversation_members: [host_user_handle, user_handle].into(),
                 conversation_key: ephemeral_conversation_key,
             };
-            db::insert_conversation(&tx, ephemeral_conversation)?;
+            db::insert_conversation(&tx, &ephemeral_conversation)?;
 
             // persistent conversation
             let persistent_conversation_key = rico_protocol::v4::payload::conversation_key(
@@ -200,7 +200,7 @@ impl Profile {
                 conversation_members: [host_user_handle, user_handle].into(),
                 conversation_key: persistent_conversation_key,
             };
-            db::insert_conversation(&tx, persistent_conversation)?;
+            db::insert_conversation(&tx, &persistent_conversation)?;
         }
         tx.commit().map_err(Error::TransactionCommitFailure)?;
 
@@ -243,7 +243,7 @@ impl Profile {
 
     pub fn add_conversation(
         &mut self,
-        conversation: Conversation,
+        conversation: &Conversation,
     ) -> Result<ConversationHandle, Error> {
         let tx = self.conn.transaction()?;
         let conversation_handle = db::insert_conversation(&tx, conversation)?;
@@ -276,7 +276,7 @@ impl Profile {
     pub fn set_user_profile(
         &mut self,
         user_handle: UserHandle,
-        user_profile: UserProfile,
+        user_profile: &UserProfile,
     ) -> Result<(), Error> {
         let tx = self.conn.transaction()?;
         db::update_user_profile(&tx, user_handle, user_profile)?;
@@ -288,9 +288,9 @@ impl Profile {
     // User
     //
 
-    pub fn add_user(&mut self, user: User) -> Result<UserHandle, Error> {
+    pub fn add_user(&mut self, user: &User) -> Result<UserHandle, Error> {
         let tx = self.conn.transaction()?;
-        let user_handle = db::insert_user(&tx, &user)?;
+        let user_handle = db::insert_user(&tx, user)?;
         tx.commit()?;
         Ok(user_handle)
     }
@@ -309,8 +309,8 @@ impl Profile {
     pub fn set_user_remote_endpoint_keys(
         &mut self,
         user_handle: UserHandle,
-        remote_endpoint_ed25519_public_key: Ed25519PublicKey,
-        remote_endpoint_x25519_private_key: X25519PrivateKey,
+        remote_endpoint_ed25519_public_key: &Ed25519PublicKey,
+        remote_endpoint_x25519_private_key: &X25519PrivateKey,
     ) -> Result<(), Error> {
         let tx = self.conn.transaction()?;
         db::update_remote_endpoint_keys(
@@ -326,8 +326,8 @@ impl Profile {
     pub fn set_user_local_endpoint_keys(
         &mut self,
         user_handle: UserHandle,
-        local_endpoint_ed25519_private_key: Ed25519PrivateKey,
-        local_endpoint_x25519_public_key: X25519PublicKey,
+        local_endpoint_ed25519_private_key: &Ed25519PrivateKey,
+        local_endpoint_x25519_public_key: &X25519PublicKey,
     ) -> Result<(), Error> {
         let tx = self.conn.transaction()?;
         db::update_local_endpoint_keys(
@@ -346,10 +346,10 @@ impl Profile {
 
     pub fn add_message_record(
         &mut self,
-        message_record: MessageRecord,
+        message_record: &MessageRecord,
     ) -> Result<MessageRecordHandle, Error> {
         let tx = self.conn.transaction()?;
-        let message_record_handle = db::insert_message_record(&tx, &message_record)?;
+        let message_record_handle = db::insert_message_record(&tx, message_record)?;
         tx.commit()?;
         Ok(message_record_handle)
     }
@@ -383,6 +383,7 @@ impl Profile {
 // UserProfile
 //
 pub type UserProfileHandle = db::UserProfileRowID;
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 pub struct UserProfile {
     pub nickname: String,
@@ -395,6 +396,7 @@ pub struct UserProfile {
 
 // Avatar
 pub type AvatarHandle = db::AvatarRowID;
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 pub struct Avatar {
     // 256x256 8-bit channel RGBA image in row-major order
@@ -412,6 +414,7 @@ impl Avatar {
 // User
 //
 pub type UserHandle = db::UserRowID;
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug)]
 pub struct User {
     pub user_type: UserType,
@@ -424,6 +427,7 @@ pub struct User {
     pub local_endpoint_x25519_public_key: Option<X25519PublicKey>,
 }
 
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Clone, Copy, Debug)]
 pub enum UserType {
     Owner,
@@ -516,3 +520,164 @@ pub use rico_protocol::v4::MessageContent;
 
 pub use rico_protocol::v4::Salt;
 pub use rico_protocol::v4::Sha256Sum;
+
+#[cfg(feature = "test-features")]
+pub mod test {
+    use super::*;
+
+    pub fn create_test_profile(name: &str) -> anyhow::Result<Profile> {
+        let mut path = std::env::temp_dir();
+        path.push(name);
+        if std::path::Path::exists(&path) {
+            std::fs::remove_file(&path)?;
+        }
+        let profile = Profile::new(&path, "hunter42")?;
+        println!("created profile: {path:?}");
+        Ok(profile)
+    }
+
+    use tor_interface::tor_crypto::*;
+
+    pub fn generate_test_keys() -> (
+        Ed25519PublicKey,
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
+        X25519PrivateKey,
+        Ed25519PrivateKey,
+        X25519PublicKey,
+    ) {
+        let identity_ed25519_private_key = Ed25519PrivateKey::generate();
+        let identity_ed25519_public_key =
+            Ed25519PublicKey::from_private_key(&identity_ed25519_private_key);
+
+        let remote_endpoint_ed25519_public_key =
+            Ed25519PublicKey::from_private_key(&Ed25519PrivateKey::generate());
+        let remote_endpoint_x25519_private_key = X25519PrivateKey::generate();
+
+        let local_endpoint_ed25519_private_key = Ed25519PrivateKey::generate();
+        let local_endpoint_x25519_public_key =
+            X25519PublicKey::from_private_key(&X25519PrivateKey::generate());
+
+        (
+            identity_ed25519_public_key,
+            identity_ed25519_private_key,
+            remote_endpoint_ed25519_public_key,
+            remote_endpoint_x25519_private_key,
+            local_endpoint_ed25519_private_key,
+            local_endpoint_x25519_public_key,
+        )
+    }
+
+    #[test]
+    fn test_add_get_remove_user() -> anyhow::Result<()> {
+        // Setup: Create a temporary profile
+        let mut profile = create_test_profile("test_add_get_remove_user.ricochet-profile")?;
+
+        // Test 1: add_user() - Add Owner user (must have identity_ed25519_private_key)
+        let (
+            identity_ed25519_pub1,
+            identity_ed25519_priv1,
+            _remote_endpoint_ed25519_pub1,
+            _remote_endpoint_x25519_priv1,
+            _local_endpoint_ed25519_priv1,
+            _local_endpoint_x25519_pub1,
+        ) = generate_test_keys();
+
+        let user1 = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname: "alice".to_string(),
+                pet_name: Some("Alice Wonder".to_string()),
+                pronouns: Some("she/her".to_string()),
+                avatar: None,
+                status: Some("Online".to_string()),
+                description: Some("A test user".to_string()),
+            },
+            identity_ed25519_public_key: identity_ed25519_pub1.clone(),
+            identity_ed25519_private_key: Some(identity_ed25519_priv1.clone()),
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let user1_handle = profile.add_user(&user1)?;
+
+        // Test 2: get_users() - Verify the user was added
+        let users = profile.get_users()?;
+        assert_eq!(users.len(), 1);
+        let (retrieved_user, retrieved_handle) = &users[0];
+        assert_eq!(*retrieved_handle, user1_handle, "Handle should match");
+        assert_eq!(retrieved_user.user_type, user1.user_type,);
+        assert_eq!(
+            retrieved_user.user_profile.nickname,
+            user1.user_profile.nickname,
+        );
+        assert_eq!(
+            retrieved_user.user_profile.pet_name,
+            user1.user_profile.pet_name,
+        );
+        assert_eq!(
+            retrieved_user.user_profile.pronouns,
+            user1.user_profile.pronouns,
+        );
+        assert_eq!(
+            retrieved_user.user_profile.status,
+            user1.user_profile.status,
+        );
+        assert_eq!(
+            retrieved_user.user_profile.description,
+            user1.user_profile.description,
+        );
+
+        // Test 3: add_user() - Add Allowed user (non-Owner: no identity_ed25519_private_key)
+        let (
+            identity_ed25519_pub2,
+            _identity_ed25519_priv2,
+            remote_endpoint_ed25519_pub2,
+            remote_endpoint_x25519_priv2,
+            _local_endpoint_ed25519_priv2,
+            _local_endpoint_x25519_pub2,
+        ) = generate_test_keys();
+
+        let user2 = User {
+            user_type: UserType::Allowed,
+            user_profile: UserProfile {
+                nickname: "bob".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_pub2.clone(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: Some(remote_endpoint_ed25519_pub2.clone()),
+            remote_endpoint_x25519_private_key: Some(remote_endpoint_x25519_priv2.clone()),
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let user2_handle = profile.add_user(&user2)?;
+        assert_ne!(user1_handle, user2_handle);
+
+        // Test 4: get_users() - Verify both users are present
+        let users = profile.get_users()?;
+        assert_eq!(users.len(), 2);
+
+        // Test 5: remove_user() - Remove the first user
+        profile.remove_user(user1_handle)?;
+        let users = profile.get_users()?;
+        assert_eq!(users.len(), 1);
+        let (remaining_user, remaining_handle) = &users[0];
+        assert_eq!(*remaining_handle, user2_handle,);
+        assert_eq!(remaining_user.user_profile.nickname, "bob",);
+
+        // Test 6: remove_user() - Remove the second user
+        profile.remove_user(user2_handle)?;
+        let users = profile.get_users()?;
+        assert_eq!(users.len(), 0);
+
+        Ok(())
+    }
+}

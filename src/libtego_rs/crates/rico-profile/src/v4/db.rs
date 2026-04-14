@@ -120,8 +120,8 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
           local_endpoint_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),
           local_endpoint_x25519_public_key_rowid INTEGER UNIQUE REFERENCES x25519_public_keys(rowid),
           CHECK((user_type == 0) == (identity_ed25519_private_key_rowid IS NOT NULL)),
-          CHECK(remote_endpoint_ed25519_public_key_rowid IS NULL == remote_endpoint_x25519_private_key_rowid IS NULL),
-          CHECK(local_endpoint_ed25519_private_key_rowid IS NULL == local_endpoint_x25519_public_key_rowid IS NULL)
+          CHECK((remote_endpoint_ed25519_public_key_rowid IS NULL AND remote_endpoint_x25519_private_key_rowid IS NULL) OR (remote_endpoint_ed25519_public_key_rowid IS NOT NULL AND remote_endpoint_x25519_private_key_rowid IS NOT NULL)),
+          CHECK((local_endpoint_ed25519_private_key_rowid IS NULL AND local_endpoint_x25519_public_key_rowid IS NULL) OR (local_endpoint_ed25519_private_key_rowid IS NOT NULL AND local_endpoint_x25519_public_key_rowid IS NOT NULL))
         );
         CREATE INDEX idx_users_identity_ed25519_public_key_rowid ON users(identity_ed25519_public_key_rowid);
 
@@ -420,8 +420,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
             local_endpoint_ed25519_private_key_rowid,
             local_endpoint_x25519_public_key_rowid,
         ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(UserRowID(rowid))
@@ -429,11 +428,11 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
 
 pub fn insert_conversation(
     tx: &Transaction<'_>,
-    conversation: profile::Conversation,
+    conversation: &profile::Conversation,
 ) -> Result<ConversationRowID, Error> {
     let conversation_type: i64 = conversation.conversation_type.into();
-    let conversation_members = conversation.conversation_members;
-    let conversation_key = conversation.conversation_key;
+    let conversation_members = &conversation.conversation_members;
+    let conversation_key = &conversation.conversation_key;
     let conversation_key_rowid = insert_sha256_hash(tx, &conversation_key)?;
 
     tx.execute(
@@ -717,10 +716,10 @@ fn insert_x25519_public_key(
 ) -> Result<X25519PublicKeyRowID, Error> {
     let value = value.as_bytes();
     tx.execute(
-        "INSERT INTO ed25519_public_keys (
-                value,
+        "INSERT INTO x25519_public_keys (
+                value
             ) VALUES (?1)",
-        params![value,],
+        params![value],
     )
     .map_err(Error::StatementExecuteFailure)?;
     let rowid = tx.last_insert_rowid();
@@ -735,7 +734,7 @@ fn insert_x25519_public_key(
 pub(crate) fn update_user_profile(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
-    user_profile: profile::UserProfile,
+    user_profile: &profile::UserProfile,
 ) -> Result<(), Error> {
     let user_rowid = user_handle;
     let user_profile_rowid = select_user_profile_rowid_by_user_rowid(tx, user_rowid)?;
@@ -746,15 +745,15 @@ pub(crate) fn update_user_profile(
         |row| row.get::<_, Option<AvatarRowID>>(0),
     )?;
 
-    let nickname = user_profile.nickname;
-    let pet_name = user_profile.pet_name;
-    let pronouns = user_profile.pronouns;
-    let avatar_rowid = match user_profile.avatar {
-        Some(avatar) => Some(insert_avatar(tx, &avatar)?),
+    let nickname = &user_profile.nickname;
+    let pet_name = &user_profile.pet_name;
+    let pronouns = &user_profile.pronouns;
+    let avatar_rowid = match &user_profile.avatar {
+        Some(avatar) => Some(insert_avatar(tx, avatar)?),
         None => None,
     };
-    let status = user_profile.status;
-    let description = user_profile.description;
+    let status = &user_profile.status;
+    let description = &user_profile.description;
     tx.execute("UPDATE user_profiles SET nickname = ?2, pet_name = ?3, pronouns = ?4, avatar_rowid = ?5, status = ?6, description = ?7 WHERE rowid = ?1",
         params![user_profile_rowid, nickname, pet_name, pronouns, avatar_rowid, status, description])?;
 
@@ -768,8 +767,8 @@ pub(crate) fn update_user_profile(
 pub(crate) fn update_remote_endpoint_keys(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
-    remote_endpoint_ed25519_public_key: Ed25519PublicKey,
-    remote_endpoint_x25519_private_key: X25519PrivateKey,
+    remote_endpoint_ed25519_public_key: &Ed25519PublicKey,
+    remote_endpoint_x25519_private_key: &X25519PrivateKey,
 ) -> Result<(), Error> {
     let user_rowid = user_handle;
     tx.execute("UPDATE users SET remote_endpoint_ed25519_public_key_rowid = ?2, remote_endpoint_x25519_private_key_rowid = ?3 WHERE rowid = ?1",
@@ -781,8 +780,8 @@ pub(crate) fn update_remote_endpoint_keys(
 pub(crate) fn update_local_endpoint_keys(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,
-    local_endpoint_ed25519_private_key: Ed25519PrivateKey,
-    local_endpoint_x25519_public_key: X25519PublicKey,
+    local_endpoint_ed25519_private_key: &Ed25519PrivateKey,
+    local_endpoint_x25519_public_key: &X25519PublicKey,
 ) -> Result<(), Error> {
     let user_rowid = user_handle;
     tx.execute("UPDATE users SET local_endpoint_ed25519_private_key = ?2, local_endpoint_x25519_public_key = ?3 WHERE rowid = ?1",
@@ -882,7 +881,19 @@ pub(crate) fn select_all_users(
     conn: &Connection,
 ) -> Result<Vec<(profile::User, UserRowID)>, Error> {
     // create our prepared statement
-    let mut select_users_stmt = conn.prepare("SELECT rowid, user_type, user_profile_rowid, identity_ed25519_public_key_rowid, identity_ed25519_private_key_rowid, remote_endpoint_ed25519_public_key_rowid, remote_endpoint_x25519_private_key_rowid, local_endpoint_ed25519_private_key_rowid, local_endpoint_x25519_public_key_rowid FROM users")?;
+    let mut select_users_stmt = conn.prepare(
+        "SELECT
+          rowid,
+          user_type,
+          user_profile_rowid,
+          identity_ed25519_public_key_rowid,
+          identity_ed25519_private_key_rowid,
+          remote_endpoint_ed25519_public_key_rowid,
+          remote_endpoint_x25519_private_key_rowid,
+          local_endpoint_ed25519_private_key_rowid,
+          local_endpoint_x25519_public_key_rowid
+        FROM users",
+    )?;
 
     let mut select_user_profile_stmt = conn.prepare("SELECT nickname, pet_name, pronouns, avatar_rowid, status, description FROM user_profiles WHERE rowid = ?1")?;
 

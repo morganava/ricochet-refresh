@@ -2,24 +2,17 @@
 use std::path::Path;
 
 // extern
-use tor_interface::tor_crypto::{Ed25519PrivateKey, Ed25519PublicKey, V3OnionServiceId};
+use tor_interface::tor_crypto::*;
 
 // internal
 #[cfg(feature = "v3-profile")]
 use rico_profile::v3;
 use rico_profile::v4;
+use rico_profile::v4::profile::*;
 
 #[test]
 fn test_construction() -> anyhow::Result<()> {
-    let mut path = std::env::temp_dir();
-    path.push("test_construction.ricochet-profile");
-    if Path::exists(&path) {
-        std::fs::remove_file(&path)?;
-    }
-
-    println!("path: {path:?}");
-
-    let mut profile = v4::profile::Profile::new(&path, "hunter42")?;
+    let profile = v4::profile::test::create_test_profile("test_construction.ricochet-profile")?;
 
     assert_eq!(profile.get_version()?, v4::profile::Version::LATEST);
 
@@ -62,12 +55,14 @@ fn test_legacy_import() -> anyhow::Result<()> {
         std::fs::remove_file(&path)?;
     }
 
-    println!("path: {path:?}");
-
     let mut v4_profile =
         v4::profile::Profile::new_from_v3_profile(v3_profile, "morgan", &path, "hunter42")?;
 
+    println!("created profile: {path:?}");
+
     let conversations = v4_profile.get_conversations()?;
+    // All of our conversations must be empty
+    // We start initially with 2 conversations per user
     assert_eq!(conversations.len(), 5 * 2);
     for (conversation, conversation_handle) in conversations {
         let message_records =
@@ -75,6 +70,7 @@ fn test_legacy_import() -> anyhow::Result<()> {
         assert_eq!(message_records.len(), 0);
     }
 
+    // Verify each of users are imported correctly
     let users = v4_profile.get_users()?;
     for (user, user_handle) in users {
         use v4::profile::UserType;
