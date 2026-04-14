@@ -955,4 +955,231 @@ pub mod test {
         );
         Ok(())
     }
+
+    #[test]
+    fn test_conversation_lifecycle() -> anyhow::Result<()> {
+        let mut profile = create_test_profile("test_conversation_lifecycle.ricochet-profile")?;
+
+        // Generate keys for two test users
+        let (identity_ed25519_public_key_alice, identity_ed25519_private_key_alice, _, _, _, _) =
+            generate_test_keys();
+        let (identity_ed25519_public_key_bob, _, _, _, _, _) = generate_test_keys();
+
+        // Create and add two users
+        let user_alice = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname: "alice".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_public_key_alice.clone(),
+            identity_ed25519_private_key: Some(identity_ed25519_private_key_alice),
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let user_bob = User {
+            user_type: UserType::Allowed,
+            user_profile: UserProfile {
+                nickname: "bob".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_public_key_bob.clone(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let alice_handle = profile.add_user(&user_alice)?;
+        let bob_handle = profile.add_user(&user_bob)?;
+
+        // Test: Retrieve conversations when empty
+        let conversations = profile.get_conversations()?;
+        assert!(conversations.is_empty());
+
+        // Test: Create an ephemeral direct message conversation
+        let conversation_members_ephemeral: BTreeSet<UserHandle> =
+            [alice_handle, bob_handle].into();
+        let conversation_members_public_keys: BTreeSet<Ed25519PublicKey> = [
+            identity_ed25519_public_key_alice.clone(),
+            identity_ed25519_public_key_bob.clone(),
+        ]
+        .into();
+
+        let ephemeral_conversation_key = rico_protocol::v4::payload::conversation_key(
+            ConversationType::EphemeralDirectMessage,
+            &conversation_members_public_keys,
+        );
+
+        let ephemeral_conversation = Conversation {
+            conversation_type: ConversationType::EphemeralDirectMessage,
+            conversation_members: conversation_members_ephemeral.clone(),
+            conversation_key: ephemeral_conversation_key.clone(),
+        };
+
+        let ephemeral_conversation_handle = profile.add_conversation(&ephemeral_conversation)?;
+
+        // Verify ephemeral conversation was created
+        let conversations = profile.get_conversations()?;
+        assert_eq!(conversations.len(), 1);
+        let (retrieved_conv, handle) = &conversations[0];
+        assert_eq!(*handle, ephemeral_conversation_handle);
+        assert_eq!(
+            retrieved_conv.conversation_type,
+            ConversationType::EphemeralDirectMessage
+        );
+        assert_eq!(
+            retrieved_conv.conversation_members,
+            conversation_members_ephemeral
+        );
+        assert_eq!(retrieved_conv.conversation_key, ephemeral_conversation_key);
+
+        // Test: Create a persistent direct message conversation
+        let persistent_conversation_key = rico_protocol::v4::payload::conversation_key(
+            ConversationType::PersistentDirectMessage,
+            &conversation_members_public_keys,
+        );
+
+        let persistent_conversation = Conversation {
+            conversation_type: ConversationType::PersistentDirectMessage,
+            conversation_members: conversation_members_ephemeral.clone(),
+            conversation_key: persistent_conversation_key.clone(),
+        };
+
+        let persistent_conversation_handle = profile.add_conversation(&persistent_conversation)?;
+
+        // Verify both conversations exist
+        let conversations = profile.get_conversations()?;
+        assert_eq!(conversations.len(), 2);
+
+        let ephemeral_found = conversations
+            .iter()
+            .find(|(_, handle)| *handle == ephemeral_conversation_handle)
+            .expect("Ephemeral conversation not found");
+        assert_eq!(
+            ephemeral_found.0.conversation_type,
+            ConversationType::EphemeralDirectMessage
+        );
+
+        let persistent_found = conversations
+            .iter()
+            .find(|(_, handle)| *handle == persistent_conversation_handle)
+            .expect("Persistent conversation not found");
+        assert_eq!(
+            persistent_found.0.conversation_type,
+            ConversationType::PersistentDirectMessage
+        );
+
+        // Test: Remove ephemeral conversation
+        profile.remove_conversation(ephemeral_conversation_handle)?;
+
+        // Verify only persistent conversation remains
+        let conversations = profile.get_conversations()?;
+        assert_eq!(conversations.len(), 1);
+        let (remaining_conv, handle) = &conversations[0];
+        assert_eq!(*handle, persistent_conversation_handle);
+        assert_eq!(
+            remaining_conv.conversation_type,
+            ConversationType::PersistentDirectMessage
+        );
+
+        // Test: Remove persistent conversation
+        profile.remove_conversation(persistent_conversation_handle)?;
+
+        // Verify all conversations are gone
+        let conversations = profile.get_conversations()?;
+        assert!(conversations.is_empty());
+
+        // Test: Create multiple conversations with different member sets
+        let (identity_ed25519_public_key_charlie, _, _, _, _, _) = generate_test_keys();
+
+        let user_charlie = User {
+            user_type: UserType::Allowed,
+            user_profile: UserProfile {
+                nickname: "charlie".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: identity_ed25519_public_key_charlie.clone(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let charlie_handle = profile.add_user(&user_charlie)?;
+
+        // Alice-Bob conversation
+        let alice_bob_key = rico_protocol::v4::payload::conversation_key(
+            ConversationType::PersistentDirectMessage,
+            &BTreeSet::from([
+                identity_ed25519_public_key_alice.clone(),
+                identity_ed25519_public_key_bob.clone(),
+            ]),
+        );
+
+        let alice_bob_conv = Conversation {
+            conversation_type: ConversationType::PersistentDirectMessage,
+            conversation_members: [alice_handle, bob_handle].into(),
+            conversation_key: alice_bob_key.clone(),
+        };
+
+        // Alice-Charlie conversation
+        let alice_charlie_key = rico_protocol::v4::payload::conversation_key(
+            ConversationType::PersistentDirectMessage,
+            &BTreeSet::from([
+                identity_ed25519_public_key_alice.clone(),
+                identity_ed25519_public_key_charlie.clone(),
+            ]),
+        );
+
+        let alice_charlie_conv = Conversation {
+            conversation_type: ConversationType::PersistentDirectMessage,
+            conversation_members: [alice_handle, charlie_handle].into(),
+            conversation_key: alice_charlie_key.clone(),
+        };
+
+        let alice_bob_handle = profile.add_conversation(&alice_bob_conv)?;
+        let alice_charlie_handle = profile.add_conversation(&alice_charlie_conv)?;
+
+        // Verify all conversations exist with correct member sets
+        let conversations = profile.get_conversations()?;
+        assert_eq!(conversations.len(), 2);
+
+        let alice_bob_retrieved = conversations
+            .iter()
+            .find(|(_, handle)| *handle == alice_bob_handle)
+            .expect("Alice-Bob conversation not found");
+        assert_eq!(
+            alice_bob_retrieved.0.conversation_members,
+            [alice_handle, bob_handle].into()
+        );
+
+        let alice_charlie_retrieved = conversations
+            .iter()
+            .find(|(_, handle)| *handle == alice_charlie_handle)
+            .expect("Alice-Charlie conversation not found");
+        assert_eq!(
+            alice_charlie_retrieved.0.conversation_members,
+            [alice_handle, charlie_handle].into()
+        );
+
+        Ok(())
+    }
 }
