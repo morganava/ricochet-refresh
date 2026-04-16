@@ -144,8 +144,8 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
           rowid INTEGER PRIMARY KEY AUTOINCREMENT,
           conversation_rowid INTEGER NOT NULL REFERENCES conversations(rowid),
           user_rowid INTEGER NOT NULL REFERENCES users(rowid),
-          record_sequence INTEGER NOT NULL CHECK(record_sequence >= 0),
-          message_sequence INTEGER NOT NULL CHECK(message_sequence >= 0),
+          record_sequence INTEGER NOT NULL CHECK(record_sequence >= 1),
+          message_sequence INTEGER NOT NULL CHECK(message_sequence >= 1),
           create_timestamp INTEGER NOT NULL,
           modify_timestamp INTEGER NOT NULL CHECK(modify_timestamp >= create_timestamp),
           message_content_rowid INTEGER NOT NULL UNIQUE REFERENCES message_contents(rowid),
@@ -1176,7 +1176,8 @@ pub(crate) fn select_message_records_from_conversation(
     }
 
     let mut results: Vec<profile::MessageRecord> = Default::default();
-    while let Some(row) = stmt.raw_query().next()? {
+    let mut raw_query = stmt.raw_query();
+    while let Some(row) = raw_query.next()? {
         let (
             conversation_handle,
             user_handle,
@@ -1212,6 +1213,8 @@ pub(crate) fn select_message_records_from_conversation(
             row.get::<_, Option<String>>(14)?,
             row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(15)?,
         );
+
+        println!("conversation_handle: {conversation_handle:?}; user_handle: {user_handle:?}, record_sequence: {record_sequence:?}, message_sequence: {message_sequence:?}");
 
         let create_timestamp = UtcDateTime::from_unix_timestamp(create_timestamp.0)?;
         let modify_timestamp = UtcDateTime::from_unix_timestamp(modify_timestamp.0)?;

@@ -1178,4 +1178,440 @@ pub mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_message_record_functions() -> anyhow::Result<()> {
+        // Create profile
+        let mut profile = create_test_profile("test_message_records.ricochet-profile")?;
+
+        // Generate keys for two users
+        let (
+            user1_id_pub,
+            user1_id_priv,
+            user1_remote_ed_pub,
+            user1_remote_x_priv,
+            user1_local_ed_priv,
+            user1_local_x_pub,
+        ) = generate_test_keys();
+        let (
+            user2_id_pub,
+            user2_id_priv,
+            user2_remote_ed_pub,
+            user2_remote_x_priv,
+            user2_local_ed_priv,
+            user2_local_x_pub,
+        ) = generate_test_keys();
+
+        // Create users
+        let user1 = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname: "user1".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: user1_id_pub.clone(),
+            identity_ed25519_private_key: Some(user1_id_priv.clone()),
+            remote_endpoint_ed25519_public_key: Some(user1_remote_ed_pub),
+            remote_endpoint_x25519_private_key: Some(user1_remote_x_priv),
+            local_endpoint_ed25519_private_key: Some(user1_local_ed_priv),
+            local_endpoint_x25519_public_key: Some(user1_local_x_pub),
+        };
+
+        let user2 = User {
+            user_type: UserType::Allowed,
+            user_profile: UserProfile {
+                nickname: "user2".to_string(),
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: user2_id_pub.clone(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: Some(user2_remote_ed_pub),
+            remote_endpoint_x25519_private_key: Some(user2_remote_x_priv),
+            local_endpoint_ed25519_private_key: Some(user2_local_ed_priv),
+            local_endpoint_x25519_public_key: Some(user2_local_x_pub),
+        };
+
+        let user1_handle = profile.add_user(&user1)?;
+        let user2_handle = profile.add_user(&user2)?;
+        // Create conversation
+        let mut conversation_members = BTreeSet::new();
+        conversation_members.insert(user1_handle);
+        conversation_members.insert(user2_handle);
+
+        let conversation_member_public_keys: BTreeSet<Ed25519PublicKey> =
+            [user1_id_pub.clone(), user2_id_pub.clone()].into();
+
+        let conversation_key = rico_protocol::v4::payload::conversation_key(
+            ConversationType::PersistentDirectMessage,
+            &conversation_member_public_keys,
+        );
+
+        let conversation = Conversation {
+            conversation_type: ConversationType::PersistentDirectMessage,
+            conversation_members,
+            conversation_key: conversation_key.clone(),
+        };
+
+        let conversation_handle = profile.add_conversation(&conversation)?;
+
+        // Track sequence numbers independently per user
+        let mut user1_record_seq: i64 = 0;
+        let mut user1_message_seq: i64 = 0;
+        let mut user2_record_seq: i64 = 0;
+        let mut user2_message_seq: i64 = 0;
+
+        let now = UtcDateTime::now();
+        //
+        // USER 1 - MODIFIED MESSAGE
+        //
+        {
+            user1_record_seq += 1;
+            user1_message_seq += 1;
+
+            // Original content the first text message from user1
+            let original_message_content_salt = Salt::generate()?;
+            let original_message_content = MessageContent::Text {
+                text: "Hello from user1".to_string(),
+            };
+            let original_content_hash = rico_protocol::v4::payload::message_content_hash(
+                &original_message_content_salt,
+                &original_message_content,
+            );
+
+            let original_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user1_id_pub,
+                RecordSequence(1),
+                MessageSequence(1),
+                now,
+                now,
+                &original_message_content_salt,
+                &original_content_hash,
+            )?;
+            let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::Modified {
+                original_message_content_hash: original_content_hash,
+                original_message_record_signature: original_signature,
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user1_id_pub,
+                RecordSequence(user1_record_seq),
+                MessageSequence(user1_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user1_handle,
+                record_sequence: RecordSequence(user1_record_seq),
+                message_sequence: MessageSequence(user1_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+        //
+        // USER 2 - MODIFIED MESSAGE
+        //
+        {
+            user2_record_seq += 1;
+            user2_message_seq += 1;
+
+            // Reference the first text message from user2
+            let original_message_content_salt = Salt::generate()?;
+            let original_message_content = MessageContent::Text {
+                text: "Hello from user2".to_string(),
+            };
+            let original_content_hash = rico_protocol::v4::payload::message_content_hash(
+                &original_message_content_salt,
+                &original_message_content,
+            );
+
+            let original_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user2_id_pub,
+                RecordSequence(1),
+                MessageSequence(1),
+                now,
+                now,
+                &original_message_content_salt,
+                &original_content_hash,
+            )?;
+            let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::Modified {
+                original_message_content_hash: original_content_hash,
+                original_message_record_signature: original_signature,
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user2_id_pub,
+                RecordSequence(user2_record_seq),
+                MessageSequence(user2_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user2_handle,
+                record_sequence: RecordSequence(user2_record_seq),
+                message_sequence: MessageSequence(user2_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+
+        //
+        // USER 1 - TEXT MESSAGE
+        //
+        {
+            user1_record_seq += 1;
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::Text {
+                text: "Hello from user1".to_string(),
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user1_id_pub,
+                RecordSequence(user1_record_seq),
+                MessageSequence(user1_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user1_handle,
+                record_sequence: RecordSequence(user1_record_seq),
+                message_sequence: MessageSequence(user1_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+
+        //
+        // USER 2 - TEXT MESSAGE
+        //
+        {
+            user2_record_seq += 1;
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::Text {
+                text: "Hello from user2".to_string(),
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user2_id_pub,
+                RecordSequence(user2_record_seq),
+                MessageSequence(user2_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user2_handle,
+                record_sequence: RecordSequence(user2_record_seq),
+                message_sequence: MessageSequence(user2_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+
+        //
+        // USER 1 - FILE SHARE MESSAGE
+        //
+        {
+            user1_record_seq += 1;
+            user1_message_seq += 1;
+
+            let file_data_salt = Salt::generate()?;
+            let file_contents = b"This is test file data";
+            let file_size = FileSize(file_contents.len() as i64);
+
+            let file_data_hash = rico_protocol::v4::payload::file_data_hash(
+                &file_data_salt,
+                file_size,
+                &mut std::io::Cursor::new(file_contents),
+            )?;
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::FileShare {
+                file_data_salt,
+                file_size,
+                file_data_hash,
+                file_path: Some("test_file.txt".into()),
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user1_id_pub,
+                RecordSequence(user1_record_seq),
+                MessageSequence(user1_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user1_handle,
+                record_sequence: RecordSequence(user1_record_seq),
+                message_sequence: MessageSequence(user1_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+
+        //
+        // USER 2 - FILE SHARE MESSAGE
+        //
+        {
+            user2_record_seq += 1;
+            user2_message_seq += 1;
+
+            let file_data_salt = Salt::generate()?;
+            let file_contents = b"Another test file";
+            let file_size = FileSize(file_contents.len() as i64);
+
+            let file_data_hash = rico_protocol::v4::payload::file_data_hash(
+                &file_data_salt,
+                file_size,
+                &mut std::io::Cursor::new(file_contents),
+            )?;
+
+            let message_content_salt = Salt::generate()?;
+            let message_content = MessageContent::FileShare {
+                file_data_salt,
+                file_size,
+                file_data_hash,
+                file_path: Some("another_file.bin".into()),
+            };
+
+            let content_hash = rico_protocol::v4::payload::message_content_hash(
+                &message_content_salt,
+                &message_content,
+            );
+
+            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
+                &conversation_key,
+                &user2_id_pub,
+                RecordSequence(user2_record_seq),
+                MessageSequence(user2_message_seq),
+                now,
+                now,
+                &message_content_salt,
+                &content_hash,
+            )?;
+
+            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
+
+            let message_record = MessageRecord {
+                conversation_handle,
+                user_handle: user2_handle,
+                record_sequence: RecordSequence(user2_record_seq),
+                message_sequence: MessageSequence(user2_message_seq),
+                create_timestamp: now,
+                modify_timestamp: now,
+                message_content_salt,
+                message_content,
+                signature,
+            };
+
+            let _handle = profile.add_message_record(&message_record)?;
+        }
+
+        // Verify we can retrieve all messages
+        let messages =
+            profile.get_message_records_from_conversation(conversation_handle, None, None)?;
+        assert_eq!(messages.len(), 6, "Expected 6 total message records");
+        Ok(())
+    }
 }
