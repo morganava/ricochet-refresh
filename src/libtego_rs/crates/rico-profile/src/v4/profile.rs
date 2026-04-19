@@ -1263,10 +1263,10 @@ pub mod test {
         let conversation_handle = profile.add_conversation(&conversation)?;
 
         // Track sequence numbers independently per user
-        let mut user1_record_seq: i64 = 0;
-        let mut user1_message_seq: i64 = 0;
-        let mut user2_record_seq: i64 = 0;
-        let mut user2_message_seq: i64 = 0;
+        let mut user1_record_seq: i64 = -1;
+        let mut user1_message_seq: i64 = -1;
+        let mut user2_record_seq: i64 = -1;
+        let mut user2_message_seq: i64 = -1;
 
         let now = UtcDateTime::now();
         //
