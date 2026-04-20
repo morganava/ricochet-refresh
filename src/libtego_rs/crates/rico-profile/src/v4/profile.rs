@@ -353,6 +353,30 @@ impl Profile {
         Ok(message_record_handle)
     }
 
+    pub fn get_message_record(
+        &self,
+        _message_record_handle: MessageRecordHandle,
+    ) -> Result<MessageRecord, Error> {
+        Err(Error::NotImplemented)
+    }
+
+    pub fn get_message_record_handle(
+        &self,
+        _conversation_handle: ConversationHandle,
+        _user_handle: UserHandle,
+        _record_sequence: RecordSequence,
+    ) -> Result<MessageRecordHandle, Error> {
+        Err(Error::NotImplemented)
+    }
+
+    pub fn tombstone_message_record(
+        &mut self,
+        _message_record_handle: MessageRecordHandle,
+        _signature: &Ed25519Signature,
+    ) -> Result<(), Error> {
+        Err(Error::NotImplemented)
+    }
+
     pub fn get_message_records_from_conversation(
         &self,
         conversation_handle: ConversationHandle,
