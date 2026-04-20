@@ -1270,7 +1270,7 @@ pub mod test {
 
         let now = UtcDateTime::now();
         //
-        // USER 1 - MODIFIED MESSAGE
+        // USER 1 - TOMBSTONED MESSAGE
         //
         let user1_message1_sig = {
             user1_record_seq += 1;
@@ -1300,7 +1300,7 @@ pub mod test {
             let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Modified {
+            let message_content = MessageContent::Tombstoned {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
@@ -1340,7 +1340,7 @@ pub mod test {
             original_signature
         };
         //
-        // USER 2 - MODIFIED MESSAGE
+        // USER 2 - TOMBSTONED MESSAGE
         //
         let user2_message1_sig = {
             user2_record_seq += 1;
@@ -1370,7 +1370,7 @@ pub mod test {
             let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Modified {
+            let message_content = MessageContent::Tombstoned {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
