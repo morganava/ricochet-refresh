@@ -1130,23 +1130,7 @@ pub(crate) fn select_message_records_from_conversation(
     limit: Option<u32>,
 ) -> Result<Vec<profile::MessageRecord>, Error> {
     let mut query = String::from(
-        "SELECT
-          mr_conversation_rowid,
-          mr_user_rowid,
-          mr_record_sequence,
-          mr_message_sequence,
-          mr_create_timestamp,
-          mr_modify_timestamp,
-          mc_salt,
-          mc_message_type,
-          tsm_original_message_content_hash,
-          tsm_original_message_record_signature,
-          tm_text,
-          fsm_file_data_salt,
-          fsm_file_size,
-          fsm_file_data_hash,
-          fsm_file_path,
-          mr_signature
+        "SELECT *
         FROM message_records_view WHERE mr_conversation_rowid = ?",
     );
 
@@ -1175,124 +1159,128 @@ pub(crate) fn select_message_records_from_conversation(
         stmt.raw_bind_parameter(param_index, limit as i64)?;
     }
 
-    let mut results: Vec<profile::MessageRecord> = Default::default();
-    let mut raw_query = stmt.raw_query();
-    while let Some(row) = raw_query.next()? {
-        let (
-            conversation_handle,
-            user_handle,
-            record_sequence,
-            message_sequence,
-            create_timestamp,
-            modify_timestamp,
-            message_content_salt,
-            message_type,
-            original_message_content_hash,
-            original_message_record_signature,
-            text,
-            file_data_salt,
-            file_size,
-            file_data_hash,
-            file_path,
-            signature,
-        ) = (
-            row.get::<_, ConversationRowID>(0)?,
-            row.get::<_, UserRowID>(1)?,
-            row.get::<_, profile::RecordSequence>(2)?,
-            row.get::<_, profile::MessageSequence>(3)?,
-            row.get::<_, Timestamp>(4)?,
-            row.get::<_, Timestamp>(5)?,
-            row.get::<_, [u8; profile::Salt::BYTES]>(6)?,
-            row.get::<_, MessageType>(7)?,
-            row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(8)?,
-            row.get::<_, Option<[u8; ED25519_SIGNATURE_SIZE]>>(9)?,
-            row.get::<_, Option<String>>(10)?,
-            row.get::<_, Option<[u8; profile::Salt::BYTES]>>(11)?,
-            row.get::<_, Option<profile::FileSize>>(12)?,
-            row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(13)?,
-            row.get::<_, Option<String>>(14)?,
-            row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(15)?,
-        );
-
-        println!("conversation_handle: {conversation_handle:?}; user_handle: {user_handle:?}, record_sequence: {record_sequence:?}, message_sequence: {message_sequence:?}");
-
-        let create_timestamp = UtcDateTime::from_unix_timestamp(create_timestamp.0)?;
-        let modify_timestamp = UtcDateTime::from_unix_timestamp(modify_timestamp.0)?;
-        let message_content_salt = profile::Salt(message_content_salt);
-
-        let message_content = match (
-            message_type,
-            original_message_content_hash,
-            original_message_record_signature,
-            text,
-            file_data_salt,
-            file_size,
-            file_data_hash,
-            file_path,
-        ) {
-            (
-                MessageType::Tombstoned,
-                Some(original_message_content_hash),
-                Some(original_message_record_signature),
-                None,
-                None,
-                None,
-                None,
-                None,
-            ) => {
-                let original_message_content_hash =
-                    profile::Sha256Sum(original_message_content_hash);
-                let original_message_record_signature =
-                    Ed25519Signature::from_raw(&original_message_record_signature)?;
-                profile::MessageContent::Tombstoned {
-                    original_message_content_hash,
-                    original_message_record_signature,
-                }
-            }
-            (MessageType::Text, None, None, Some(text), None, None, None, None) => {
-                profile::MessageContent::Text { text }
-            }
-            (
-                MessageType::FileShare,
-                None,
-                None,
-                None,
-                Some(file_data_salt),
-                Some(file_size),
-                Some(file_data_hash),
-                file_path,
-            ) => {
-                let file_data_salt = profile::Salt(file_data_salt);
-                let file_data_hash = profile::Sha256Sum(file_data_hash);
-                let file_path = match file_path {
-                    Some(file_path) => Some(file_path.into()),
-                    None => None,
-                };
-                profile::MessageContent::FileShare {
-                    file_data_salt,
-                    file_size,
-                    file_data_hash,
-                    file_path,
-                }
-            }
-            _ => unreachable!("unexpected message_content"),
-        };
-        let signature = Ed25519Signature::from_raw(&signature)?;
-
-        results.push(profile::MessageRecord {
-            conversation_handle,
-            user_handle,
-            record_sequence,
-            message_sequence,
-            create_timestamp,
-            modify_timestamp,
-            message_content_salt,
-            message_content,
-            signature,
-        });
+    let mut result: Vec<profile::MessageRecord> = Default::default();
+    let mut rows = stmt.raw_query();
+    while let Some(row) = rows.next()? {
+        result.push(message_record_from_row(row)?);
     }
+    Ok(result)
+}
 
-    Ok(results)
+/// Convert Row from a SELECT * query from message_records_view table
+/// to Vec<MessageRecord>
+fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRecord, Error> {
+    let (
+        _rowid,
+        conversation_handle,
+        user_handle,
+        record_sequence,
+        message_sequence,
+        create_timestamp,
+        modify_timestamp,
+        message_content_salt,
+        message_type,
+        original_message_content_hash,
+        original_message_record_signature,
+        text,
+        file_data_salt,
+        file_size,
+        file_data_hash,
+        file_path,
+        signature,
+    ) = (
+        row.get::<_, MessageRecordRowID>(0)?,
+        row.get::<_, ConversationRowID>(1)?,
+        row.get::<_, UserRowID>(2)?,
+        row.get::<_, profile::RecordSequence>(3)?,
+        row.get::<_, profile::MessageSequence>(4)?,
+        row.get::<_, Timestamp>(5)?,
+        row.get::<_, Timestamp>(6)?,
+        row.get::<_, [u8; profile::Salt::BYTES]>(7)?,
+        row.get::<_, MessageType>(8)?,
+        row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(9)?,
+        row.get::<_, Option<[u8; ED25519_SIGNATURE_SIZE]>>(10)?,
+        row.get::<_, Option<String>>(11)?,
+        row.get::<_, Option<[u8; profile::Salt::BYTES]>>(12)?,
+        row.get::<_, Option<profile::FileSize>>(13)?,
+        row.get::<_, Option<[u8; profile::Sha256Sum::BYTES]>>(14)?,
+        row.get::<_, Option<String>>(15)?,
+        row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(16)?,
+    );
+
+    let create_timestamp = UtcDateTime::from_unix_timestamp(create_timestamp.0)?;
+    let modify_timestamp = UtcDateTime::from_unix_timestamp(modify_timestamp.0)?;
+    let message_content_salt = profile::Salt(message_content_salt);
+
+    let message_content = match (
+        message_type,
+        original_message_content_hash,
+        original_message_record_signature,
+        text,
+        file_data_salt,
+        file_size,
+        file_data_hash,
+        file_path,
+    ) {
+        (
+            MessageType::Tombstoned,
+            Some(original_message_content_hash),
+            Some(original_message_record_signature),
+            None,
+            None,
+            None,
+            None,
+            None,
+        ) => {
+            let original_message_content_hash = profile::Sha256Sum(original_message_content_hash);
+            let original_message_record_signature =
+                Ed25519Signature::from_raw(&original_message_record_signature)?;
+            profile::MessageContent::Tombstoned {
+                original_message_content_hash,
+                original_message_record_signature,
+            }
+        }
+        (MessageType::Text, None, None, Some(text), None, None, None, None) => {
+            profile::MessageContent::Text { text }
+        }
+        (
+            MessageType::FileShare,
+            None,
+            None,
+            None,
+            Some(file_data_salt),
+            Some(file_size),
+            Some(file_data_hash),
+            file_path,
+        ) => {
+            let file_data_salt = profile::Salt(file_data_salt);
+            let file_data_hash = profile::Sha256Sum(file_data_hash);
+            let file_path = match file_path {
+                Some(file_path) => Some(file_path.into()),
+                None => None,
+            };
+            profile::MessageContent::FileShare {
+                file_data_salt,
+                file_size,
+                file_data_hash,
+                file_path,
+            }
+        }
+        _ => unreachable!("unexpected message_content"),
+    };
+    let signature = Ed25519Signature::from_raw(&signature)?;
+
+    Ok(profile::MessageRecord {
+        conversation_handle,
+        user_handle,
+        record_sequence,
+        message_sequence,
+        create_timestamp,
+        modify_timestamp,
+        message_content_salt,
+        message_content,
+        signature,
+    })
 }
 
 //
