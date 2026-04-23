@@ -343,6 +343,7 @@ impl Profile {
     // Messages
     //
 
+    /// Add a single message record
     pub fn add_message_record(
         &mut self,
         message_record: &MessageRecord,
@@ -353,13 +354,15 @@ impl Profile {
         Ok(message_record_handle)
     }
 
+    /// Retrieve a single message record
     pub fn get_message_record(
         &self,
-        _message_record_handle: MessageRecordHandle,
+        message_record_handle: MessageRecordHandle,
     ) -> Result<MessageRecord, Error> {
-        Err(Error::NotImplemented)
+        db::select_message_record(&self.conn, message_record_handle)
     }
 
+    /// Find the `MessageRecordHandle` of an entry with a particular `(Conversationhandle, UserHandle, RecordSequence)` tuple
     pub fn get_message_record_handle(
         &self,
         _conversation_handle: ConversationHandle,
@@ -369,35 +372,47 @@ impl Profile {
         Err(Error::NotImplemented)
     }
 
-    pub fn tombstone_message_record(
+    /// Replace a `MessageRecord` (e.g. for tombstoning)
+    pub fn replace_message_record(
         &mut self,
         _message_record_handle: MessageRecordHandle,
-        _signature: &Ed25519Signature,
+        _message_record: &MessageRecord,
     ) -> Result<(), Error> {
         Err(Error::NotImplemented)
     }
 
+    /// Get `MessageRedcord`s older than a particular time from a conversation
     pub fn get_message_records_from_conversation(
         &self,
-        conversation_handle: ConversationHandle,
+        conversation: ConversationHandle,
         older_than_creation_timestamp: Option<UtcDateTime>,
         limit: Option<u32>,
     ) -> Result<Vec<MessageRecord>, Error> {
         db::select_message_records_from_conversation(
             &self.conn,
-            conversation_handle,
+            conversation,
             older_than_creation_timestamp,
             limit,
         )
     }
 
+    /// Get a particular user's messages from a conversation
     pub fn get_message_records_from_conversation_by_user(
         &self,
-        _conversation_handle: ConversationHandle,
+        _conversation: ConversationHandle,
         _author: UserHandle,
-        _older_than_message_record_handle: Option<MessageRecordHandle>,
+        _older_than_record_sequence: Option<RecordSequence>,
         _limit: Option<u32>,
     ) -> Result<(), Error> {
+        Err(Error::NotImplemented)
+    }
+
+    /// Get the most recent `RecordSequence` for a given user in a given conversation
+    pub fn get_newest_record_sequence_in_converation(
+        &self,
+        _conversation: ConversationHandle,
+        _author: UserHandle,
+    ) -> Result<Option<RecordSequence>, Error> {
         Err(Error::NotImplemented)
     }
 }
@@ -521,13 +536,15 @@ pub use rico_protocol::v4::ConversationType;
 pub type MessageRecordHandle = db::MessageRecordRowID;
 pub use rico_protocol::v4::MessageSequence;
 pub use rico_protocol::v4::RecordSequence;
+pub use rico_protocol::v4::Timestamp;
+#[derive(Debug, PartialEq)]
 pub struct MessageRecord {
     pub conversation_handle: ConversationHandle,
     pub user_handle: UserHandle,
     pub record_sequence: RecordSequence,
     pub message_sequence: MessageSequence,
-    pub create_timestamp: UtcDateTime,
-    pub modify_timestamp: UtcDateTime,
+    pub create_timestamp: Timestamp,
+    pub modify_timestamp: Timestamp,
     pub message_content_salt: Salt,
     pub message_content: MessageContent,
     pub signature: Ed25519Signature,
@@ -1292,7 +1309,7 @@ pub mod test {
         let mut user2_record_seq: i64 = -1;
         let mut user2_message_seq: i64 = -1;
 
-        let now = UtcDateTime::now();
+        let now: Timestamp = Timestamp::try_from(UtcDateTime::now())?;
         //
         // USER 1 - TOMBSTONED MESSAGE
         //
@@ -1360,7 +1377,8 @@ pub mod test {
                 signature,
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             original_signature
         };
         //
@@ -1430,7 +1448,8 @@ pub mod test {
                 signature,
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             original_signature
         };
         //
@@ -1475,7 +1494,8 @@ pub mod test {
                 signature: signature.clone(),
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
 
@@ -1521,7 +1541,8 @@ pub mod test {
                 signature: signature.clone(),
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
 
@@ -1581,7 +1602,8 @@ pub mod test {
                 signature: signature.clone(),
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
 
@@ -1641,7 +1663,8 @@ pub mod test {
                 signature: signature.clone(),
             };
 
-            let _handle = profile.add_message_record(&message_record)?;
+            let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
 

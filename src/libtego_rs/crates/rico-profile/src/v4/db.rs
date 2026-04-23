@@ -58,7 +58,7 @@ impl_sql_wrapper_type!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
-impl_sql_wrapper_type!(pub struct Timestamp(pub i64));
+type Timestamp = rico_protocol::v4::Timestamp;
 
 type MessageType = rico_protocol::v4::MessageType;
 
@@ -475,8 +475,8 @@ pub fn insert_message_record(
     let user_rowid = message_record.user_handle;
     let record_sequence = message_record.record_sequence;
     let message_sequence = message_record.message_sequence;
-    let create_timestamp = message_record.create_timestamp.unix_timestamp();
-    let modify_timestamp = message_record.modify_timestamp.unix_timestamp();
+    let create_timestamp = message_record.create_timestamp;
+    let modify_timestamp = message_record.modify_timestamp;
     let message_content_salt = &message_record.message_content_salt;
     let message_content_salt_rowid = insert_salt(tx, message_content_salt)?;
     let message_content = &message_record.message_content;
@@ -1123,6 +1123,23 @@ fn select_user_profile_rowid_by_user_rowid(
     Ok(user_profile_rowid)
 }
 
+pub(crate) fn select_message_record(
+    conn: &Connection,
+    message_record_rowid: MessageRecordRowID,
+) -> Result<profile::MessageRecord, Error> {
+    let mut stmt = conn.prepare(
+        "SELECT *
+        FROM message_records_view WHERE mr_rowid = ?1",
+    )?;
+    let mut rows = stmt.query(params![message_record_rowid])?;
+    if let Some(row) = rows.next()? {
+        let message_record = message_record_from_row(row)?;
+        Ok(message_record)
+    } else {
+        Err(rusqlite::Error::QueryReturnedNoRows)?
+    }
+}
+
 pub(crate) fn select_message_records_from_conversation(
     conn: &Connection,
     conversation_rowid: ConversationRowID,
@@ -1159,8 +1176,8 @@ pub(crate) fn select_message_records_from_conversation(
         stmt.raw_bind_parameter(param_index, limit as i64)?;
     }
 
-    let mut result: Vec<profile::MessageRecord> = Default::default();
     let mut rows = stmt.raw_query();
+    let mut result: Vec<profile::MessageRecord> = Default::default();
     while let Some(row) = rows.next()? {
         result.push(message_record_from_row(row)?);
     }
@@ -1208,8 +1225,8 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(16)?,
     );
 
-    let create_timestamp = UtcDateTime::from_unix_timestamp(create_timestamp.0)?;
-    let modify_timestamp = UtcDateTime::from_unix_timestamp(modify_timestamp.0)?;
+    let create_timestamp = create_timestamp.into();
+    let modify_timestamp = modify_timestamp.into();
     let message_content_salt = profile::Salt(message_content_salt);
 
     let message_content = match (
