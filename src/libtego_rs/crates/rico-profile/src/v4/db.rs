@@ -1140,6 +1140,22 @@ pub(crate) fn select_message_record(
     }
 }
 
+pub(crate) fn select_message_record_rowid(
+    conn: &Connection,
+    conversation_rowid: ConversationRowID,
+    user_rowid: UserRowID,
+    record_sequence: profile::RecordSequence,
+) -> Result<MessageRecordRowID, Error> {
+    let rowid = conn.query_one(
+        "SELECT rowid
+        FROM message_records
+        WHERE conversation_rowid = ?1 AND user_rowid = ?2 AND record_sequence = ?3",
+        params![conversation_rowid, user_rowid, record_sequence],
+        |row| row.get::<_, MessageRecordRowID>(0),
+    )?;
+    Ok(rowid)
+}
+
 pub(crate) fn select_message_records_from_conversation(
     conn: &Connection,
     conversation_rowid: ConversationRowID,

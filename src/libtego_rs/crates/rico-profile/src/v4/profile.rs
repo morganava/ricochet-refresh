@@ -365,11 +365,16 @@ impl Profile {
     /// Find the `MessageRecordHandle` of an entry with a particular `(Conversationhandle, UserHandle, RecordSequence)` tuple
     pub fn get_message_record_handle(
         &self,
-        _conversation_handle: ConversationHandle,
-        _user_handle: UserHandle,
-        _record_sequence: RecordSequence,
+        conversation_handle: ConversationHandle,
+        user_handle: UserHandle,
+        record_sequence: RecordSequence,
     ) -> Result<MessageRecordHandle, Error> {
-        Err(Error::NotImplemented)
+        db::select_message_record_rowid(
+            &self.conn,
+            conversation_handle,
+            user_handle,
+            record_sequence,
+        )
     }
 
     /// Replace a `MessageRecord` (e.g. for tombstoning)
@@ -1314,8 +1319,13 @@ pub mod test {
         // USER 1 - TOMBSTONED MESSAGE
         //
         let user1_message1_sig = {
+            let user_handle = user1_handle;
+
             user1_record_seq += 1;
             user1_message_seq += 1;
+
+            let record_sequence = RecordSequence(user1_record_seq);
+            let message_sequence = MessageSequence(user1_message_seq);
 
             // Original content the first text message from user1
             let original_message_content_salt = Salt::generate()?;
@@ -1331,8 +1341,8 @@ pub mod test {
                 None,
                 &conversation_key,
                 &user1_id_pub,
-                RecordSequence(1),
-                MessageSequence(1),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &original_message_content_salt,
@@ -1355,8 +1365,8 @@ pub mod test {
                 None,
                 &conversation_key,
                 &user1_id_pub,
-                RecordSequence(user1_record_seq),
-                MessageSequence(user1_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1367,9 +1377,9 @@ pub mod test {
 
             let message_record = MessageRecord {
                 conversation_handle,
-                user_handle: user1_handle,
-                record_sequence: RecordSequence(user1_record_seq),
-                message_sequence: MessageSequence(user1_message_seq),
+                user_handle,
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1378,6 +1388,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             original_signature
         };
@@ -1385,8 +1403,13 @@ pub mod test {
         // USER 2 - TOMBSTONED MESSAGE
         //
         let user2_message1_sig = {
+            let user_handle = user2_handle;
+
             user2_record_seq += 1;
             user2_message_seq += 1;
+
+            let record_sequence = RecordSequence(user2_record_seq);
+            let message_sequence = MessageSequence(user2_message_seq);
 
             // Reference the first text message from user2
             let original_message_content_salt = Salt::generate()?;
@@ -1402,8 +1425,8 @@ pub mod test {
                 None,
                 &conversation_key,
                 &user2_id_pub,
-                RecordSequence(1),
-                MessageSequence(1),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &original_message_content_salt,
@@ -1426,8 +1449,8 @@ pub mod test {
                 None,
                 &conversation_key,
                 &user2_id_pub,
-                RecordSequence(user2_record_seq),
-                MessageSequence(user2_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1439,8 +1462,8 @@ pub mod test {
             let message_record = MessageRecord {
                 conversation_handle,
                 user_handle: user2_handle,
-                record_sequence: RecordSequence(user2_record_seq),
-                message_sequence: MessageSequence(user2_message_seq),
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1449,6 +1472,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             original_signature
         };
@@ -1456,7 +1487,12 @@ pub mod test {
         // USER 1 - TEXT MESSAGE
         //
         let user1_message2_sig = {
+            let user_handle = user1_handle;
+
             user1_record_seq += 1;
+
+            let record_sequence = RecordSequence(user1_record_seq);
+            let message_sequence = MessageSequence(user1_message_seq);
 
             let message_content_salt = Salt::generate()?;
             let message_content = MessageContent::Text {
@@ -1472,8 +1508,8 @@ pub mod test {
                 Some(&user1_message1_sig),
                 &conversation_key,
                 &user1_id_pub,
-                RecordSequence(user1_record_seq),
-                MessageSequence(user1_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1484,9 +1520,9 @@ pub mod test {
 
             let message_record = MessageRecord {
                 conversation_handle,
-                user_handle: user1_handle,
-                record_sequence: RecordSequence(user1_record_seq),
-                message_sequence: MessageSequence(user1_message_seq),
+                user_handle,
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1495,6 +1531,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
@@ -1503,7 +1547,12 @@ pub mod test {
         // USER 2 - TEXT MESSAGE
         //
         let user2_message2_sig = {
+            let user_handle = user2_handle;
+
             user2_record_seq += 1;
+
+            let record_sequence = RecordSequence(user2_record_seq);
+            let message_sequence = MessageSequence(user2_message_seq);
 
             let message_content_salt = Salt::generate()?;
             let message_content = MessageContent::Text {
@@ -1519,8 +1568,8 @@ pub mod test {
                 Some(&user2_message1_sig),
                 &conversation_key,
                 &user2_id_pub,
-                RecordSequence(user2_record_seq),
-                MessageSequence(user2_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1531,9 +1580,9 @@ pub mod test {
 
             let message_record = MessageRecord {
                 conversation_handle,
-                user_handle: user2_handle,
-                record_sequence: RecordSequence(user2_record_seq),
-                message_sequence: MessageSequence(user2_message_seq),
+                user_handle,
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1542,6 +1591,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
@@ -1550,8 +1607,13 @@ pub mod test {
         // USER 1 - FILE SHARE MESSAGE
         //
         let _user1_message3_sig = {
+            let user_handle = user1_handle;
+
             user1_record_seq += 1;
             user1_message_seq += 1;
+
+            let record_sequence = RecordSequence(user1_record_seq);
+            let message_sequence = MessageSequence(user1_message_seq);
 
             let file_data_salt = Salt::generate()?;
             let file_contents = b"This is test file data";
@@ -1580,8 +1642,8 @@ pub mod test {
                 Some(&user1_message2_sig),
                 &conversation_key,
                 &user1_id_pub,
-                RecordSequence(user1_record_seq),
-                MessageSequence(user1_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1592,9 +1654,9 @@ pub mod test {
 
             let message_record = MessageRecord {
                 conversation_handle,
-                user_handle: user1_handle,
-                record_sequence: RecordSequence(user1_record_seq),
-                message_sequence: MessageSequence(user1_message_seq),
+                user_handle,
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1603,6 +1665,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
@@ -1611,8 +1681,13 @@ pub mod test {
         // USER 2 - FILE SHARE MESSAGE
         //
         let _user2_message3_sig = {
+            let user_handle = user2_handle;
+
             user2_record_seq += 1;
             user2_message_seq += 1;
+
+            let record_sequence = RecordSequence(user2_record_seq);
+            let message_sequence = MessageSequence(user2_message_seq);
 
             let file_data_salt = Salt::generate()?;
             let file_contents = b"Another test file";
@@ -1641,8 +1716,8 @@ pub mod test {
                 Some(&user2_message2_sig),
                 &conversation_key,
                 &user2_id_pub,
-                RecordSequence(user2_record_seq),
-                MessageSequence(user2_message_seq),
+                record_sequence,
+                message_sequence,
                 now,
                 now,
                 &message_content_salt,
@@ -1653,9 +1728,9 @@ pub mod test {
 
             let message_record = MessageRecord {
                 conversation_handle,
-                user_handle: user2_handle,
-                record_sequence: RecordSequence(user2_record_seq),
-                message_sequence: MessageSequence(user2_message_seq),
+                user_handle,
+                record_sequence,
+                message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
@@ -1664,6 +1739,14 @@ pub mod test {
             };
 
             let handle = profile.add_message_record(&message_record)?;
+            assert_eq!(
+                handle,
+                profile.get_message_record_handle(
+                    conversation_handle,
+                    user_handle,
+                    record_sequence
+                )?
+            );
             assert_eq!(message_record, profile.get_message_record(handle)?);
             signature
         };
