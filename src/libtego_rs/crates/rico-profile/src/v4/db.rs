@@ -477,9 +477,9 @@ pub fn insert_message_record(
     let message_sequence = message_record.message_sequence;
     let create_timestamp = message_record.create_timestamp;
     let modify_timestamp = message_record.modify_timestamp;
-    let message_content_salt = &message_record.message_content_salt;
+    let message_content_salt = &message_record.message_content.salt;
     let message_content_salt_rowid = insert_salt(tx, message_content_salt)?;
-    let message_content_data = &message_record.message_content_data;
+    let message_content_data = &message_record.message_content.data;
     let message_content_rowid =
         insert_message_content_data(tx, message_content_salt_rowid, message_content_data)?;
     let signature = &message_record.signature;
@@ -1244,7 +1244,6 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
     let create_timestamp = create_timestamp.into();
     let modify_timestamp = modify_timestamp.into();
     let message_content_salt = profile::Salt(message_content_salt);
-
     let message_content_data = match (
         message_type,
         original_message_content_hash,
@@ -1301,6 +1300,10 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         }
         _ => unreachable!("unexpected message_content_data"),
     };
+    let message_content = profile::MessageContent {
+        salt: message_content_salt,
+        data: message_content_data,
+    };
     let signature = Ed25519Signature::from_raw(&signature)?;
 
     Ok(profile::MessageRecord {
@@ -1310,8 +1313,7 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         message_sequence,
         create_timestamp,
         modify_timestamp,
-        message_content_salt,
-        message_content_data,
+        message_content,
         signature,
     })
 }

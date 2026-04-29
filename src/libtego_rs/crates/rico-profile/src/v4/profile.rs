@@ -550,9 +550,14 @@ pub struct MessageRecord {
     pub message_sequence: MessageSequence,
     pub create_timestamp: Timestamp,
     pub modify_timestamp: Timestamp,
-    pub message_content_salt: Salt,
-    pub message_content_data: MessageContentData,
+    pub message_content: MessageContent,
     pub signature: Ed25519Signature,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MessageContent {
+    pub salt: Salt,
+    pub data: MessageContentData,
 }
 
 pub use rico_protocol::v4::FileSize;
@@ -1372,6 +1377,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
 
             let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
 
@@ -1382,8 +1391,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature,
             };
 
@@ -1456,6 +1464,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
 
             let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
 
@@ -1466,8 +1478,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature,
             };
 
@@ -1515,7 +1526,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
-
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
             let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
 
             let message_record = MessageRecord {
@@ -1525,8 +1539,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature: signature.clone(),
             };
 
@@ -1575,6 +1588,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
 
             let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
 
@@ -1585,8 +1602,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature: signature.clone(),
             };
 
@@ -1649,6 +1665,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
 
             let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
 
@@ -1659,8 +1679,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature: signature.clone(),
             };
 
@@ -1723,6 +1742,10 @@ pub mod test {
                 &message_content_salt,
                 &content_hash,
             )?;
+            let message_content = MessageContent {
+                salt: message_content_salt,
+                data: message_content_data,
+            };
 
             let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
 
@@ -1733,8 +1756,7 @@ pub mod test {
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content_salt,
-                message_content_data,
+                message_content,
                 signature: signature.clone(),
             };
 
