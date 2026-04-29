@@ -518,13 +518,13 @@ fn insert_message_content_data(
     salt_rowid: SaltRowID,
     message_content_data: &profile::MessageContentData,
 ) -> Result<MessageContentDataRowID, Error> {
-    use profile::MessageContentData;
+    use profile::{MessageContentData, TombstoneData};
     let (message_type, tombstone_message_rowid, text_message_rowid, file_share_message_rowid) =
         match message_content_data {
-            MessageContentData::Tombstone {
+            MessageContentData::Tombstone(TombstoneData {
                 original_message_content_hash,
                 original_message_record_signature,
-            } => {
+            }) => {
                 let rowid = insert_tombstone_message(
                     tx,
                     original_message_content_hash,
@@ -1267,10 +1267,10 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
             let original_message_content_hash = profile::Sha256Sum(original_message_content_hash);
             let original_message_record_signature =
                 Ed25519Signature::from_raw(&original_message_record_signature)?;
-            profile::MessageContentData::Tombstone {
+            profile::MessageContentData::Tombstone(profile::TombstoneData {
                 original_message_content_hash,
                 original_message_record_signature,
-            }
+            })
         }
         (MessageType::Text, None, None, Some(text), None, None, None, None) => {
             profile::MessageContentData::Text { text }

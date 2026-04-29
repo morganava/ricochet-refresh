@@ -562,6 +562,7 @@ pub struct MessageContent {
 
 pub use rico_protocol::v4::FileSize;
 pub use rico_protocol::v4::MessageContentData;
+pub use rico_protocol::v4::TombstoneData;
 
 //
 // Salt
@@ -1356,10 +1357,10 @@ pub mod test {
             let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstone {
+            let message_content_data = MessageContentData::Tombstone(TombstoneData {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
-            };
+            });
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
@@ -1443,10 +1444,10 @@ pub mod test {
             let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstone {
+            let message_content_data = MessageContentData::Tombstone(TombstoneData {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
-            };
+            });
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
