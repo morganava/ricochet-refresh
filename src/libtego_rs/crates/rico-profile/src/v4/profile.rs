@@ -551,12 +551,12 @@ pub struct MessageRecord {
     pub create_timestamp: Timestamp,
     pub modify_timestamp: Timestamp,
     pub message_content_salt: Salt,
-    pub message_content: MessageContent,
+    pub message_content_data: MessageContentData,
     pub signature: Ed25519Signature,
 }
 
 pub use rico_protocol::v4::FileSize;
-pub use rico_protocol::v4::MessageContent;
+pub use rico_protocol::v4::MessageContentData;
 
 //
 // Salt
@@ -1329,12 +1329,12 @@ pub mod test {
 
             // Original content the first text message from user1
             let original_message_content_salt = Salt::generate()?;
-            let original_message_content = MessageContent::Text {
+            let original_message_content_data = MessageContentData::Text {
                 text: "Hello from user1".to_string(),
             };
             let original_content_hash = rico_protocol::v4::payload::message_content_hash(
                 &original_message_content_salt,
-                &original_message_content,
+                &original_message_content_data,
             );
 
             let original_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1351,14 +1351,14 @@ pub mod test {
             let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Tombstoned {
+            let message_content_data = MessageContentData::Tombstoned {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1383,7 +1383,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature,
             };
 
@@ -1413,12 +1413,12 @@ pub mod test {
 
             // Reference the first text message from user2
             let original_message_content_salt = Salt::generate()?;
-            let original_message_content = MessageContent::Text {
+            let original_message_content_data = MessageContentData::Text {
                 text: "Hello from user2".to_string(),
             };
             let original_content_hash = rico_protocol::v4::payload::message_content_hash(
                 &original_message_content_salt,
-                &original_message_content,
+                &original_message_content_data,
             );
 
             let original_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1435,14 +1435,14 @@ pub mod test {
             let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Tombstoned {
+            let message_content_data = MessageContentData::Tombstoned {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1467,7 +1467,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature,
             };
 
@@ -1495,13 +1495,13 @@ pub mod test {
             let message_sequence = MessageSequence(user1_message_seq);
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Text {
+            let message_content_data = MessageContentData::Text {
                 text: "Hello from user1".to_string(),
             };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1526,7 +1526,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature: signature.clone(),
             };
 
@@ -1555,13 +1555,13 @@ pub mod test {
             let message_sequence = MessageSequence(user2_message_seq);
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::Text {
+            let message_content_data = MessageContentData::Text {
                 text: "Hello from user2".to_string(),
             };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1586,7 +1586,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature: signature.clone(),
             };
 
@@ -1626,7 +1626,7 @@ pub mod test {
             )?;
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::FileShare {
+            let message_content_data = MessageContentData::FileShare {
                 file_data_salt,
                 file_size,
                 file_data_hash,
@@ -1635,7 +1635,7 @@ pub mod test {
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1660,7 +1660,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature: signature.clone(),
             };
 
@@ -1700,7 +1700,7 @@ pub mod test {
             )?;
 
             let message_content_salt = Salt::generate()?;
-            let message_content = MessageContent::FileShare {
+            let message_content_data = MessageContentData::FileShare {
                 file_data_salt,
                 file_size,
                 file_data_hash,
@@ -1709,7 +1709,7 @@ pub mod test {
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
-                &message_content,
+                &message_content_data,
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
@@ -1734,7 +1734,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content_salt,
-                message_content,
+                message_content_data,
                 signature: signature.clone(),
             };
 

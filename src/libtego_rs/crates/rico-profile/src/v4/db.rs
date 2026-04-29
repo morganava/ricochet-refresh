@@ -47,7 +47,7 @@ impl_sql_wrapper_type!(pub(crate) struct AvatarRowID(pub i64));
 impl_sql_wrapper_type!(pub struct UserRowID(pub i64));
 impl_sql_wrapper_type!(pub struct ConversationRowID(pub i64));
 impl_sql_wrapper_type!(pub struct MessageRecordRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct MessageContentRowID(pub i64));
+impl_sql_wrapper_type!(pub(crate) struct MessageContentDataRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct TombstonedMessageRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct TextMessageRowID(pub i64));
 impl_sql_wrapper_type!(pub(crate) struct FileShareMessageRowID(pub i64));
@@ -148,7 +148,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
           message_sequence INTEGER NOT NULL CHECK(message_sequence >= 0),
           create_timestamp INTEGER NOT NULL,
           modify_timestamp INTEGER NOT NULL CHECK(modify_timestamp >= create_timestamp),
-          message_content_rowid INTEGER NOT NULL UNIQUE REFERENCES message_contents(rowid),
+          message_content_rowid INTEGER NOT NULL UNIQUE REFERENCES message_content_datas(rowid),
           signature_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_signatures(rowid),
           UNIQUE(conversation_rowid, user_rowid, record_sequence)
         );
@@ -178,7 +178,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
           es.value AS mr_signature
         FROM message_records mr
         JOIN conversations c ON mr.conversation_rowid = c.rowid
-        JOIN message_contents mc ON mr.message_content_rowid = mc.rowid
+        JOIN message_content_datas mc ON mr.message_content_rowid = mc.rowid
         JOIN salts mc_salt ON mc.salt_rowid = mc_salt.rowid
         JOIN ed25519_signatures es ON mr.signature_rowid = es.rowid
         LEFT JOIN tombstoned_messages tsm ON mc.tombstoned_message_rowid = tsm.rowid
@@ -189,8 +189,8 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         LEFT JOIN salts fsm_salt ON fsm.file_data_salt_rowid = fsm_salt.rowid
         LEFT JOIN sha256_hashes fsm_hash ON fsm.file_data_hash_rowid = fsm_hash.rowid;
 
-        -- message_contents
-        CREATE TABLE message_contents (
+        -- message_content_datas
+        CREATE TABLE message_content_datas (
           rowid INTEGER PRIMARY KEY AUTOINCREMENT,
           salt_rowid INTEGER NOT NULL REFERENCES salts(rowid),
           message_type INTEGER NOT NULL CHECK(message_type >= 0 AND message_type <= 2),
@@ -479,9 +479,9 @@ pub fn insert_message_record(
     let modify_timestamp = message_record.modify_timestamp;
     let message_content_salt = &message_record.message_content_salt;
     let message_content_salt_rowid = insert_salt(tx, message_content_salt)?;
-    let message_content = &message_record.message_content;
+    let message_content_data = &message_record.message_content_data;
     let message_content_rowid =
-        insert_message_content(tx, message_content_salt_rowid, message_content)?;
+        insert_message_content_data(tx, message_content_salt_rowid, message_content_data)?;
     let signature = &message_record.signature;
     let signature_rowid = insert_ed25519_signature(tx, signature)?;
 
@@ -513,15 +513,15 @@ pub fn insert_message_record(
     Ok(MessageRecordRowID(rowid))
 }
 
-fn insert_message_content(
+fn insert_message_content_data(
     tx: &Transaction<'_>,
     salt_rowid: SaltRowID,
-    message_content: &profile::MessageContent,
-) -> Result<MessageContentRowID, Error> {
-    use profile::MessageContent;
+    message_content_data: &profile::MessageContentData,
+) -> Result<MessageContentDataRowID, Error> {
+    use profile::MessageContentData;
     let (message_type, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid) =
-        match message_content {
-            MessageContent::Tombstoned {
+        match message_content_data {
+            MessageContentData::Tombstoned {
                 original_message_content_hash,
                 original_message_record_signature,
             } => {
@@ -532,11 +532,11 @@ fn insert_message_content(
                 )?;
                 (MessageType::Tombstoned, Some(rowid), None, None)
             }
-            MessageContent::Text { text } => {
+            MessageContentData::Text { text } => {
                 let rowid = insert_text_message(tx, text.as_str())?;
                 (MessageType::Text, None, Some(rowid), None)
             }
-            MessageContent::FileShare {
+            MessageContentData::FileShare {
                 file_data_salt,
                 file_size,
                 file_data_hash,
@@ -553,12 +553,12 @@ fn insert_message_content(
             }
         };
 
-    tx.execute("INSERT INTO message_contents (salt_rowid, message_type, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid) VALUES (?1, ?2, ?3, ?4, ?5)",
+    tx.execute("INSERT INTO message_content_datas (salt_rowid, message_type, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![salt_rowid, message_type, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid])?;
 
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
-    Ok(MessageContentRowID(rowid))
+    Ok(MessageContentDataRowID(rowid))
 }
 
 fn insert_tombstoned_message(
@@ -1245,7 +1245,7 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
     let modify_timestamp = modify_timestamp.into();
     let message_content_salt = profile::Salt(message_content_salt);
 
-    let message_content = match (
+    let message_content_data = match (
         message_type,
         original_message_content_hash,
         original_message_record_signature,
@@ -1268,13 +1268,13 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
             let original_message_content_hash = profile::Sha256Sum(original_message_content_hash);
             let original_message_record_signature =
                 Ed25519Signature::from_raw(&original_message_record_signature)?;
-            profile::MessageContent::Tombstoned {
+            profile::MessageContentData::Tombstoned {
                 original_message_content_hash,
                 original_message_record_signature,
             }
         }
         (MessageType::Text, None, None, Some(text), None, None, None, None) => {
-            profile::MessageContent::Text { text }
+            profile::MessageContentData::Text { text }
         }
         (
             MessageType::FileShare,
@@ -1292,14 +1292,14 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
                 Some(file_path) => Some(file_path.into()),
                 None => None,
             };
-            profile::MessageContent::FileShare {
+            profile::MessageContentData::FileShare {
                 file_data_salt,
                 file_size,
                 file_data_hash,
                 file_path,
             }
         }
-        _ => unreachable!("unexpected message_content"),
+        _ => unreachable!("unexpected message_content_data"),
     };
     let signature = Ed25519Signature::from_raw(&signature)?;
 
@@ -1311,7 +1311,7 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         create_timestamp,
         modify_timestamp,
         message_content_salt,
-        message_content,
+        message_content_data,
         signature,
     })
 }
@@ -1418,15 +1418,15 @@ pub(crate) fn delete_conversation(
     let message_record_foreign_keys_it =
         delete_messages_stmt.query_map(params![conversation_key_rowid], |row| {
             Ok((
-                row.get::<_, MessageContentRowID>(0)?,
+                row.get::<_, MessageContentDataRowID>(0)?,
                 row.get::<_, Ed25519SignatureRowID>(1)?,
             ))
         })?;
 
-    // delete referenced message_contents and ed25519_signature
+    // delete referenced message_content_datas and ed25519_signature
     for message_record_foreign_keys in message_record_foreign_keys_it {
         let (message_content_rowid, signature_rowid) = message_record_foreign_keys?;
-        delete_message_content(tx, message_content_rowid)?;
+        delete_message_content_data(tx, message_content_rowid)?;
         delete_ed25519_signature(tx, signature_rowid)?;
     }
 
@@ -1439,11 +1439,11 @@ pub(crate) fn delete_conversation(
     Ok(())
 }
 
-fn delete_message_content(
+fn delete_message_content_data(
     tx: &Transaction<'_>,
-    message_content_rowid: MessageContentRowID,
+    message_content_rowid: MessageContentDataRowID,
 ) -> Result<(), Error> {
-    let (salt_rowid, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid) = tx.query_one("DELETE FROM message_contents WHERE rowid = ?1 RETURNING salt_rowid, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid", params![message_content_rowid], |row| Ok((
+    let (salt_rowid, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid) = tx.query_one("DELETE FROM message_content_datas WHERE rowid = ?1 RETURNING salt_rowid, tombstoned_message_rowid, text_message_rowid, file_share_message_rowid", params![message_content_rowid], |row| Ok((
             row.get::<_, SaltRowID>(0)?,
             row.get::<_, Option<TombstonedMessageRowID>>(1)?,
             row.get::<_, Option<TextMessageRowID>>(2)?,
