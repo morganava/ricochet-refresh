@@ -378,12 +378,23 @@ impl Profile {
     }
 
     /// Replace a `MessageRecord` (e.g. for tombstoning)
-    pub fn replace_message_record(
+    pub fn tombstone_message_record(
         &mut self,
-        _message_record_handle: MessageRecordHandle,
-        _message_record: &MessageRecord,
+        message_record_handle: MessageRecordHandle,
+        tombstone_message_content_salt: &Salt,
+        original_message_content_hash: &Sha256Sum,
+        new_message_record_signature: &Ed25519Signature,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let tx = self.conn.transaction()?;
+        db::tombstone_message_record(
+            &tx,
+            message_record_handle,
+            tombstone_message_content_salt,
+            original_message_content_hash,
+            new_message_record_signature,
+        )?;
+        tx.commit()?;
+        Ok(())
     }
 
     /// Get `MessageRedcord`s older than a particular time from a conversation
