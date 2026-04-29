@@ -1351,7 +1351,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &original_message_content_salt,
                 &original_content_hash,
             )?;
             let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
@@ -1375,7 +1374,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
@@ -1438,7 +1436,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &original_message_content_salt,
                 &original_content_hash,
             )?;
             let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
@@ -1462,7 +1459,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
@@ -1524,7 +1520,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
@@ -1586,7 +1581,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
@@ -1663,7 +1657,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
@@ -1740,7 +1733,6 @@ pub mod test {
                 message_sequence,
                 now,
                 now,
-                &message_content_salt,
                 &content_hash,
             )?;
             let message_content = MessageContent {
