@@ -1356,7 +1356,7 @@ pub mod test {
             let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstoned {
+            let message_content_data = MessageContentData::Tombstone {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
@@ -1443,7 +1443,7 @@ pub mod test {
             let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
 
             let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstoned {
+            let message_content_data = MessageContentData::Tombstone {
                 original_message_content_hash: original_content_hash,
                 original_message_record_signature: original_signature.clone(),
             };
