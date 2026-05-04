@@ -397,7 +397,7 @@ impl Profile {
         Ok(())
     }
 
-    /// Get `MessageRedcord`s older than a particular time from a conversation
+    /// Get `MessageRecord`s older than a particular time from a conversation
     pub fn get_message_records_from_conversation(
         &self,
         conversation: ConversationHandle,
@@ -1258,7 +1258,7 @@ pub mod test {
         ) = generate_test_keys();
         let (
             user2_id_pub,
-            user2_id_priv,
+            _user2_id_priv,
             user2_remote_ed_pub,
             user2_remote_x_priv,
             user2_local_ed_priv,
@@ -1328,14 +1328,13 @@ pub mod test {
         // Track sequence numbers independently per user
         let mut user1_record_seq: i64 = -1;
         let mut user1_message_seq: i64 = -1;
-        let mut user2_record_seq: i64 = -1;
-        let mut user2_message_seq: i64 = -1;
 
         let now: Timestamp = Timestamp::try_from(UtcDateTime::now())?;
+
         //
-        // USER 1 - TOMBSTONED MESSAGE
+        // User 1 - Send an embarassing text message
         //
-        let user1_message1_sig = {
+        let user1_message_record1 = {
             let user_handle = user1_handle;
 
             user1_record_seq += 1;
@@ -1344,33 +1343,10 @@ pub mod test {
             let record_sequence = RecordSequence(user1_record_seq);
             let message_sequence = MessageSequence(user1_message_seq);
 
-            // Original content the first text message from user1
-            let original_message_content_salt = Salt::generate()?;
-            let original_message_content_data = MessageContentData::Text {
-                text: "Hello from user1".to_string(),
-            };
-            let original_content_hash = rico_protocol::v4::payload::message_content_hash(
-                &original_message_content_salt,
-                &original_message_content_data,
-            );
-
-            let original_payload = rico_protocol::v4::payload::message_record_payload(
-                None,
-                &conversation_key,
-                &user1_id_pub,
-                record_sequence,
-                message_sequence,
-                now,
-                now,
-                &original_content_hash,
-            )?;
-            let original_signature = user1_id_priv.sign_message(original_payload.as_slice());
-
             let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstone(TombstoneData {
-                original_message_content_hash: original_content_hash,
-                original_message_record_signature: original_signature.clone(),
-            });
+            let message_content_data = MessageContentData::Text {
+                text: "A truly embarassing message!".to_string(),
+            };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
                 &message_content_salt,
@@ -1391,7 +1367,6 @@ pub mod test {
                 salt: message_content_salt,
                 data: message_content_data,
             };
-
             let signature = user1_id_priv.sign_message(message_record_payload.as_slice());
 
             let message_record = MessageRecord {
@@ -1402,7 +1377,7 @@ pub mod test {
                 create_timestamp: now,
                 modify_timestamp: now,
                 message_content,
-                signature,
+                signature: signature.clone(),
             };
 
             let handle = profile.add_message_record(&message_record)?;
@@ -1415,97 +1390,85 @@ pub mod test {
                 )?
             );
             assert_eq!(message_record, profile.get_message_record(handle)?);
-            original_signature
+            message_record
         };
         //
-        // USER 2 - TOMBSTONED MESSAGE
+        // User 1 - Edit the first message first by tombstoning and adding an updated message_record
+        // with new text
         //
-        let user2_message1_sig = {
-            let user_handle = user2_handle;
-
-            user2_record_seq += 1;
-            user2_message_seq += 1;
-
-            let record_sequence = RecordSequence(user2_record_seq);
-            let message_sequence = MessageSequence(user2_message_seq);
-
-            // Reference the first text message from user2
-            let original_message_content_salt = Salt::generate()?;
-            let original_message_content_data = MessageContentData::Text {
-                text: "Hello from user2".to_string(),
-            };
-            let original_content_hash = rico_protocol::v4::payload::message_content_hash(
-                &original_message_content_salt,
-                &original_message_content_data,
-            );
-
-            let original_payload = rico_protocol::v4::payload::message_record_payload(
-                None,
-                &conversation_key,
-                &user2_id_pub,
-                record_sequence,
-                message_sequence,
-                now,
-                now,
-                &original_content_hash,
-            )?;
-            let original_signature = user2_id_priv.sign_message(original_payload.as_slice());
-
-            let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Tombstone(TombstoneData {
-                original_message_content_hash: original_content_hash,
-                original_message_record_signature: original_signature.clone(),
-            });
-
-            let content_hash = rico_protocol::v4::payload::message_content_hash(
-                &message_content_salt,
-                &message_content_data,
-            );
-
-            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
-                None,
-                &conversation_key,
-                &user2_id_pub,
-                record_sequence,
-                message_sequence,
-                now,
-                now,
-                &content_hash,
-            )?;
-            let message_content = MessageContent {
-                salt: message_content_salt,
-                data: message_content_data,
-            };
-
-            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
-
-            let message_record = MessageRecord {
+        let _user1_message_record1_tombstone = {
+            // first we tombstone the message record
+            let user_handle = user1_handle;
+            let record_sequence = RecordSequence(user1_record_seq);
+            let message_sequence = MessageSequence(user1_message_seq);
+            let message_record_handle = profile.get_message_record_handle(
                 conversation_handle,
-                user_handle: user2_handle,
+                user_handle,
+                record_sequence,
+            )?;
+            let tombstone_message_content_salt = Salt::generate()?;
+            let original_message_content = &user1_message_record1.message_content;
+            let original_message_content_hash = rico_protocol::v4::payload::message_content_hash(
+                &original_message_content.salt,
+                &original_message_content.data,
+            );
+            let original_message_record_signature = user1_message_record1.signature.clone();
+            // create our new tombstne message content which replaces the original content
+            let tombstone_message_content = MessageContent {
+                salt: tombstone_message_content_salt,
+                data: MessageContentData::Tombstone(TombstoneData {
+                    original_message_content_hash: original_message_content_hash.clone(),
+                    original_message_record_signature,
+                }),
+            };
+            let tombstone_message_content_hash = rico_protocol::v4::payload::message_content_hash(
+                &tombstone_message_content.salt,
+                &tombstone_message_content.data,
+            );
+
+            let tombstone_message_record_payload =
+                rico_protocol::v4::payload::message_record_payload(
+                    None,
+                    &conversation_key,
+                    &user1_id_pub,
+                    record_sequence,
+                    message_sequence,
+                    now,
+                    now,
+                    &tombstone_message_content_hash,
+                )?;
+
+            let tombstone_message_record_signature =
+                user1_id_priv.sign_message(tombstone_message_record_payload.as_slice());
+
+            // tombstone the record
+            profile.tombstone_message_record(
+                message_record_handle,
+                &tombstone_message_content.salt,
+                &original_message_content_hash,
+                &tombstone_message_record_signature,
+            )?;
+
+            // verify correctness
+            let tombstone_message_record = MessageRecord {
+                conversation_handle,
+                user_handle,
                 record_sequence,
                 message_sequence,
                 create_timestamp: now,
                 modify_timestamp: now,
-                message_content,
-                signature,
+                message_content: tombstone_message_content,
+                signature: tombstone_message_record_signature,
             };
-
-            let handle = profile.add_message_record(&message_record)?;
             assert_eq!(
-                handle,
-                profile.get_message_record_handle(
-                    conversation_handle,
-                    user_handle,
-                    record_sequence
-                )?
+                tombstone_message_record,
+                profile.get_message_record(message_record_handle)?
             );
-            assert_eq!(message_record, profile.get_message_record(handle)?);
-            original_signature
         };
         //
-        // USER 1 - TEXT MESSAGE
+        // User 1 - Send a better text message instead
         //
-        let user1_message2_sig = {
+        let user1_message_record2 = {
             let user_handle = user1_handle;
 
             user1_record_seq += 1;
@@ -1515,7 +1478,7 @@ pub mod test {
 
             let message_content_salt = Salt::generate()?;
             let message_content_data = MessageContentData::Text {
-                text: "Hello from user1".to_string(),
+                text: "Hello World!".to_string(),
             };
 
             let content_hash = rico_protocol::v4::payload::message_content_hash(
@@ -1524,7 +1487,7 @@ pub mod test {
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
-                Some(&user1_message1_sig),
+                Some(&user1_message_record1.signature),
                 &conversation_key,
                 &user1_id_pub,
                 record_sequence,
@@ -1560,75 +1523,13 @@ pub mod test {
                 )?
             );
             assert_eq!(message_record, profile.get_message_record(handle)?);
-            signature
+            message_record
         };
 
         //
-        // USER 2 - TEXT MESSAGE
+        // User 1 - Share a file
         //
-        let user2_message2_sig = {
-            let user_handle = user2_handle;
-
-            user2_record_seq += 1;
-
-            let record_sequence = RecordSequence(user2_record_seq);
-            let message_sequence = MessageSequence(user2_message_seq);
-
-            let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::Text {
-                text: "Hello from user2".to_string(),
-            };
-
-            let content_hash = rico_protocol::v4::payload::message_content_hash(
-                &message_content_salt,
-                &message_content_data,
-            );
-
-            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
-                Some(&user2_message1_sig),
-                &conversation_key,
-                &user2_id_pub,
-                record_sequence,
-                message_sequence,
-                now,
-                now,
-                &content_hash,
-            )?;
-            let message_content = MessageContent {
-                salt: message_content_salt,
-                data: message_content_data,
-            };
-
-            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
-
-            let message_record = MessageRecord {
-                conversation_handle,
-                user_handle,
-                record_sequence,
-                message_sequence,
-                create_timestamp: now,
-                modify_timestamp: now,
-                message_content,
-                signature: signature.clone(),
-            };
-
-            let handle = profile.add_message_record(&message_record)?;
-            assert_eq!(
-                handle,
-                profile.get_message_record_handle(
-                    conversation_handle,
-                    user_handle,
-                    record_sequence
-                )?
-            );
-            assert_eq!(message_record, profile.get_message_record(handle)?);
-            signature
-        };
-
-        //
-        // USER 1 - FILE SHARE MESSAGE
-        //
-        let _user1_message3_sig = {
+        let _user1_message_record2 = {
             let user_handle = user1_handle;
 
             user1_record_seq += 1;
@@ -1661,7 +1562,7 @@ pub mod test {
             );
 
             let message_record_payload = rico_protocol::v4::payload::message_record_payload(
-                Some(&user1_message2_sig),
+                Some(&user1_message_record2.signature),
                 &conversation_key,
                 &user1_id_pub,
                 record_sequence,
@@ -1698,89 +1599,13 @@ pub mod test {
                 )?
             );
             assert_eq!(message_record, profile.get_message_record(handle)?);
-            signature
-        };
-
-        //
-        // USER 2 - FILE SHARE MESSAGE
-        //
-        let _user2_message3_sig = {
-            let user_handle = user2_handle;
-
-            user2_record_seq += 1;
-            user2_message_seq += 1;
-
-            let record_sequence = RecordSequence(user2_record_seq);
-            let message_sequence = MessageSequence(user2_message_seq);
-
-            let file_data_salt = Salt::generate()?;
-            let file_contents = b"Another test file";
-            let file_size = FileSize(file_contents.len() as i64);
-
-            let file_data_hash = rico_protocol::v4::payload::file_data_hash(
-                &file_data_salt,
-                file_size,
-                &mut std::io::Cursor::new(file_contents),
-            )?;
-
-            let message_content_salt = Salt::generate()?;
-            let message_content_data = MessageContentData::FileShare {
-                file_data_salt,
-                file_size,
-                file_data_hash,
-                file_path: None,
-            };
-
-            let content_hash = rico_protocol::v4::payload::message_content_hash(
-                &message_content_salt,
-                &message_content_data,
-            );
-
-            let message_record_payload = rico_protocol::v4::payload::message_record_payload(
-                Some(&user2_message2_sig),
-                &conversation_key,
-                &user2_id_pub,
-                record_sequence,
-                message_sequence,
-                now,
-                now,
-                &content_hash,
-            )?;
-            let message_content = MessageContent {
-                salt: message_content_salt,
-                data: message_content_data,
-            };
-
-            let signature = user2_id_priv.sign_message(message_record_payload.as_slice());
-
-            let message_record = MessageRecord {
-                conversation_handle,
-                user_handle,
-                record_sequence,
-                message_sequence,
-                create_timestamp: now,
-                modify_timestamp: now,
-                message_content,
-                signature: signature.clone(),
-            };
-
-            let handle = profile.add_message_record(&message_record)?;
-            assert_eq!(
-                handle,
-                profile.get_message_record_handle(
-                    conversation_handle,
-                    user_handle,
-                    record_sequence
-                )?
-            );
-            assert_eq!(message_record, profile.get_message_record(handle)?);
-            signature
+            message_record
         };
 
         // Verify we can retrieve all messages
         let messages =
             profile.get_message_records_from_conversation(conversation_handle, None, None)?;
-        assert_eq!(messages.len(), 6, "Expected 6 total message records");
+        assert_eq!(messages.len(), 3);
         Ok(())
     }
 }

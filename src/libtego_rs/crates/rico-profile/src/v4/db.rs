@@ -156,7 +156,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         CREATE INDEX idx_message_records_conversation_user_timestamp_sequence ON message_records(conversation_rowid, user_rowid, create_timestamp, message_sequence, record_sequence);
         CREATE INDEX idx_message_records_conversation_timestamp_record ON message_records(conversation_rowid, create_timestamp DESC, record_sequence DESC);
 
-        -- meessage_records_view
+        -- message_records_view
         CREATE VIEW message_records_view AS
         SELECT
           mr.rowid AS mr_rowid,
@@ -188,6 +188,16 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         LEFT JOIN file_share_messages fsm ON mc.file_share_message_rowid = fsm.rowid
         LEFT JOIN salts fsm_salt ON fsm.file_data_salt_rowid = fsm_salt.rowid
         LEFT JOIN sha256_hashes fsm_hash ON fsm.file_data_hash_rowid = fsm_hash.rowid;
+
+        -- message_records_tombstone_view
+        CREATE VIEW message_records_tombstone_view AS
+        SELECT
+          mr.rowid AS mr_rowid,
+          mr.message_content_rowid as mr_message_content_rowid,
+          mr.signature_rowid as mr_signature_rowid,
+          mc.message_type as mc_message_type
+        FROM message_records mr
+        JOIN message_contents mc ON mr.message_content_rowid = mc.rowid;
 
         -- message_contents
         CREATE TABLE message_contents (
@@ -806,10 +816,10 @@ pub(crate) fn tombstone_message_record(
 ) -> Result<(), Error> {
     // first we need the old message_content_rowid and the old signature_rowid for the message_record
     let (original_message_content_rowid, original_message_record_signature_rowid) = tx.query_one(
-        "SELECT message_content_rowid, signature_rowid
-        FROM message_records
-        WHERE rowid = ?1",
-        params![message_record_handle],
+        "SELECT mr_message_content_rowid, mr_signature_rowid
+        FROM message_records_tombstone_view
+        WHERE mr_rowid = ?1 AND mc_message_type != ?2",
+        params![message_record_handle, MessageType::Tombstone],
         |row| {
             Ok((
                 row.get::<_, MessageContentRowID>(0)?,
@@ -845,7 +855,7 @@ pub(crate) fn tombstone_message_record(
     // finally we can delete the old message_content
     delete_message_content(tx, original_message_content_rowid)?;
 
-    Err(Error::NotImplemented)
+    Ok(())
 }
 
 //
