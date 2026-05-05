@@ -1232,7 +1232,7 @@ pub(crate) fn select_message_records_from_conversation(
         query.push_str(" AND mr_create_timestamp < ?");
     }
 
-    query.push_str(" ORDER BY mr_create_timestamp DESC, mr_record_sequence DESC");
+    query.push_str(" ORDER BY mr_create_timestamp ASC, mr_record_sequence ASC");
 
     if limit.is_some() {
         query.push_str(" LIMIT ?");
@@ -1244,8 +1244,55 @@ pub(crate) fn select_message_records_from_conversation(
 
     if let Some(older_than_creation_timestamp) = older_than_creation_timestamp {
         param_index += 1;
-        let older_than_creation_timestamp: i64 = older_than_creation_timestamp.unix_timestamp();
+        let older_than_creation_timestamp = Timestamp::try_from(older_than_creation_timestamp)?;
         stmt.raw_bind_parameter(param_index, older_than_creation_timestamp)?;
+    }
+
+    if let Some(limit) = limit {
+        param_index += 1;
+        stmt.raw_bind_parameter(param_index, limit as i64)?;
+    }
+
+    let mut rows = stmt.raw_query();
+    let mut result: Vec<profile::MessageRecord> = Default::default();
+    while let Some(row) = rows.next()? {
+        result.push(message_record_from_row(row)?);
+    }
+    Ok(result)
+}
+
+pub(crate) fn select_message_records_from_conversation_by_user(
+    conn: &Connection,
+    conversation_rowid: ConversationRowID,
+    user_rowid: UserRowID,
+    older_than_record_sequence: Option<profile::RecordSequence>,
+    limit: Option<u32>,
+) -> Result<Vec<profile::MessageRecord>, Error> {
+    let mut query = String::from(
+        "SELECT *
+        FROM message_records_view WHERE mr_conversation_rowid = ? AND mr_user_rowid = ?",
+    );
+
+    if older_than_record_sequence.is_some() {
+        query.push_str(" AND mr_record_sequence < ?");
+    }
+
+    query.push_str(" ORDER BY mr_record_sequence ASC");
+
+    if limit.is_some() {
+        query.push_str(" LIMIT ?");
+    }
+
+    let mut stmt = conn.prepare(&query)?;
+    let mut param_index = 1;
+    stmt.raw_bind_parameter(param_index, conversation_rowid)?;
+
+    param_index += 1;
+    stmt.raw_bind_parameter(param_index, user_rowid)?;
+
+    if let Some(older_than_record_sequence) = older_than_record_sequence {
+        param_index += 1;
+        stmt.raw_bind_parameter(param_index, older_than_record_sequence)?;
     }
 
     if let Some(limit) = limit {

@@ -415,12 +415,18 @@ impl Profile {
     /// Get a particular user's messages from a conversation
     pub fn get_message_records_from_conversation_by_user(
         &self,
-        _conversation: ConversationHandle,
-        _author: UserHandle,
-        _older_than_record_sequence: Option<RecordSequence>,
-        _limit: Option<u32>,
-    ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        conversation: ConversationHandle,
+        author: UserHandle,
+        older_than_record_sequence: Option<RecordSequence>,
+        limit: Option<u32>,
+    ) -> Result<Vec<MessageRecord>, Error> {
+        db::select_message_records_from_conversation_by_user(
+            &self.conn,
+            conversation,
+            author,
+            older_than_record_sequence,
+            limit,
+        )
     }
 
     /// Get the most recent `RecordSequence` for a given user in a given conversation
@@ -1606,6 +1612,27 @@ pub mod test {
         let messages =
             profile.get_message_records_from_conversation(conversation_handle, None, None)?;
         assert_eq!(messages.len(), 3);
+        for message in &messages {
+            println!("{message:?}");
+        }
+
+        // verify we get the same list of messages when filtering by the author
+        let user1_messages = profile.get_message_records_from_conversation_by_user(
+            conversation_handle,
+            user1_handle,
+            None,
+            None,
+        )?;
+        assert_eq!(messages, user1_messages);
+
+        let user2_messages = profile.get_message_records_from_conversation_by_user(
+            conversation_handle,
+            user2_handle,
+            None,
+            None,
+        )?;
+        assert!(user2_messages.is_empty());
+
         Ok(())
     }
 }
