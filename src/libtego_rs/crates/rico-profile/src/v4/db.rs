@@ -1308,6 +1308,24 @@ pub(crate) fn select_message_records_from_conversation_by_user(
     Ok(result)
 }
 
+pub(crate) fn select_newest_record_sequence_in_conversation_by_user(
+    conn: &Connection,
+    conversation_rowid: ConversationRowID,
+    user_rowid: UserRowID,
+) -> Result<profile::RecordSequence, Error> {
+    let record_sequence = conn.query_one(
+        "SELECT record_sequence
+        FROM message_records
+        WHERE conversation_rowid = ?1 AND user_rowid = ?2
+        ORDER BY record_sequence DESC
+        LIMIT 1",
+        params![conversation_rowid, user_rowid],
+        |row| row.get::<_, profile::RecordSequence>(0),
+    )?;
+
+    Ok(record_sequence)
+}
+
 /// Convert Row from a SELECT * query from message_records_view table
 /// to Vec<MessageRecord>
 fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRecord, Error> {

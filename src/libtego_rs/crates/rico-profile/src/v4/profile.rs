@@ -432,10 +432,10 @@ impl Profile {
     /// Get the most recent `RecordSequence` for a given user in a given conversation
     pub fn get_newest_record_sequence_in_converation(
         &self,
-        _conversation: ConversationHandle,
-        _author: UserHandle,
-    ) -> Result<Option<RecordSequence>, Error> {
-        Err(Error::NotImplemented)
+        conversation: ConversationHandle,
+        author: UserHandle,
+    ) -> Result<RecordSequence, Error> {
+        db::select_newest_record_sequence_in_conversation_by_user(&self.conn, conversation, author)
     }
 }
 
@@ -1625,6 +1625,7 @@ pub mod test {
         )?;
         assert_eq!(messages, user1_messages);
 
+        // verify user2 has no messages
         let user2_messages = profile.get_message_records_from_conversation_by_user(
             conversation_handle,
             user2_handle,
@@ -1632,6 +1633,17 @@ pub mod test {
             None,
         )?;
         assert!(user2_messages.is_empty());
+
+        // verify the newest known record seq is correctly determined
+        assert_eq!(
+            profile.get_newest_record_sequence_in_converation(conversation_handle, user1_handle)?,
+            RecordSequence(user1_record_seq)
+        );
+
+        // verify user2 has no messages in thsi conversation
+        assert!(profile
+            .get_newest_record_sequence_in_converation(conversation_handle, user2_handle)
+            .is_err(),);
 
         Ok(())
     }
