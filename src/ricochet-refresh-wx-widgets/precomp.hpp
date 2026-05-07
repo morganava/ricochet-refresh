@@ -24,3 +24,6 @@
 #include <wx/uilocale.h>
 #include <wx/valnum.h>
 #include <wx/wx.h>
+
+// tego-rs
+#include <tego/tego.hpp>

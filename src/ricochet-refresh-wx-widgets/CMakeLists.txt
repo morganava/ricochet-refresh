@@ -91,7 +91,8 @@ target_precompile_headers(ricochet-refresh-wx-widgets PRIVATE precomp.hpp)
 
 target_include_directories(ricochet-refresh-wx-widgets PRIVATE ${wxWidgets_INCLUDE_DIRS})
 target_include_directories(ricochet-refresh-wx-widgets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(ricochet-refresh-wx-widgets ${wxWidgets_LIBRARIES})
+target_link_libraries(ricochet-refresh-wx-widgets PRIVATE ${wxWidgets_LIBRARIES})
+target_link_libraries(ricochet-refresh-wx-widgets PRIVATE tego_rs)
 
 #
 # Localisation
