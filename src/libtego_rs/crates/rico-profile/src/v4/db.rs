@@ -67,8 +67,7 @@ type MessageType = rico_protocol::v4::MessageType;
 //
 
 pub(super) fn set_password(conn: &Connection, password: &str) -> Result<(), Error> {
-    conn.pragma_update(None, "key", password)
-        .map_err(Error::PragmaUpdateFailure)?;
+    conn.pragma_update(None, "key", password)?;
     Ok(())
 }
 
@@ -270,7 +269,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         );
 
         COMMIT;"
-    ).map_err(Error::StatementExecuteFailure)?;
+    )?;
     Ok(())
 }
 
@@ -291,8 +290,7 @@ pub(crate) fn insert_db_version(
             patch
         ) VALUES (?1, ?2, ?3)",
         params![major, minor, patch],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = conn.last_insert_rowid();
     Ok(DBVersionRowID(rowid))
 }
@@ -329,8 +327,7 @@ pub fn insert_user_profile(
             status,
             description
         ],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     Ok(UserProfileRowID(rowid))
 }
@@ -339,8 +336,7 @@ pub fn insert_avatar(tx: &Transaction<'_>, avatar: &profile::Avatar) -> Result<A
     tx.execute(
         "INSERT INTO avatars (value) VALUES (?1)",
         params![avatar.rgba_data],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     Ok(AvatarRowID(rowid))
 }
@@ -438,8 +434,7 @@ pub fn insert_conversation(
     tx.execute(
         "INSERT INTO conversations (conversation_type, conversation_key_rowid) VALUES (?1, ?2)",
         params![conversation_type, conversation_key_rowid],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     let conversation_rowid = ConversationRowID(rowid);
@@ -462,8 +457,7 @@ pub fn insert_conversation_member(
               user_rowid
             ) VALUES (?1, ?2)",
         params![conversation_rowid, user_rowid],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(ConversationRowID(rowid))
@@ -632,8 +626,7 @@ fn insert_sha256_hash(
                 value
             ) VALUES (?1)",
         params![value.0],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(Sha256HashRowID(rowid))
@@ -649,8 +642,7 @@ fn insert_ed25519_private_key(
                 value
             ) VALUES (?1)",
         params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(Ed25519PrivateKeyRowID(rowid))
@@ -666,8 +658,7 @@ fn insert_ed25519_public_key(
                 value
             ) VALUES (?1)",
         params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(Ed25519PublicKeyRowID(rowid))
@@ -683,8 +674,7 @@ fn insert_ed25519_signature(
                 value
             ) VALUES (?1)",
         params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(Ed25519SignatureRowID(rowid))
@@ -700,8 +690,7 @@ fn insert_x25519_private_key(
                 value
             ) VALUES (?1)",
         params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(X25519PrivateKeyRowID(rowid))
@@ -717,8 +706,7 @@ fn insert_x25519_public_key(
                 value
             ) VALUES (?1)",
         params![value],
-    )
-    .map_err(Error::StatementExecuteFailure)?;
+    )?;
     let rowid = tx.last_insert_rowid();
     assert!(rowid > 0);
     Ok(X25519PublicKeyRowID(rowid))

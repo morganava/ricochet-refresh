@@ -6,6 +6,9 @@ use std::str::FromStr;
 use serde::{Deserialize, Deserializer};
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 
+// internal
+use crate::v3::error::Error;
+
 //
 // Profile Raw
 //
@@ -60,17 +63,15 @@ pub struct User {
 }
 
 impl TryFrom<ProfileRaw> for Profile {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: ProfileRaw) -> Result<Self, Self::Error> {
         let private_key =
-            Ed25519PrivateKey::from_key_blob_legacy(value.identity.private_key.as_str())
-                .map_err(|err| err.to_string())?;
+            Ed25519PrivateKey::from_key_blob_legacy(value.identity.private_key.as_str())?;
         let mut users: BTreeMap<V3OnionServiceId, User> = BTreeMap::new();
         if let Some(raw_users) = value.users {
             for (service_id, user) in raw_users.into_iter() {
-                let service_id = V3OnionServiceId::from_string(service_id.as_str())
-                    .map_err(|err| err.to_string())?;
+                let service_id = V3OnionServiceId::from_string(service_id.as_str())?;
                 let nickname = user.nickname;
                 let user_type = user.user_type;
                 users.insert(
@@ -100,9 +101,9 @@ impl<'de> Deserialize<'de> for Profile {
 }
 
 impl FromStr for Profile {
-    type Err = String;
+    type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let result: Profile = serde_json::from_str(s).map_err(|err| err.to_string())?;
+        let result: Profile = serde_json::from_str(s)?;
         Ok(result)
     }
 }

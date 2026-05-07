@@ -68,8 +68,7 @@ impl Profile {
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
 
-        let conn =
-            Connection::open_with_flags(path, open_flags).map_err(Error::DatabaseOpenFailure)?;
+        let conn = Connection::open_with_flags(path, open_flags)?;
 
         // set the our password
         db::set_password(&conn, password)?;
@@ -94,10 +93,8 @@ impl Profile {
     ) -> Result<Profile, Error> {
         // todo, write profile to a temp file and move after successful creation
         let mut profile = Profile::new(path, password)?;
-        let tx = profile
-            .conn
-            .transaction()
-            .map_err(Error::TransactionCreateFailure)?;
+        let tx = profile.conn.transaction()?;
+
         //
         // Add our host user
         //
@@ -201,7 +198,7 @@ impl Profile {
             };
             db::insert_conversation(&tx, &persistent_conversation)?;
         }
-        tx.commit().map_err(Error::TransactionCommitFailure)?;
+        tx.commit()?;
 
         Ok(profile)
     }
@@ -210,8 +207,7 @@ impl Profile {
         let open_flags: OpenFlags =
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
 
-        let conn =
-            Connection::open_with_flags(path, open_flags).map_err(Error::DatabaseOpenFailure)?;
+        let conn = Connection::open_with_flags(path, open_flags)?;
 
         // set password
         db::set_password(&conn, password)?;

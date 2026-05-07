@@ -1,6 +1,7 @@
 set(rico_profile_depends
     Cargo.toml
     src/lib.rs
+    src/v3/error.rs
     src/v3/mod.rs
     src/v3/profile.rs
     src/v4/db.rs
