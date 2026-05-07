@@ -1,5 +1,9 @@
 #pragma once
 
+//
+// Locale-related enums
+//
+
 enum class LayoutDirection {
     LeftToRight,
     RightToLeft,
@@ -11,14 +15,21 @@ enum class Ordering {
     Greater
 };
 
+//
+// Bootstrap-related enums
+//
+
 enum class ConnectionStatus {
     Offline,
     Connecting,
     Online,
 };
 
-// todo: gate InProcessArti on feature gate
+//
+// Settings-related enums
+//
 
+// todo: gate InProcessArti on feature gate
 enum class TorBackend {
     BundledLegacyTor,
     ExternalLegacyTor,
@@ -63,6 +74,10 @@ enum class Settings {
     Interface,
     Connection,
 };
+
+//
+// Conversation-related enums
+//
 
 enum class ContactGroup {
     Connected = 0,
