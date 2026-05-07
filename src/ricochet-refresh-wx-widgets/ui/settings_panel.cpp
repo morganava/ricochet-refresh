@@ -43,9 +43,9 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
 
     auto h_sizer = new wxBoxSizer(wxHORIZONTAL);
     h_sizer->Add(settings_listbox, 0, wxEXPAND);
-    h_sizer->Add(this->general_settings_panel, 1, wxEXPAND | wxALL, Metrics::PADDING_MEDIUM);
-    h_sizer->Add(this->interface_settings_panel, 1, wxEXPAND | wxALL, Metrics::PADDING_MEDIUM);
-    h_sizer->Add(this->connection_settings_panel, 1, wxEXPAND | wxALL, Metrics::PADDING_MEDIUM);
+    h_sizer->Add(this->general_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
+    h_sizer->Add(this->interface_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
+    h_sizer->Add(this->connection_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
     v_sizer->Add(h_sizer, 1, wxEXPAND);
 
     auto button_sizer = new wxStdDialogButtonSizer();
@@ -61,7 +61,7 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
     button_sizer->AddButton(apply_button);
     button_sizer->Realize();
 
-    v_sizer->Add(button_sizer, 0, wxEXPAND | wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
+    v_sizer->Add(button_sizer, 0, wxEXPAND | wxTOP | wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
 
     this->SetSizerAndFit(v_sizer);
 
