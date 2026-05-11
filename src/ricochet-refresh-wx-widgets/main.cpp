@@ -1,20 +1,21 @@
+#include "main.hpp"
+
 #include "locale.hpp"
 #include "strings.hpp"
 #include "ui/main_frame.hpp"
 
-class App: public wxApp {
-public:
-    bool OnInit() override {
-        if (!wxApp::OnInit()) {
-            return false;
-        }
+wxIMPLEMENT_APP(RicochetRefresh);
 
-        Locale::init();
-
-        auto main_frame = new MainFrame();
-        main_frame->Show(true);
-        return true;
+bool RicochetRefresh::OnInit() {
+    if (!wxApp::OnInit()) {
+        return false;
     }
-};
 
-wxIMPLEMENT_APP(App);
+    Locale::init();
+
+    auto main_frame = new MainFrame();
+    main_frame->Show(true);
+    this->main_frame = main_frame;
+
+    return true;
+}

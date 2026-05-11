@@ -33,6 +33,7 @@ set(RICOCHET_REFRESH_SOURCE
     locale.cpp
     locale.hpp
     main.cpp
+    main.hpp
     mock_ffi.cpp
     mock_ffi.hpp
     precomp.hpp
