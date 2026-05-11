@@ -51,14 +51,14 @@ DisconnectedPanel::DisconnectedPanel(wxWindow* parent) : wxPanel(parent) {
 }
 
 void DisconnectedPanel::set_quickstart(bool enabled) {
-    std::cout << "Quickstart: " << (enabled ? "true" : "false") << std::endl;
+    LOG_INFO(fmt::format("Quickstart: {}", enabled));
 }
 
 void DisconnectedPanel::configure() {
     // todo: open the settings panel to the tor
-    std::cout << "Configure" << std::endl;
+    LOG_INFO("Configure");
 }
 
 void DisconnectedPanel::connect() {
-    std::cout << "Connect" << std::endl;
+    LOG_INFO("Connect");
 }

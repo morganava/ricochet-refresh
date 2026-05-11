@@ -52,15 +52,15 @@ std::vector<std::filesystem::path> ConnectedPanel::get_recent_profiles() {
 }
 
 void ConnectedPanel::create_profile() {
-    std::cout << "create profile" << std::endl;
+    LOG_INFO("create profile");
 }
 
 void ConnectedPanel::open_profile() {
-    std::cout << "open profile" << std::endl;
+    LOG_INFO("open profile");
 }
 
 void ConnectedPanel::import_profile() {
-    std::cout << "import profile" << std::endl;
+    LOG_INFO("import profile");
 }
 
 void ConnectedPanel::open_recent_profile(int index) {
@@ -68,7 +68,7 @@ void ConnectedPanel::open_recent_profile(int index) {
     const auto profile_path = std::filesystem::path(profile_path_string);
 
     // todo: load the profile, popup error box if file not found
-    std::cout << "profile_path: " << profile_path << std::endl;
+    LOG_INFO(fmt::format("Profile path: {}", profile_path.string()));
 }
 
 void ConnectedPanel::set_recent_profiles(const std::vector<std::filesystem::path>& profile_paths) {

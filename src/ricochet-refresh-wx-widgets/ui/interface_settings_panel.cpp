@@ -175,32 +175,29 @@ InterfaceSettingsPanel::InterfaceSettingsPanel(wxWindow* parent) :
 }
 
 void InterfaceSettingsPanel::set_interface_language(Language language) {
-    std::cout << "Set Language: ";
-    switch (language) {
-        case Language::System:
-            std::cout << Strings::Enums::Language::system();
-            break;
-        case Language::Arabic:
-            std::cout << Strings::Enums::Language::ar();
-            break;
-        case Language::German:
-            std::cout << Strings::Enums::Language::de();
-            break;
-        case Language::English:
-            std::cout << Strings::Enums::Language::en();
-            break;
-        case Language::Spanish:
-            std::cout << Strings::Enums::Language::es();
-            break;
-        case Language::Dutch:
-            std::cout << Strings::Enums::Language::nl();
-            break;
-    }
-    std::cout << std::endl;
+    const auto language_str = [&]() {
+        switch (language) {
+            case Language::System:
+                return Strings::Enums::Language::system();
+            case Language::Arabic:
+                return Strings::Enums::Language::ar();
+            case Language::German:
+                return Strings::Enums::Language::de();
+            case Language::English:
+                return Strings::Enums::Language::en();
+            case Language::Spanish:
+                return Strings::Enums::Language::es();
+            case Language::Dutch:
+                return Strings::Enums::Language::nl();
+            default:
+                return wxString("unknown");
+        }
+    }();
+    LOG_INFO(fmt::format("Set Language: {}", language_str));
 }
 
 void InterfaceSettingsPanel::set_show_toolbar(bool enabled) {
-    std::cout << "Set Show toolbar: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Show toolbar: {}", enabled));
     if (enabled) {
         this->enable_button_style_controls();
     } else {
@@ -209,42 +206,41 @@ void InterfaceSettingsPanel::set_show_toolbar(bool enabled) {
 }
 
 void InterfaceSettingsPanel::set_button_style(ButtonStyle button_style) {
-    std::cout << "Set Button style: ";
-    switch (button_style) {
-        case ButtonStyle::Icons:
-            std::cout << "Icons";
-            break;
-        case ButtonStyle::Text:
-            std::cout << "Text";
-            break;
-        case ButtonStyle::IconsAndText:
-            std::cout << "Icons and Text";
-            break;
-        case ButtonStyle::IconsBesideText:
-            std::cout << "Icons beside Text";
-            break;
-    }
-    std::cout << std::endl;
+    const auto button_style_str = [&]() {
+        switch (button_style) {
+            case ButtonStyle::Icons:
+                return "Icons";
+            case ButtonStyle::Text:
+                return "Text";
+            case ButtonStyle::IconsAndText:
+                return "Icons and Text";
+            case ButtonStyle::IconsBesideText:
+                return "Icons beside Text";
+            default:
+                return "unknown";
+        }
+    }();
+    LOG_INFO(fmt::format("Set Button Style: {}", button_style_str));
 }
 
 void InterfaceSettingsPanel::set_show_desktop_notifications(bool enabled) {
-    std::cout << "Set Show desktop notifications: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Show desktop notifications: {}", enabled));
 }
 
 void InterfaceSettingsPanel::set_blink_taskbar_icon(bool enabled) {
-    std::cout << "Set Blink taskbar icon: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Blink taskbar icon: {}", enabled));
 }
 
 void InterfaceSettingsPanel::set_enable_audio_notifications(bool enabled) {
-    std::cout << "Set Enable audio notifications: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Enable audio notifications: {}", enabled));
 }
 
 void InterfaceSettingsPanel::set_minimize_instead_of_exit(bool enabled) {
-    std::cout << "Set Minimze instead of exit: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Minimze instead of exit: {}", enabled));
 }
 
 void InterfaceSettingsPanel::set_show_system_tray_icon(bool enabled) {
-    std::cout << "Set Show system tray icon: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Show system tray icon: {}", enabled));
     if (enabled) {
         this->enable_system_tray_icon_controls();
     } else {
@@ -253,7 +249,7 @@ void InterfaceSettingsPanel::set_show_system_tray_icon(bool enabled) {
 }
 
 void InterfaceSettingsPanel::set_minimize_to_system_tray(bool enabled) {
-    std::cout << "Set Minimize to system tray: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Minimize to system tray: {}", enabled));
 }
 
 void InterfaceSettingsPanel::enable_button_style_controls() {

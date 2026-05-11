@@ -54,10 +54,10 @@ void ConnectingPanel::update_progress_bar(unsigned n) {
 
 void ConnectingPanel::view_logs() {
     // todo: open the tor logs pane
-    std::cout << "View Logs" << std::endl;
+    LOG_INFO("View Logs");
 }
 
 void ConnectingPanel::cancel() {
     // todo: cancel bootstrap and send us back to disconnected pane
-    std::cout << "Cancel" << std::endl;
+    LOG_INFO("Cancel");
 }

@@ -25,5 +25,15 @@
 #include <wx/valnum.h>
 #include <wx/wx.h>
 
+// {fmt}
+#ifdef RICOCHET_REFRESH_LOGGING
+    #include <fmt/format.h>
+
+// enable wxString usage with fmt
+inline auto format_as(const wxString& str) {
+    return str.utf8_string();
+}
+#endif
+
 // tego-rs
 #include <tego/tego.hpp>

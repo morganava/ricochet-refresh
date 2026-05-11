@@ -400,23 +400,23 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
 void ConnectionSettingsPanel::set_tor_backend(TorBackend tor_backend) {
     switch (tor_backend) {
         case TorBackend::BundledLegacyTor:
-            std::cout << "Set Backend: Bundled Legacy Tor" << std::endl;
+            LOG_INFO("Set Backend: Bundled Legacy Tor");
             break;
         case TorBackend::ExternalLegacyTor:
-            std::cout << "Set Backend: External Legacy Tor" << std::endl;
+            LOG_INFO("Set Backend: External Legacy Tor");
             break;
         case TorBackend::InProcessArti:
-            std::cout << "Set Backend: In-Process Arti" << std::endl;
+            LOG_INFO("Set Backend: In-Process Arti");
             break;
     }
 }
 
 void ConnectionSettingsPanel::set_connect_automatically(bool enabled) {
-    std::cout << "Set Connect Automatically: " << (enabled ? "true" : "false") << std::endl;
+    LOG_INFO(fmt::format("Set Connect Automatically: : {}", enabled));
 }
 
 void ConnectionSettingsPanel::set_use_bridges(bool enabled) {
-    std::cout << "Set Use Bridges: " << (enabled ? "true" : "false") << std::endl;
+    LOG_INFO(fmt::format("Set Use Bridges: : {}", enabled));
     if (enabled) {
         this->enable_bridge_controls();
         if (this->builtin_bridge_option->GetValue()) {
@@ -436,12 +436,12 @@ void ConnectionSettingsPanel::set_use_bridges(bool enabled) {
 void ConnectionSettingsPanel::set_bridge_type(BridgeType bridge_type) {
     switch (bridge_type) {
         case BridgeType::Builtin:
-            std::cout << "Set BridgeType: Builtin" << std::endl;
+            LOG_INFO("Set BridgeType: Builtin");
             this->enable_builtin_bridge_controls();
             this->disable_custom_bridge_controls();
             break;
         case BridgeType::Custom:
-            std::cout << "Set BridgeType: Custom" << std::endl;
+            LOG_INFO("Set BridgeType: Custom");
             this->disable_builtin_bridge_controls();
             this->enable_custom_bridge_controls();
             break;
@@ -451,19 +451,19 @@ void ConnectionSettingsPanel::set_bridge_type(BridgeType bridge_type) {
 void ConnectionSettingsPanel::set_builtin_bridge(BuiltinBridge builtin_bridge) {
     switch (builtin_bridge) {
         case BuiltinBridge::Obfs4:
-            std::cout << "Set BuiltinBridge: Obfs4" << std::endl;
+            LOG_INFO("Set BuiltinBridge: Obfs4");
             break;
         case BuiltinBridge::Snowflake:
-            std::cout << "Set BuiltinBridge: Snowflake" << std::endl;
+            LOG_INFO("Set BuiltinBridge: Snowflake");
             break;
         case BuiltinBridge::Meek:
-            std::cout << "Set BuiltinBridge: Meek" << std::endl;
+            LOG_INFO("Set BuiltinBridge: Meek");
             break;
     }
 }
 
 void ConnectionSettingsPanel::set_use_proxy(bool enabled) {
-    std::cout << "Set Use Proxy: " << (enabled ? "true" : "false") << std::endl;
+    LOG_INFO(fmt::format("Set Use Proxy: : {}", enabled));
     if (enabled) {
         this->enable_proxy_address_controls();
         const auto& proxy_type = static_cast<ProxyType>(this->proxy_type_combobox->GetSelection());
@@ -481,22 +481,22 @@ void ConnectionSettingsPanel::set_use_proxy(bool enabled) {
 void ConnectionSettingsPanel::set_proxy_type(ProxyType proxy_type) {
     switch (proxy_type) {
         case ProxyType::SOCKS4:
-            std::cout << "Set Proxy Type: SOCKS4" << std::endl;
+            LOG_INFO("Set Proxy Type: SOCKS4");
             this->disable_proxy_authentication_controls();
             break;
         case ProxyType::SOCKS5:
-            std::cout << "Set Proxy Type: SOCKS5" << std::endl;
+            LOG_INFO("Set Proxy Type: SOCKS5");
             this->enable_proxy_authentication_controls();
             break;
         case ProxyType::HTTPS:
-            std::cout << "Set Proxy Type: HTTPS" << std::endl;
+            LOG_INFO("Set Proxy Type: HTTPS");
             this->enable_proxy_authentication_controls();
             break;
     }
 }
 
 void ConnectionSettingsPanel::set_use_firewall(bool enabled) {
-    std::cout << "Set Use Firewall: " << (enabled ? "true" : "false") << std::endl;
+    LOG_INFO(fmt::format("Set Use Firewall: : {}", enabled));
     if (enabled) {
         this->enable_firewall_controls();
     } else {

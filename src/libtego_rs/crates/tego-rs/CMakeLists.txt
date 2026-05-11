@@ -72,6 +72,7 @@ set_target_properties(tego_rs PROPERTIES
 target_include_directories(tego_rs INTERFACE ${tego_rs_include_dir})
 if (ENABLE_RICOCHET_REFRESH_LOGGING)
     target_compile_definitions(tego_rs INTERFACE RICOCHET_REFRESH_LOGGING)
+    target_link_libraries(tego_rs INTERFACE fmt::fmt)
 endif()
 
 # Windows

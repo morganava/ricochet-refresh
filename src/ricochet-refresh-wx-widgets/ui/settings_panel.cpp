@@ -102,13 +102,13 @@ void SettingsPanel::show_connection_settings() {
 }
 
 void SettingsPanel::apply() {
-    std::cout << "Apply Pressed" << std::endl;
+    LOG_INFO("Apply Pressed");
 }
 
 void SettingsPanel::cancel() {
-    std::cout << "Cancel Pressed" << std::endl;
+    LOG_INFO("Cancel Pressed");
 }
 
 void SettingsPanel::ok() {
-    std::cout << "Ok Pressed" << std::endl;
+    LOG_INFO("Ok Pressed");
 }

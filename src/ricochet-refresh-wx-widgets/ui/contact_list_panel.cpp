@@ -181,11 +181,12 @@ void ContactListPanel::set_selected_contact_group_heading_panel(
 
     this->SetFocus();
 
-    std::cout << "Selected ContactGroupHeadingPanel: "
-              << Strings::ContactGroupPanel::group_label(
-                     this->selected_contact_group_heading_panel->get_contact_group()
-                 )
-              << std::endl;
+    LOG_INFO(fmt::format(
+        "Selected ContactGroupHeadingPanel: {}",
+        Strings::ContactGroupPanel::group_label(
+            this->selected_contact_group_heading_panel->get_contact_group()
+        )
+    ));
 }
 
 void ContactListPanel::set_selected_contact_panel(ContactPanel* contact_panel) {
@@ -208,8 +209,8 @@ void ContactListPanel::set_selected_contact_panel(ContactPanel* contact_panel) {
 
     this->SetFocus();
 
-    std::cout << "Selected ContactPanel: " << this->selected_contact_panel->get_nickname()
-              << std::endl;
+    LOG_INFO(fmt::format("Selected ContactPanel: {}", this->selected_contact_panel->get_nickname())
+    );
 }
 
 void ContactListPanel::remove_contact_panel(ContactPanel* contact_panel) {

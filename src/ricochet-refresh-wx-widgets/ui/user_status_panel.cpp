@@ -48,10 +48,9 @@ UserStatusPanel::UserStatusPanel(wxWindow* parent) : wxPanel(parent) {
 }
 
 void UserStatusPanel::on_profile_button_clicked() {
-    std::cout << "Profile Button Pressed" << std::endl;
+    LOG_INFO("Profile Button Pressed");
 }
 
 void UserStatusPanel::set_visibility(Visibility visibility) {
-    std::cout << "Set Visibility: " << Strings::Enums::Visibility::to_string(visibility)
-              << std::endl;
+    LOG_INFO(fmt::format("Set Visibility: {}", Strings::Enums::Visibility::to_string(visibility)));
 }

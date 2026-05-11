@@ -45,9 +45,9 @@ GeneralSettingsPanel::GeneralSettingsPanel(wxWindow* parent) :
 }
 
 void GeneralSettingsPanel::set_start_only_single_instance(bool enabled) {
-    std::cout << "Set Start only single instance: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Start only single instance: : {}", enabled));
 }
 
 void GeneralSettingsPanel::set_check_for_updates(bool enabled) {
-    std::cout << "Set Check for updates on launch: " << (enabled ? "True" : "False") << std::endl;
+    LOG_INFO(fmt::format("Set Check for updates on launch: : {}", enabled));
 }

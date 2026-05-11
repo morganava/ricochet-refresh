@@ -89,9 +89,9 @@ void ConnectionStatusPanel::add_log(const wxString& log_line) {
 }
 
 void ConnectionStatusPanel::copy_tor_logs() {
-    std::cout << "Copy Tor Logs" << std::endl;
+    LOG_INFO("Copy Tor Logs");
 }
 
 void ConnectionStatusPanel::close() {
-    std::cout << "Close" << std::endl;
+    LOG_INFO("Close");
 }
