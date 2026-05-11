@@ -3,6 +3,8 @@
 #include "enums.hpp"
 #include "locale.hpp"
 
+// todo: use fmt::format and positional parameters rather than printf formatting
+
 //clang-format off
 class Strings {
 public:

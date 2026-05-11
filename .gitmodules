@@ -1,6 +1,3 @@
 [submodule "src/extern/fmt"]
 	path = src/extern/fmt
 	url = https://github.com/fmtlib/fmt.git
-[submodule "src/extern/tor"]
-	path = src/extern/tor
-	url = https://gitlab.torproject.org/tpo/core/tor.git

@@ -112,7 +112,7 @@ if (ENABLE_FORMATTING)
 
 endif()
 
-
+add_subdirectory(extern)
 add_subdirectory(libtego_rs)
 option(BUILD_QT_FRONTEND "Build the Qt frontend" ON)
 if (BUILD_QT_FRONTEND)
