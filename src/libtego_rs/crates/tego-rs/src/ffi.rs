@@ -87,7 +87,7 @@ pub struct tego_context;
 ///
 /// All pointers must be properly initialised or NULL
 #[no_mangle]
-pub unsafe extern "C" fn tego_initialize(
+pub unsafe extern "C" fn tego_context_initialize(
     out_context: *mut *mut tego_context,
     error: *mut *mut tego_error,
 ) {
@@ -104,29 +104,6 @@ pub unsafe extern "C" fn tego_initialize(
         } else {
             bail!("");
         }
-        Ok(())
-    })
-}
-
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_uninitialize(
-    context: *mut tego_context,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-
-        let key = context as TegoKey;
-        let mut object_map = get_object_map();
-        match object_map.get(&key) {
-            Some(TegoObject::Context(_)) => object_map.remove(&key),
-            Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
-
         Ok(())
     })
 }
@@ -2320,6 +2297,8 @@ macro_rules! impl_deleter {
         let mut object_map = get_object_map();
         if let Some($tego_object) = object_map.get(&key) {
             object_map.remove(&key);
+        } else {
+            panic!("");
         }
     };
 }
@@ -2327,6 +2306,11 @@ macro_rules! impl_deleter {
 #[no_mangle]
 pub extern "C" fn tego_error_delete(value: *mut tego_error) {
     impl_deleter!(TegoObject::Error(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_delete(value: *mut tego_context) {
+    impl_deleter!(TegoObject::Context(_), value);
 }
 
 #[no_mangle]

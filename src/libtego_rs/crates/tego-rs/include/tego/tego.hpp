@@ -57,6 +57,7 @@ namespace std {\
 }
 
 TEGO_DEFAULT_DELETE_IMPL(tego_error)
+TEGO_DEFAULT_DELETE_IMPL(tego_context)
 TEGO_DEFAULT_DELETE_IMPL(tego_ed25519_private_key)
 TEGO_DEFAULT_DELETE_IMPL(tego_v3_onion_service_id)
 TEGO_DEFAULT_DELETE_IMPL(tego_tor_daemon_config)
