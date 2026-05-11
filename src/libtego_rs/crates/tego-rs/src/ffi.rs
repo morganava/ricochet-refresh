@@ -36,7 +36,6 @@ pub const TEGO_ED25519_KEYBLOB_LENGTH: usize = 99usize;
 /// length of an ed25519 keyblob string including null terminator
 pub const TEGO_ED25519_KEYBLOB_SIZE: usize = TEGO_ED25519_KEYBLOB_LENGTH + 1usize;
 
-pub struct tego_error;
 
 pub(crate) type TegoKey = usize;
 pub(crate) enum TegoObject {
@@ -58,6 +57,8 @@ pub(crate) fn get_object_map<'a>() -> std::sync::MutexGuard<'a, TegoObjectMap> {
         .lock()
         .expect("another thread panicked while holding OBJECT_MAP's mutex")
 }
+
+pub struct tego_error;
 
 /// Get error message form tego_error
 ///
@@ -83,6 +84,11 @@ pub unsafe extern "C" fn tego_error_get_message(error: *const tego_error) -> *co
 
 pub struct tego_context;
 
+/// Initialize a new tego_context
+///
+/// @param out_context : returned context
+/// @param error : filled on error
+///
 /// # Safety
 ///
 /// All pointers must be properly initialised or NULL

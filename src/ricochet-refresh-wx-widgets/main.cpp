@@ -6,7 +6,7 @@
 
 wxIMPLEMENT_APP(RicochetRefresh);
 
-bool RicochetRefresh::OnInit() {
+bool RicochetRefresh::OnInit() try {
     if (!wxApp::OnInit()) {
         return false;
     }
@@ -17,5 +17,11 @@ bool RicochetRefresh::OnInit() {
     main_frame->Show(true);
     this->main_frame = main_frame;
 
+    tego_context_initialize(tego::out(this->context), tego::throw_on_error());
+
     return true;
+
+} catch (std::exception& ex) {
+    LOG_ERROR(ex.what());
+    return false;
 }
