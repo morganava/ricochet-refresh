@@ -33,6 +33,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(ricochet-refresh)
 
+set(RICOCHET_REFRESH_VERSION "3.1.0-alpha.1")
+
 # cmake variables reference: https://cmake.org/cmake/help/v3.17/manual/cmake-variables.7.html
 # define per-platform flags
 if(UNIX AND NOT APPLE)

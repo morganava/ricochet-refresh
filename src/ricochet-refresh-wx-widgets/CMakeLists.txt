@@ -94,6 +94,8 @@ target_include_directories(ricochet-refresh-wx-widgets PRIVATE ${wxWidgets_INCLU
 target_include_directories(ricochet-refresh-wx-widgets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ricochet-refresh-wx-widgets PRIVATE ${wxWidgets_LIBRARIES})
 target_link_libraries(ricochet-refresh-wx-widgets PRIVATE tego_rs)
+target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE RICOCHET_REFRESH_VERSION="${RICOCHET_REFRESH_VERSION}")
+
 #
 # Localisation
 #
