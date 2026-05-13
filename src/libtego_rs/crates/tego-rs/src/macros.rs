@@ -53,6 +53,18 @@ macro_rules! bail_if_not_equal {
 pub(crate) use bail_if_not_equal;
 
 //
+// ffi helpers
+//
+
+macro_rules! raw_to_str {
+    ($ptr:expr, $len:expr) => {{
+        let bytes = unsafe { std::slice::from_raw_parts($ptr as *const u8, $len) };
+        std::str::from_utf8(bytes)
+    }};
+}
+pub(crate) use raw_to_str;
+
+//
 // logging macros
 //
 

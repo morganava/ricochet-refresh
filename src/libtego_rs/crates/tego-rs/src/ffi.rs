@@ -171,8 +171,7 @@ pub unsafe extern "C" fn tego_ed25519_private_key_from_ed25519_keyblob(
         bail_if_null!(out_private_key);
         bail_if_null!(keyblob);
 
-        let keyblob = unsafe { std::slice::from_raw_parts(keyblob as *const u8, keyblob_length) };
-        let keyblob = std::str::from_utf8(keyblob)?;
+        let keyblob = raw_to_str!(keyblob, keyblob_length)?;
 
         let private_key = if let Ok(private_key) = Ed25519PrivateKey::from_key_blob(keyblob) {
             private_key
@@ -262,10 +261,7 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_string_is_valid(
     translate_failures(TEGO_FALSE, error, || -> Result<tego_bool> {
         bail_if_null!(service_id_string);
 
-        let service_id_string = unsafe {
-            std::slice::from_raw_parts(service_id_string as *const u8, service_id_string_length)
-        };
-        let service_id_string = std::str::from_utf8(service_id_string)?;
+        let service_id_string = raw_to_str!(service_id_string, service_id_string_length)?;
 
         if V3OnionServiceId::is_valid(service_id_string) {
             Ok(TEGO_TRUE)
@@ -299,10 +295,7 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_from_string(
         bail_if_null!(out_service_id);
         bail_if_null!(service_id_string);
 
-        let service_id_string = unsafe {
-            std::slice::from_raw_parts(service_id_string as *const u8, service_id_string_length)
-        };
-        let service_id_string = std::str::from_utf8(service_id_string)?;
+        let service_id_string = raw_to_str!(service_id_string, service_id_string_length)?;
 
         let service_id = V3OnionServiceId::from_string(service_id_string)?;
 
@@ -561,10 +554,7 @@ pub unsafe extern "C" fn tego_tor_daemon_config_initialize(
 
         let tor_bin_path = Context::tor_bin_path()?;
 
-        let data_directory = unsafe {
-            std::slice::from_raw_parts(data_directory as *const u8, data_directory_length)
-        };
-        let data_directory = std::str::from_utf8(data_directory)?;
+        let data_directory = raw_to_str!(data_directory, data_directory_length)?;
         let data_directory = PathBuf::from(data_directory);
         let data_directory = std::path::absolute(data_directory)?;
 
@@ -614,8 +604,7 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks4(
         bail_if_equal!(port, 0u16);
 
         // convert args to a proxy config
-        let address = unsafe { std::slice::from_raw_parts(address as *const u8, address_length) };
-        let address = std::str::from_utf8(address)?;
+        let address = raw_to_str!(address, address_length)?;
 
         let proxy_address = if let Ok(address) = Ipv4Addr::from_str(address) {
             let address = SocketAddr::new(IpAddr::V4(address), port);
@@ -693,8 +682,7 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks5(
         bail_if!(password.is_null() && password_length != 0usize);
 
         // convert args to a proxy config
-        let address = unsafe { std::slice::from_raw_parts(address as *const u8, address_length) };
-        let address = std::str::from_utf8(address)?;
+        let address = raw_to_str!(address, address_length)?;
 
         let proxy_address = if let Ok(address) = Ipv4Addr::from_str(address) {
             let address = SocketAddr::new(IpAddr::V4(address), port);
@@ -711,18 +699,14 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks5(
         let username = if username.is_null() || username_length == 0usize {
             None
         } else {
-            let username =
-                unsafe { std::slice::from_raw_parts(username as *const u8, username_length) };
-            let username = std::str::from_utf8(username)?;
+            let username = raw_to_str!(username, username_length)?;
             Some(username.to_string())
         };
 
         let password = if password.is_null() || password_length == 0usize {
             None
         } else {
-            let password =
-                unsafe { std::slice::from_raw_parts(password as *const u8, password_length) };
-            let password = std::str::from_utf8(password)?;
+            let password = raw_to_str!(password, password_length)?;
             Some(password.to_string())
         };
 
@@ -791,8 +775,7 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_https(
         bail_if!(password.is_null() && password_length != 0usize);
 
         // convert args to a proxy config
-        let address = unsafe { std::slice::from_raw_parts(address as *const u8, address_length) };
-        let address = std::str::from_utf8(address)?;
+        let address = raw_to_str!(address, address_length)?;
 
         let proxy_address = if let Ok(address) = Ipv4Addr::from_str(address) {
             let address = SocketAddr::new(IpAddr::V4(address), port);
@@ -809,18 +792,14 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_https(
         let username = if username.is_null() || username_length == 0usize {
             None
         } else {
-            let username =
-                unsafe { std::slice::from_raw_parts(username as *const u8, username_length) };
-            let username = std::str::from_utf8(username)?;
+            let username = raw_to_str!(username, username_length)?;
             Some(username.to_string())
         };
 
         let password = if password.is_null() || password_length == 0usize {
             None
         } else {
-            let password =
-                unsafe { std::slice::from_raw_parts(password as *const u8, password_length) };
-            let password = std::str::from_utf8(password)?;
+            let password = raw_to_str!(password, password_length)?;
             Some(password.to_string())
         };
 
@@ -937,8 +916,7 @@ pub unsafe extern "C" fn tego_pluggable_transport_config_initialize(
         bail_if_null!(option_lengths);
 
         // construct binary path
-        let binary_path = std::slice::from_raw_parts(binary_path as *const u8, binary_path_length);
-        let binary_path = std::str::from_utf8(binary_path)?;
+        let binary_path = raw_to_str!(binary_path, binary_path_length)?;
         let binary_path = std::path::Path::new(binary_path);
         binary_path.canonicalize()?;
 
@@ -949,8 +927,7 @@ pub unsafe extern "C" fn tego_pluggable_transport_config_initialize(
         let mut transport_vec: Vec<String> = Vec::with_capacity(transport_count);
         for (transport, transport_len) in transports.iter().zip(transport_lengths.iter()) {
             bail_if!(transport.is_null());
-            let transport = std::slice::from_raw_parts(*transport as *const u8, *transport_len);
-            let transport = std::str::from_utf8(transport)?;
+            let transport = raw_to_str!(*transport, *transport_len)?;
 
             transport_vec.push(transport.to_string());
         }
@@ -964,8 +941,7 @@ pub unsafe extern "C" fn tego_pluggable_transport_config_initialize(
 
         for (option, option_len) in options.iter().zip(option_lengths.iter()) {
             bail_if!(option.is_null());
-            let option = std::slice::from_raw_parts(*option as *const u8, *option_len);
-            let option = std::str::from_utf8(option)?;
+            let option = raw_to_str!(*option, *option_len)?;
 
             pluggable_transport_config.add_option(option.to_string());
         }
@@ -1083,10 +1059,7 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_bridges(
             for (bridge_line, bridge_line_length) in
                 bridge_lines.iter().zip(bridge_line_lengths.iter())
             {
-                let bridge_line = unsafe {
-                    std::slice::from_raw_parts(*bridge_line as *const u8, *bridge_line_length)
-                };
-                let bridge_line = std::str::from_utf8(bridge_line)?;
+                let bridge_line = raw_to_str!(*bridge_line, *bridge_line_length)?;
                 let bridge_line = BridgeLine::from_str(bridge_line)?;
 
                 bridge_line_vec.push(bridge_line);
@@ -1564,8 +1537,8 @@ pub unsafe extern "C" fn tego_context_send_message(
             None => bail!("not a valid pointer: {:?}", user as *const c_void),
         };
 
-        let message = unsafe { std::slice::from_raw_parts(message as *const u8, message_length) };
-        let message = std::str::from_utf8(message)?.to_string();
+        let message = raw_to_str!(message, message_length)?;
+        let message = message.to_string();
         use rico_protocol::v3::message::chat_channel::MessageText;
         let message: MessageText = message.try_into()?;
 
@@ -1628,9 +1601,7 @@ pub unsafe extern "C" fn tego_context_send_file_transfer_request(
             None => bail!("not a valid pointer: {:?}", user as *const c_void),
         };
 
-        let file_path =
-            unsafe { std::slice::from_raw_parts(file_path as *const u8, file_path_length) };
-        let file_path = std::str::from_utf8(file_path)?.to_string();
+        let file_path = raw_to_str!(file_path, file_path_length)?;
         let file_path = PathBuf::from(file_path);
 
         let (id, file_size) = context.send_file_transfer_request(user, file_path)?;
@@ -1704,9 +1675,7 @@ pub unsafe extern "C" fn tego_context_respond_file_transfer_request(
             tego_file_transfer_response::tego_file_transfer_response_accept => {
                 bail_if_null!(dest_path);
                 bail_if_equal!(dest_path_length, 0usize);
-                let dest_path =
-                    unsafe { std::slice::from_raw_parts(dest_path as *const u8, dest_path_length) };
-                let dest_path = std::str::from_utf8(dest_path)?.to_string();
+                let dest_path = raw_to_str!(dest_path, dest_path_length)?;
                 let dest_path = PathBuf::from(dest_path);
 
                 context.accept_file_transfer_request(user, id, dest_path)?;
@@ -1793,8 +1762,8 @@ pub unsafe extern "C" fn tego_context_send_chat_request(
             None => bail!("not a valid pointer: {:?}", key as *const c_void),
         };
 
-        let message = unsafe { std::slice::from_raw_parts(message as *const u8, message_length) };
-        let message = std::str::from_utf8(message)?.to_string();
+        let message = raw_to_str!(message, message_length)?;
+        let message = message.to_string();
         use rico_protocol::v3::message::contact_request_channel::MessageText;
         let message: MessageText = message.try_into()?;
 
@@ -2362,12 +2331,9 @@ pub unsafe extern "C" fn tego_log_error(message: *const c_char, message_length: 
     if message.is_null() && message_length > 0 {
         panic!("message pointer is null but has non-zero length");
     } else {
-        let message = unsafe { std::slice::from_raw_parts(message as *const u8, message_length) };
-        let message = std::str::from_utf8(message)
-            .expect("message not utf8 encoded")
-            .to_string();
+        let message = raw_to_str!(message, message_length).expect("message not utf8 encoded");
 
-        crate::logger::Logger::log(crate::logger::LogLevel::Error, message);
+        crate::logger::Logger::log(crate::logger::LogLevel::Error, message.to_string());
     }
 }
 
@@ -2383,12 +2349,9 @@ pub unsafe extern "C" fn tego_log_info(message: *const c_char, message_length: u
     if message.is_null() && message_length > 0 {
         panic!("message pointer is null but has non-zero length");
     } else {
-        let message = unsafe { std::slice::from_raw_parts(message as *const u8, message_length) };
-        let message = std::str::from_utf8(message)
-            .expect("message not utf8 encoded")
-            .to_string();
+        let message = raw_to_str!(message, message_length).expect("message not utf8 encoded");
 
-        crate::logger::Logger::log(crate::logger::LogLevel::Info, message);
+        crate::logger::Logger::log(crate::logger::LogLevel::Info, message.to_string());
     }
 }
 
@@ -2421,20 +2384,9 @@ pub unsafe extern "C" fn tego_log_trace(
     if source_path_length == 0usize {
         panic!("source_path_length must be greater than 0");
     } else {
-        let message = unsafe { std::slice::from_raw_parts(message as *const u8, message_length) };
-        let message = std::str::from_utf8(message).expect("message not utf8 encoded");
-
-        let function_name =
-            unsafe { std::slice::from_raw_parts(function_name as *const u8, function_name_length) };
-        let function_name = std::str::from_utf8(function_name)
-            .expect("function_name not utf8 encoded")
-            .to_string();
-
-        let source_path =
-            unsafe { std::slice::from_raw_parts(source_path as *const u8, source_path_length) };
-        let source_path = std::str::from_utf8(source_path)
-            .expect("source_path not utf8 encoded")
-            .to_string();
+        let message = raw_to_str!(message, message_length).expect("message not utf8 encoded");
+        let function_name = raw_to_str!(function_name, function_name_length).expect("function_name not utf8 encoded");
+        let source_path = raw_to_str!(source_path, source_path_length).expect("source_path not utf8 encoded");
 
         crate::logger::Logger::log(
             crate::logger::LogLevel::Trace,
