@@ -1769,6 +1769,7 @@ dependencies = [
  "cbindgen",
  "data-encoding",
  "rico-protocol",
+ "rico-settings",
  "time",
  "tor-interface",
  "which 7.0.3",
