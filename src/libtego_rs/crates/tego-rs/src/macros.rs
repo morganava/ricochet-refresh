@@ -56,6 +56,43 @@ pub(crate) use bail_if_not_equal;
 // ffi helpers
 //
 
+// implement callback setter code block
+macro_rules! impl_callback_setter {
+    ($dest:ident, $context:expr, $callback:expr, $error:expr) => {
+        translate_failures((), $error, || -> Result<()> {
+            let key = $context as TegoKey;
+            match get_object_map().get_mut(&key) {
+                Some(TegoObject::Context(context)) => {
+                    let mut callbacks = context
+                        .callbacks
+                        .lock()
+                        .expect("another thread panicked while holding callback's mutex");
+                    callbacks.$dest = $callback;
+                }
+                Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
+                None => bail!("not a valid pointer: {:?}", key as *const c_void),
+            };
+            Ok(())
+        })
+    };
+}
+pub(crate) use impl_callback_setter;
+
+// implement deleter code block
+macro_rules! impl_deleter {
+    ($tego_object:pat, $value:expr) => {
+        let key = $value as TegoKey;
+        let mut object_map = get_object_map();
+        if let Some($tego_object) = object_map.get(&key) {
+            object_map.remove(&key);
+        } else {
+            panic!("");
+        }
+    };
+}
+pub(crate) use impl_deleter;
+
+// convert unsafe pointer+length to a str&
 macro_rules! raw_to_str {
     ($ptr:expr, $len:expr) => {{
         let bytes = unsafe { std::slice::from_raw_parts($ptr as *const u8, $len) };

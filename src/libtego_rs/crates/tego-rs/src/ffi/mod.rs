@@ -1,0 +1,688 @@
+pub mod context;
+pub mod ed25519_private_key;
+pub mod error;
+#[cfg(feature = "logging")]
+pub mod logger;
+pub mod pluggable_transport_config;
+pub mod settings;
+pub mod tor_daemon_config;
+pub mod user_id;
+pub mod v3_onion_service_id;
+
+// standard
+use std::ffi::{c_char, c_int, c_void};
+
+// extern
+use anyhow::{bail, Result};
+use rico_settings::v4::settings::Settings;
+use tor_interface::censorship_circumvention::PluggableTransportConfig;
+use tor_interface::censorship_circumvention::*;
+use tor_interface::legacy_tor_client::LegacyTorClientConfig;
+use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
+
+// internal
+use crate::context::Context;
+use crate::error::{translate_failures, Error};
+use crate::macros::*;
+use crate::object_map::ObjectMap;
+
+pub(crate) type TegoKey = usize;
+pub(crate) enum TegoObject {
+    Error(Error),
+    Context(Box<Context>),
+    Settings(Settings),
+    Ed25519PrivateKey(Ed25519PrivateKey),
+    V3OnionServiceId(V3OnionServiceId),
+    UserId(V3OnionServiceId),
+    PluggableTransportConfig(PluggableTransportConfig),
+    TorDaemonConfig(LegacyTorClientConfig),
+}
+
+type TegoObjectMap = ObjectMap<TegoObject>;
+
+static OBJECT_MAP: std::sync::Mutex<TegoObjectMap> = std::sync::Mutex::new(TegoObjectMap::new());
+
+pub(crate) fn get_object_map<'a>() -> std::sync::MutexGuard<'a, TegoObjectMap> {
+    OBJECT_MAP
+        .lock()
+        .expect("another thread panicked while holding OBJECT_MAP's mutex")
+}
+
+pub const TEGO_TRUE: i32 = 1;
+pub const TEGO_FALSE: i32 = 0;
+
+/// number of bytes in an ed25519 signature
+pub const TEGO_ED25519_SIGNATURE_SIZE: usize = 64usize;
+/// length of a valid v3 service id string not including null terminator
+pub const TEGO_V3_ONION_SERVICE_ID_LENGTH: usize = 56usize;
+/// length of a v3 service id string including null terminator
+pub const TEGO_V3_ONION_SERVICE_ID_SIZE: usize = TEGO_V3_ONION_SERVICE_ID_LENGTH + 1usize;
+/// length of the ed25519 keyblob string not including null terminator
+pub const TEGO_ED25519_KEYBLOB_LENGTH: usize = 99usize;
+/// length of an ed25519 keyblob string including null terminator
+pub const TEGO_ED25519_KEYBLOB_SIZE: usize = TEGO_ED25519_KEYBLOB_LENGTH + 1usize;
+
+pub type tego_bool = i32;
+pub struct tego_error;
+pub struct tego_context;
+pub struct tego_settings;
+pub struct tego_ed25519_private_key;
+pub struct tego_v3_onion_service_id;
+pub struct tego_user_id;
+
+/// State of the host user's onion service
+#[repr(C)]
+pub enum tego_host_onion_service_state {
+    tego_host_onion_service_state_none,
+    tego_host_onion_service_state_service_added,
+    tego_host_onion_service_state_service_published,
+}
+
+/// TODO: figure out which statuses we need later
+#[repr(C)]
+pub enum tego_user_status {
+    tego_user_status_none,
+    tego_user_status_online,
+    tego_user_status_offline,
+}
+
+/// enum for user type
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub enum tego_user_type {
+    /// the host user
+    tego_user_type_host,
+    /// in host's contact list
+    tego_user_type_allowed,
+    /// users who have added host but the host has not replied yet
+    // todo: remove requesting type
+    tego_user_type_requesting,
+    /// users who have added host but the host has blocked
+    tego_user_type_blocked,
+    /// users the host has added but who have not replied yet
+    tego_user_type_pending,
+    /// user the host has added but who have replied with rejection
+    tego_user_type_rejected,
+}
+
+pub struct tego_tor_daemon_config;
+pub struct tego_pluggable_transport_config;
+
+#[repr(C)]
+pub enum tego_tor_network_status {
+    tego_tor_network_status_unknown,
+    tego_tor_network_status_offline,
+    tego_tor_network_status_ready,
+}
+
+#[repr(C)]
+pub enum tego_tor_bootstrap_tag {
+    tego_tor_bootstrap_tag_invalid = -1,
+    tego_tor_bootstrap_tag_starting,
+    tego_tor_bootstrap_tag_conn_pt,
+    tego_tor_bootstrap_tag_conn_done_pt,
+    tego_tor_bootstrap_tag_conn_proxy,
+    tego_tor_bootstrap_tag_conn_done_proxy,
+    tego_tor_bootstrap_tag_conn,
+    tego_tor_bootstrap_tag_conn_done,
+    tego_tor_bootstrap_tag_handshake,
+    tego_tor_bootstrap_tag_handshake_done,
+    tego_tor_bootstrap_tag_onehop_create,
+    tego_tor_bootstrap_tag_requesting_status,
+    tego_tor_bootstrap_tag_loading_status,
+    tego_tor_bootstrap_tag_loading_keys,
+    tego_tor_bootstrap_tag_requesting_descriptors,
+    tego_tor_bootstrap_tag_loading_descriptors,
+    tego_tor_bootstrap_tag_enough_dirinfo,
+    tego_tor_bootstrap_tag_ap_conn_pt_summary,
+    tego_tor_bootstrap_tag_ap_conn_done_pt,
+    tego_tor_bootstrap_tag_ap_conn_proxy,
+    tego_tor_bootstrap_tag_ap_conn_done_proxy,
+    tego_tor_bootstrap_tag_ap_conn,
+    tego_tor_bootstrap_tag_ap_conn_done,
+    tego_tor_bootstrap_tag_ap_handshake,
+    tego_tor_bootstrap_tag_ap_handshake_done,
+    tego_tor_bootstrap_tag_circuit_create,
+    tego_tor_bootstrap_tag_done,
+
+    tego_tor_bootstrap_tag_count,
+}
+
+impl From<&str> for tego_tor_bootstrap_tag {
+    fn from(value: &str) -> Self {
+        use tego_tor_bootstrap_tag::*;
+        match value {
+            "starting" => tego_tor_bootstrap_tag_starting,
+            "conn_pt" => tego_tor_bootstrap_tag_conn_pt,
+            "conn_done_pt" => tego_tor_bootstrap_tag_conn_done_pt,
+            "conn_proxy" => tego_tor_bootstrap_tag_conn_proxy,
+            "conn_done_proxy" => tego_tor_bootstrap_tag_conn_done_proxy,
+            "conn" => tego_tor_bootstrap_tag_conn,
+            "conn_done" => tego_tor_bootstrap_tag_conn_done,
+            "handshake" => tego_tor_bootstrap_tag_handshake,
+            "handshake_done" => tego_tor_bootstrap_tag_handshake_done,
+            "onehop_create" => tego_tor_bootstrap_tag_onehop_create,
+            "requesting_status" => tego_tor_bootstrap_tag_requesting_status,
+            "loading_status" => tego_tor_bootstrap_tag_loading_status,
+            "loading_keys" => tego_tor_bootstrap_tag_loading_keys,
+            "requesting_descriptors" => tego_tor_bootstrap_tag_requesting_descriptors,
+            "loading_descriptors" => tego_tor_bootstrap_tag_loading_descriptors,
+            "enough_dirinfo" => tego_tor_bootstrap_tag_enough_dirinfo,
+            "ap_conn_pt" => tego_tor_bootstrap_tag_ap_conn_pt_summary,
+            "ap_conn_done_pt" => tego_tor_bootstrap_tag_ap_conn_done_pt,
+            "ap_conn_proxy" => tego_tor_bootstrap_tag_ap_conn_proxy,
+            "ap_conn_done_proxy" => tego_tor_bootstrap_tag_ap_conn_done_proxy,
+            "ap_conn" => tego_tor_bootstrap_tag_ap_conn,
+            "ap_conn_done" => tego_tor_bootstrap_tag_ap_conn_done,
+            "ap_handshake" => tego_tor_bootstrap_tag_ap_handshake,
+            "ap_handshake_done" => tego_tor_bootstrap_tag_ap_handshake_done,
+            "circuit_create" => tego_tor_bootstrap_tag_circuit_create,
+            "done" => tego_tor_bootstrap_tag_done,
+            _ => tego_tor_bootstrap_tag_invalid,
+        }
+    }
+}
+
+/// Get the summary string associated with the given bootstrap tag
+///
+/// @param tag : the tag to get the summary of
+/// @param error : filled on error
+/// @return : utf8 null-terminated summary string, NULL on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_tor_bootstrap_tag_to_summary(
+    tag: tego_tor_bootstrap_tag,
+    error: *mut *mut tego_error,
+) -> *const c_char {
+    translate_failures(std::ptr::null(), error, || -> Result<*const c_char> {
+        use tego_tor_bootstrap_tag::*;
+        let summary = match tag {
+            tego_tor_bootstrap_tag_starting => "Starting\0",
+            tego_tor_bootstrap_tag_conn_pt => "Connecting to pluggable transport\0",
+            tego_tor_bootstrap_tag_conn_done_pt => "Connected to pluggable transport\0",
+            tego_tor_bootstrap_tag_conn_proxy => "Connecting to proxy\0",
+            tego_tor_bootstrap_tag_conn_done_proxy => "Connected to proxy\0",
+            tego_tor_bootstrap_tag_conn => "Connecting to a relay\0",
+            tego_tor_bootstrap_tag_conn_done => "Connected to a relay\0",
+            tego_tor_bootstrap_tag_handshake => "Handshaking with a relay\0",
+            tego_tor_bootstrap_tag_handshake_done => "Handshake with a relay done\0",
+            tego_tor_bootstrap_tag_onehop_create => {
+                "Establishing an encrypted directory connection\0"
+            }
+            tego_tor_bootstrap_tag_requesting_status => "Asking for networkstatus consensus\0",
+            tego_tor_bootstrap_tag_loading_status => "Loading networkstatus consensus\0",
+            tego_tor_bootstrap_tag_loading_keys => "Loading authority key certs\0",
+            tego_tor_bootstrap_tag_requesting_descriptors => "Asking for relay descriptors\0",
+            tego_tor_bootstrap_tag_loading_descriptors => "Loading relay descriptors\0",
+            tego_tor_bootstrap_tag_enough_dirinfo => {
+                "Loaded enough directory info to build circuits\0"
+            }
+            tego_tor_bootstrap_tag_ap_conn_pt_summary => {
+                "Connecting to pluggable transport to build circuits\0"
+            }
+            tego_tor_bootstrap_tag_ap_conn_done_pt => {
+                "Connected to pluggable transport to build circuits\0"
+            }
+            tego_tor_bootstrap_tag_ap_conn_proxy => "Connecting to proxy to build circuits\0",
+            tego_tor_bootstrap_tag_ap_conn_done_proxy => "Connected to proxy to build circuits\0",
+            tego_tor_bootstrap_tag_ap_conn => "Connecting to a relay to build circuits\0",
+            tego_tor_bootstrap_tag_ap_conn_done => "Connected to a relay to build circuits\0",
+            tego_tor_bootstrap_tag_ap_handshake => {
+                "Finishing handshake with a relay to build circuits\0"
+            }
+            tego_tor_bootstrap_tag_ap_handshake_done => {
+                "Handshake finished with a relay to build circuits\0"
+            }
+            tego_tor_bootstrap_tag_circuit_create => "Establishing a Tor circuit\0",
+            tego_tor_bootstrap_tag_done => "Done\0",
+            _ => bail!("unknown tego_tor_bootstrap_tag: {}", tag as c_int),
+        };
+        Ok(summary.as_ptr() as *const c_char)
+    })
+}
+
+/// milliseconds since 1970-01-01T00:00:00 utc.
+pub type tego_time = u64;
+/// unique (per user) message identifier
+pub type tego_message_id = u64;
+/// unique (per user) file transfer identifier
+pub type tego_file_transfer_id = u64;
+/// integer type for file size
+pub type tego_file_size = u64;
+
+#[repr(C)]
+pub enum tego_file_transfer_response {
+    /// proceed with a file transfer
+    tego_file_transfer_response_accept,
+    /// reject the file transfer
+    tego_file_transfer_response_reject,
+}
+
+#[repr(C)]
+pub enum tego_chat_acknowledge {
+    /// allows the user to chat with us
+    tego_chat_acknowledge_accept,
+    // do not allow the user to chat with us
+    tego_chat_acknowledge_reject,
+    // do not allow and reject all future requests
+    tego_chat_acknowledge_block,
+}
+
+//
+// Callbacks for frontend to respond to events
+// Provides no guarantees on what thread they are running on or thread safety
+// All parameters (such as tego_error*) are automatically destroyed after user
+//  callback is invoked, so duplicate/marshall data as necessary
+//
+
+/// Callback fired when the tor daemon's network status changes
+///
+/// @param context : the current tego context
+/// @param status : the new network status
+pub type tego_tor_network_status_changed_callback =
+    Option<extern "C" fn(context: *mut tego_context, status: tego_tor_network_status) -> ()>;
+
+/// Callback fired when tor's bootstrap status changes
+///
+/// @param context : the current tego context
+/// @param progress : the bootstrap progress percent
+/// @param tag : the bootstrap tag
+pub type tego_tor_bootstrap_status_changed_callback = Option<
+    extern "C" fn(context: *mut tego_context, progress: i32, tag: tego_tor_bootstrap_tag) -> (),
+>;
+
+/// Callback fired when a log entry is received from the tor daemon
+///
+/// @param context : the current tego context
+/// @param message : a null-terminated log entry string
+/// @param message_length : length of the message not including null-terminator
+pub type tego_tor_log_received_callback = Option<
+    extern "C" fn(context: *mut tego_context, message: *const c_char, message_length: usize) -> (),
+>;
+
+/// Callback fired when the host user state changes
+///
+/// @param context : the current tego context
+/// @param state : the current host user state
+pub type tego_host_onion_service_state_changed_callback =
+    Option<extern "C" fn(context: *mut tego_context, state: tego_host_onion_service_state) -> ()>;
+
+/// Callback fired when the host receives a chat request from another user
+///
+/// @param context : the current tego context
+/// @param sender : the user that wants to chat
+/// @param message : null-terminated message string received from the requesting user
+/// @param message_length : length of the message not including null-terminator
+pub type tego_chat_request_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        sender: *const tego_user_id,
+        message: *const c_char,
+        message_length: usize,
+    ) -> (),
+>;
+
+/// Callback fired when the host receives a response to their sent chat request
+///
+/// @param context : the current tego context
+/// @param sender : the user responding to our chat request
+/// @param accepted_request : TEGO_TRUE if request accepted, TEGO_FALSE if rejected
+pub type tego_chat_request_response_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        sender: *const tego_user_id,
+        accepted_request: tego_bool,
+    ) -> (),
+>;
+
+/// Callback fired when the host receives a message from another user
+///
+/// @param context : the current tego context
+/// @param sender : the user that sent host the message
+/// @param timestamp : the time the message was sent
+/// @param message_id : id of the message received
+/// @param message : null-terminated message string
+/// @param message_length : length of the message not including null-terminator
+pub type tego_message_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        sender: *const tego_user_id,
+        timestamp: tego_time,
+        message_id: tego_message_id,
+        message: *const c_char,
+        message_length: usize,
+    ) -> (),
+>;
+
+/// Callback fired when a chat message is received and acknowledge
+/// by the recipient
+///
+/// @param context : the current tego context
+/// @param user_id : the user the message was sent to
+/// @param message_id : id of the message being acknowledged
+/// @param message_acked : TEGO_TRUE if acknowledged, TEGO_FALSE if error
+pub type tego_message_acknowledged_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        user_id: *const tego_user_id,
+        message_id: tego_message_id,
+        message_acked: tego_bool,
+    ) -> (),
+>;
+
+/// Callback fired when a user wants to send recipient a file
+///
+/// @param context : the current tego context
+/// @param sender : the user sending the request
+/// @param id : id of the file transfer received
+/// @param file_name : name of the file user wants to send
+/// @param file_name_length : length of file_name not including the null-terminator
+/// @param file_size : size of the file in bytes
+/// @param file_hash : hash of the file
+pub type tego_file_transfer_request_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        sender: *const tego_user_id,
+        id: tego_file_transfer_id,
+        file_name: *const c_char,
+        file_name_length: usize,
+        file_size: tego_file_size,
+    ) -> (),
+>;
+
+/// Callback fired when a file transfer request message is received and
+/// acknowledged by the recipient (not whether the recipient wishes to start
+/// the file transfer)
+///
+/// @param context : the current tego cotext
+/// @param receiver : the user acknowledging our request
+/// @param id : the id of the file transfer that is being acknowledged
+/// @param request_acked : TEGO_TRUE if acknowledged, TEGO_FALSE if error
+pub type tego_file_transfer_request_acknowledged_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        receiver: *const tego_user_id,
+        id: tego_file_transfer_id,
+        request_acked: tego_bool,
+    ) -> (),
+>;
+
+/// Callback fired when the user responds to an file transfer request
+///
+/// @param context : the current tego context
+/// @param receiver : the user accepting or rejecting our request
+/// @param id : the id of the file transfer that is being accepted
+/// @param response : TEGO_TRUE if the recipients wants to recevie
+///  our file, TEGO_FALSE otherwise
+pub type tego_file_transfer_request_response_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        receiver: *const tego_user_id,
+        id: tego_file_transfer_id,
+        response: tego_file_transfer_response,
+    ) -> (),
+>;
+
+#[repr(C)]
+pub enum tego_file_transfer_direction {
+    tego_file_transfer_direction_sending,
+    tego_file_transfer_direction_receiving,
+}
+
+/// Callback fired when file transfer send or receive progress has changed
+/// This callback is fired for both the sender and the receiver
+///
+/// @param context : the current tego context
+/// @param user_id : the user sending/receiving the file
+/// @param id : the file transfer associated with this callback
+/// @param direction : the direction this file is going
+/// @param bytes_complete : number of bytes sent/received
+/// @param bytes_total : the total size of the file
+pub type tego_file_transfer_progress_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        user_id: *const tego_user_id,
+        id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        bytes_complete: tego_file_size,
+        bytes_total: tego_file_size,
+    ) -> (),
+>;
+
+#[repr(C)]
+pub enum tego_file_transfer_result {
+    /// file transfer completed successfully
+    tego_file_transfer_result_success,
+    /// file transfer failed for unknown reason
+    tego_file_transfer_result_failure,
+    /// file transfer was cancelled by one of the participants after it had started
+    tego_file_transfer_result_cancelled,
+    /// file transfer request was rejected by the receiver
+    tego_file_transfer_result_rejected,
+    /// file transfer completed but final file's hash did not match the one advertised
+    tego_file_transfer_result_bad_hash,
+    /// file transfer failed due to connectivity problem
+    tego_file_transfer_result_network_error,
+    /// file transfer failed due to a file system error
+    tego_file_transfer_result_filesystem_error,
+}
+
+/// Callback fired when a file transfer has completed
+/// either successfully or in error
+///
+/// @param context : the current tego context
+/// @param user_id : the user sending/receivintg the file
+/// @param id : the file transfer associated with this callback
+/// @param direction : the direction this file was going
+/// @param result : how the transfer completed
+pub type tego_file_transfer_complete_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        user_id: *const tego_user_id,
+        id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        result: tego_file_transfer_result,
+    ) -> (),
+>;
+
+/// Callback fired when a user's status changes
+///
+/// @param context : the current tego context
+/// @param user : the user whose status has changed
+/// @param status: the user's new status
+pub type tego_user_status_changed_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        user: *const tego_user_id,
+        status: tego_user_status,
+    ) -> (),
+>;
+
+//
+// Setters for various callbacks
+//
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_tor_network_status_changed_callback(
+    context: *mut tego_context,
+    callback: tego_tor_network_status_changed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_tor_network_status_changed, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_tor_bootstrap_status_changed_callback(
+    context: *mut tego_context,
+    callback: tego_tor_bootstrap_status_changed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_tor_bootstrap_status_changed, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_tor_log_received_callback(
+    context: *mut tego_context,
+    callback: tego_tor_log_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_tor_log_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_host_onion_service_state_changed_callback(
+    context: *mut tego_context,
+    callback: tego_host_onion_service_state_changed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(
+        on_host_onion_service_state_changed,
+        context,
+        callback,
+        error
+    );
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_chat_request_received_callback(
+    context: *mut tego_context,
+    callback: tego_chat_request_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_chat_request_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_chat_request_response_received_callback(
+    context: *mut tego_context,
+    callback: tego_chat_request_response_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_chat_request_response_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_message_received_callback(
+    context: *mut tego_context,
+    callback: tego_message_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_message_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_message_acknowledged_callback(
+    context: *mut tego_context,
+    callback: tego_message_acknowledged_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_message_acknowledged, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_received_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_request_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_acknowledged_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_acknowledged_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(
+        on_file_transfer_request_acknowledged,
+        context,
+        callback,
+        error
+    );
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_response_received_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_response_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(
+        on_file_transfer_request_response_received,
+        context,
+        callback,
+        error
+    );
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_progress_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_progress_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_progress, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_complete_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_complete_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_complete, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_user_status_changed_callback(
+    context: *mut tego_context,
+    callback: tego_user_status_changed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_user_status_changed, context, callback, error);
+}
+
+//
+// Destructors for various tego types
+//
+
+#[no_mangle]
+pub extern "C" fn tego_error_delete(value: *mut tego_error) {
+    impl_deleter!(TegoObject::Error(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_delete(value: *mut tego_context) {
+    impl_deleter!(TegoObject::Context(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_ed25519_private_key_delete(value: *mut tego_ed25519_private_key) {
+    impl_deleter!(TegoObject::Ed25519PrivateKey(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_v3_onion_service_id_delete(value: *mut tego_v3_onion_service_id) {
+    impl_deleter!(TegoObject::V3OnionServiceId(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_user_id_delete(value: *mut tego_user_id) {
+    impl_deleter!(TegoObject::UserId(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_pluggable_transport_config_delete(
+    value: *mut tego_pluggable_transport_config,
+) {
+    impl_deleter!(TegoObject::PluggableTransportConfig(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_tor_daemon_config_delete(value: *mut tego_tor_daemon_config) {
+    impl_deleter!(TegoObject::TorDaemonConfig(_), value);
+}
