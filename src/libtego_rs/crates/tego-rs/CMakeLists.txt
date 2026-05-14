@@ -25,6 +25,7 @@ set(tego_rs_sources
     src/macros.rs
     src/object_map.rs
     src/promise.rs
+    src/settings.rs
 )
 
 set(tego_rs_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}tego_rs${CMAKE_STATIC_LIBRARY_SUFFIX}" CACHE STRING "tego-rs static library filename" FORCE

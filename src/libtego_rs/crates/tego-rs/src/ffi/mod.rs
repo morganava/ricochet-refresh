@@ -14,7 +14,6 @@ use std::ffi::{c_char, c_int, c_void};
 
 // extern
 use anyhow::{bail, Result};
-use rico_settings::v4::settings::Settings;
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
 use tor_interface::censorship_circumvention::*;
 use tor_interface::legacy_tor_client::LegacyTorClientConfig;
@@ -25,12 +24,13 @@ use crate::context::Context;
 use crate::error::{translate_failures, Error};
 use crate::macros::*;
 use crate::object_map::ObjectMap;
+use crate::settings::SettingsFile;
 
 pub(crate) type TegoKey = usize;
 pub(crate) enum TegoObject {
     Error(Error),
     Context(Box<Context>),
-    Settings(Settings),
+    Settings(SettingsFile),
     Ed25519PrivateKey(Ed25519PrivateKey),
     V3OnionServiceId(V3OnionServiceId),
     UserId(V3OnionServiceId),
@@ -658,6 +658,11 @@ pub extern "C" fn tego_error_delete(value: *mut tego_error) {
 #[no_mangle]
 pub extern "C" fn tego_context_delete(value: *mut tego_context) {
     impl_deleter!(TegoObject::Context(_), value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
+    impl_deleter!(TegoObject::Settings(_), value);
 }
 
 #[no_mangle]
