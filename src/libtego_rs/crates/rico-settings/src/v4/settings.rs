@@ -160,9 +160,9 @@ pub struct Settings {
 }
 
 impl FromStr for Settings {
-    type Err = String;
+    type Err = crate::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let result: Settings = serde_json::from_str(s).map_err(|err| err.to_string())?;
+        let result: Settings = serde_json::from_str(s)?;
         Ok(result)
     }
 }
@@ -198,7 +198,7 @@ impl Default for Settings {
 }
 
 impl TryFrom<SettingsRaw> for Settings {
-    type Error = String;
+    type Error = crate::Error;
 
     fn try_from(value: SettingsRaw) -> Result<Self, Self::Error> {
         let start_only_single_instance = value.start_only_single_instance;
@@ -217,21 +217,15 @@ impl TryFrom<SettingsRaw> for Settings {
             BridgeConfigRaw::None => None,
             BridgeConfigRaw::Custom(bridge_strings) => {
                 if bridge_strings.is_empty() {
-                    return Err(
-                        "custom bridge_config must contain at least one bridge line".to_string()
-                    );
+                    return Err(Self::Error::ConversionFailed(
+                        "custom bridge_config must contain at least one bridge line",
+                    ));
                 } else {
                     let mut bridge_lines: Vec<BridgeLine> =
                         Vec::with_capacity(bridge_strings.len());
                     for bridge_string in bridge_strings {
-                        match BridgeLine::from_str(bridge_string.as_ref()) {
-                            Ok(bridge_line) => bridge_lines.push(bridge_line),
-                            Err(err) => {
-                                return Err(format!(
-                                    "failed to parse \"{bridge_string}\" as BridgeLine; {err}"
-                                ))
-                            }
-                        }
+                        let bridge_line = BridgeLine::from_str(bridge_string.as_ref())?;
+                        bridge_lines.push(bridge_line);
                     }
                     let first = bridge_lines.remove(0);
                     Some(BridgeConfig::Custom(first, bridge_lines))
@@ -246,8 +240,8 @@ impl TryFrom<SettingsRaw> for Settings {
         let proxy_config = match value.proxy_config {
             ProxyConfigRaw::None => None,
             ProxyConfigRaw::Socks4 { host, port } => {
-                let address = TargetAddr::try_from((host, port)).map_err(|err| err.to_string())?;
-                let config = Socks4ProxyConfig::new(address).map_err(|err| err.to_string())?;
+                let address = TargetAddr::try_from((host, port))?;
+                let config = Socks4ProxyConfig::new(address)?;
                 Some(ProxyConfig::from(config))
             }
             ProxyConfigRaw::Socks5 {
@@ -256,9 +250,8 @@ impl TryFrom<SettingsRaw> for Settings {
                 username,
                 password,
             } => {
-                let address = TargetAddr::try_from((host, port)).map_err(|err| err.to_string())?;
-                let config = Socks5ProxyConfig::new(address, username, password)
-                    .map_err(|err| err.to_string())?;
+                let address = TargetAddr::try_from((host, port))?;
+                let config = Socks5ProxyConfig::new(address, username, password)?;
                 Some(ProxyConfig::from(config))
             }
             ProxyConfigRaw::Https {
@@ -267,9 +260,8 @@ impl TryFrom<SettingsRaw> for Settings {
                 username,
                 password,
             } => {
-                let address = TargetAddr::try_from((host, port)).map_err(|err| err.to_string())?;
-                let config = HttpsProxyConfig::new(address, username, password)
-                    .map_err(|err| err.to_string())?;
+                let address = TargetAddr::try_from((host, port))?;
+                let config = HttpsProxyConfig::new(address, username, password)?;
                 Some(ProxyConfig::from(config))
             }
         };

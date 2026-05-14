@@ -28,11 +28,13 @@ impl From<BuiltInBridge> for BridgeConfig {
 }
 
 impl TryFrom<Vec<BridgeLine>> for BridgeConfig {
-    type Error = &'static str;
+    type Error = crate::Error;
 
     fn try_from(mut value: Vec<BridgeLine>) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            Err("must have at least one BridgeLine")
+            Err(Self::Error::ConversionFailed(
+                "must have at least one BridgeLine",
+            ))
         } else {
             let first = value.remove(0);
             Ok(BridgeConfig::Custom(first, value))
@@ -55,18 +57,22 @@ impl FirewallConfig {
 }
 
 impl TryFrom<Vec<u16>> for FirewallConfig {
-    type Error = String;
+    type Error = crate::Error;
 
     fn try_from(value: Vec<u16>) -> Result<Self, Self::Error> {
         let mut allowed_ports: BTreeSet<u16> = Default::default();
         if value.is_empty() {
-            return Err("must be a non-empty set of valid port values".to_string());
+            return Err(Self::Error::ConversionFailed(
+                "must be a non-empty set of valid port values",
+            ));
         }
         for port in value {
             if port == 0u16 {
-                return Err("must not contain 0".to_string());
+                return Err(Self::Error::ConversionFailed("must not contain 0"));
             } else if !allowed_ports.insert(port) {
-                return Err("must not contain duplicate entries".to_string());
+                return Err(Self::Error::ConversionFailed(
+                    "must not contain duplicate entries",
+                ));
             }
         }
         let allowed_ports = allowed_ports.into_iter().collect();

@@ -248,30 +248,29 @@ impl Default for Settings {
 }
 
 impl FromStr for Settings {
-    type Err = String;
+    type Err = crate::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let result: Settings = serde_json::from_str(s).map_err(|err| err.to_string())?;
+        let result: Settings = serde_json::from_str(s)?;
         Ok(result)
     }
 }
 
 impl TryFrom<SettingsRaw> for Settings {
-    type Error = String;
+    type Error = crate::Error;
 
     fn try_from(value: SettingsRaw) -> Result<Self, Self::Error> {
         // ui
         let ui = value.ui;
         let combined_chat_window = ui.combined_chat_window;
         let language = ui.language;
-        let notification_volume = if ui.notification_volume < 0.0f32
-            || ui.notification_volume > 1.0f32
-        {
-            return Err(
-                "field 'ui.notificationVolume' must be a value from 0.0 through 1.0".to_string(),
-            );
-        } else {
-            ui.notification_volume
-        };
+        let notification_volume =
+            if ui.notification_volume < 0.0f32 || ui.notification_volume > 1.0f32 {
+                return Err(Self::Error::ConversionFailed(
+                    "field 'ui.notificationVolume' must be a value from 0.0 through 1.0",
+                ));
+            } else {
+                ui.notification_volume
+            };
         let play_audio_notification = ui.play_audio_notification;
 
         // tor
@@ -279,32 +278,25 @@ impl TryFrom<SettingsRaw> for Settings {
         let bootstrapped_successfully = tor.bootstrapped_successfully;
         let bridge_config = match (tor.bridge_type, tor.bridge_strings) {
             (BridgeTypeRaw::Custom, None) => {
-                return Err(
-                    "field 'tor.bridgeStrings' is required when field 'tor.bridgeType' is 'custom'"
-                        .to_string(),
-                );
+                return Err(Self::Error::ConversionFailed(
+                    "field 'tor.bridgeStrings' is required when field 'tor.bridgeType' is 'custom'",
+                ));
             }
             (BridgeTypeRaw::Custom, Some(bridge_strings)) => {
                 if bridge_strings.is_empty() {
-                    return Err("field 'tor.bridgeStrings' must not be empty when field 'tor.bridgeType' is 'custom'".to_string());
+                    return Err(Self::Error::ConversionFailed("field 'tor.bridgeStrings' must not be empty when field 'tor.bridgeType' is 'custom'"));
                 } else {
                     let mut bridge_lines: Vec<BridgeLine> = Default::default();
                     for bridge_string in bridge_strings {
-                        match BridgeLine::from_str(bridge_string.as_ref()) {
-                            Ok(bridge_line) => bridge_lines.push(bridge_line),
-                            Err(err) => {
-                                return Err(format!(
-                                    "failed to parse \"{bridge_string}\" as BridgeLine; {err}"
-                                ))
-                            }
-                        }
+                        let bridge_line = BridgeLine::from_str(bridge_string.as_ref())?;
+                        bridge_lines.push(bridge_line);
                     }
                     let first = bridge_lines.remove(0);
                     Some(common::BridgeConfig::Custom(first, bridge_lines))
                 }
             }
             (_, Some(_bridge_strings)) => {
-                return Err("field 'tor.bridgeStrings' may only be present when field 'tor.bridgeType' is 'custom'".to_string());
+                return Err(Self::Error::ConversionFailed("field 'tor.bridgeStrings' may only be present when field 'tor.bridgeType' is 'custom'"));
             }
             (BridgeTypeRaw::Obfs4, None) => {
                 Some(common::BridgeConfig::BuiltIn(common::BuiltInBridge::Obfs4))
@@ -321,26 +313,24 @@ impl TryFrom<SettingsRaw> for Settings {
         let proxy_config = if let Some(proxy_raw) = tor.proxy {
             let host = proxy_raw.address;
             let port = proxy_raw.port;
-            let address = TargetAddr::try_from((host, port)).map_err(|err| err.to_string())?;
+            let address = TargetAddr::try_from((host, port))?;
             match (proxy_raw.proxy_type, proxy_raw.username, proxy_raw.password) {
                 (ProxyTypeRaw::Socks4, None, None) => {
-                    let config = Socks4ProxyConfig::new(address).map_err(|err| err.to_string())?;
+                    let config = Socks4ProxyConfig::new(address)?;
                     Some(ProxyConfig::from(config))
                 }
                 (ProxyTypeRaw::Socks4, Some(_username), _) => {
-                    return Err("field 'tor.proxy.username' may only be present when field 'tor.proxy.type' is 'socks5' or 'https'".to_string());
+                    return Err(Self::Error::ConversionFailed("field 'tor.proxy.username' may only be present when field 'tor.proxy.type' is 'socks5' or 'https'"));
                 }
                 (ProxyTypeRaw::Socks4, None, Some(_password)) => {
-                    return Err("field 'tor.proxy.password' may only be present when field 'tor.proxy.type' is 'socks5' or 'https'".to_string());
+                    return Err(Self::Error::ConversionFailed("field 'tor.proxy.password' may only be present when field 'tor.proxy.type' is 'socks5' or 'https'"));
                 }
                 (ProxyTypeRaw::Socks5, username, password) => {
-                    let config = Socks5ProxyConfig::new(address, username, password)
-                        .map_err(|err| err.to_string())?;
+                    let config = Socks5ProxyConfig::new(address, username, password)?;
                     Some(ProxyConfig::from(config))
                 }
                 (ProxyTypeRaw::Https, username, password) => {
-                    let config = HttpsProxyConfig::new(address, username, password)
-                        .map_err(|err| err.to_string())?;
+                    let config = HttpsProxyConfig::new(address, username, password)?;
                     Some(ProxyConfig::from(config))
                 }
             }
