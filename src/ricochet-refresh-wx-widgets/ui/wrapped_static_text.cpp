@@ -36,13 +36,11 @@ static std::tuple<wxString, wxSize> get_wrapped_string_size(
         }
 
     protected:
-        // cppcheck-suppress unusedFunction
         virtual void OnOutputLine(const wxString& line) {
             this->line_buffer.push_back(line);
             this->size += line.Len();
         }
 
-        // cppcheck-suppress unusedFunction
         virtual void OnNewLine() {
             this->size += 1;
         }

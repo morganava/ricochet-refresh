@@ -10,7 +10,7 @@ private:
     void setup_overlay_panels(wxBoxSizer* sizer);
 
     // Event Handlers
-    void on_exit(wxCommandEvent& event) {
+    void on_exit(wxCommandEvent&) {
         this->Close(true);
     }
 

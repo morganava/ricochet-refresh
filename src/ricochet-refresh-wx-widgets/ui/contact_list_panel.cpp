@@ -67,7 +67,7 @@ void ContactListPanel::add_contact(
     assert(this->contact_map.find(contact_handle) == this->contact_map.end());
 
     auto contact_panel = new ContactPanel(this, contact_handle, nickname, avatar);
-    contact_panel->Bind(wxEVT_LEFT_DOWN, [=, this](wxMouseEvent& event) {
+    contact_panel->Bind(wxEVT_LEFT_DOWN, [=, this](wxMouseEvent&) {
         this->set_selected_contact_panel(contact_panel);
     });
 
