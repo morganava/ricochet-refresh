@@ -7,9 +7,12 @@ public:
     bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
 private:
+    void init_settings();
+
     class MainFrame* main_frame = nullptr;
 
     std::unique_ptr<tego_context> context;
+    std::unique_ptr<tego_settings> settings;
 
     // the config we will load rather than the default
     std::optional<std::filesystem::path> config_to_load = std::nullopt;

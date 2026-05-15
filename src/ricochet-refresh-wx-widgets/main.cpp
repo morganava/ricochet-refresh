@@ -11,6 +11,8 @@ bool RicochetRefresh::OnInit() try {
         return false;
     }
 
+    this->init_settings();
+
     Locale::init();
 
     auto main_frame = new MainFrame();
@@ -25,6 +27,10 @@ bool RicochetRefresh::OnInit() try {
     LOG_ERROR(ex.what());
     return false;
 }
+
+//
+// Override Methods
+//
 
 void RicochetRefresh::OnInitCmdLine(wxCmdLineParser& parser) {
     parser.AddUsageText(
@@ -76,4 +82,25 @@ bool RicochetRefresh::OnCmdLineParsed(wxCmdLineParser& parser) {
     this->profiles_to_load = std::move(profile_paths);
 
     return true;
+}
+
+//
+// Private Methods
+//
+
+void RicochetRefresh::init_settings() {
+    if (this->config_to_load) {
+        const auto& config_path = this->config_to_load->string();
+        const auto config_path_data = config_path.data();
+        const auto config_path_length = config_path.size();
+        tego_settings_load(
+            tego::out(this->settings),
+            config_path_data,
+            config_path_length,
+            tego::throw_on_error()
+        );
+        this->config_to_load = std::nullopt;
+    } else {
+        tego_settings_load_default(tego::out(this->settings), tego::throw_on_error());
+    }
 }
