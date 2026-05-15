@@ -1,9 +1,9 @@
 #include "interface_settings_panel.hpp"
 
 #include "enums.hpp"
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
 
 InterfaceSettingsPanel::InterfaceSettingsPanel(wxWindow* parent) :
     wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {

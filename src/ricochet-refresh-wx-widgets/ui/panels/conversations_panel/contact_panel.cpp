@@ -1,7 +1,7 @@
 #include "contact_panel.hpp"
 
-#include "contact_list_panel.hpp"
-#include "metrics.hpp"
+#include "ui/metrics.hpp"
+#include "ui/panels/conversations_panel/contact_list_panel.hpp"
 
 ContactPanel::ContactPanel(
     ContactListPanel* parent,

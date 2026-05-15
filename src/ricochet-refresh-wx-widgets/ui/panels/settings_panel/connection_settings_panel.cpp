@@ -1,10 +1,10 @@
 #include "connection_settings_panel.hpp"
 
 #include "enums.hpp"
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
-#include "wrapped_static_text.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
+#include "ui/widgets/wrapped_static_text.hpp"
 
 ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {

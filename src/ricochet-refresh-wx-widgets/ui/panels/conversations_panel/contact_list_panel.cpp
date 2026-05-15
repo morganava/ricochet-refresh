@@ -1,13 +1,13 @@
 #include "contact_list_panel.hpp"
 
-#include "contact_group_heading_panel.hpp"
-#include "contact_panel.hpp"
 #include "enums.hpp"
-#include "events.hpp"
 #include "locale.hpp"
-#include "metrics.hpp"
 #include "mock_ffi.hpp"
 #include "strings.hpp"
+#include "ui/events.hpp"
+#include "ui/metrics.hpp"
+#include "ui/panels/conversations_panel/contact_group_heading_panel.hpp"
+#include "ui/panels/conversations_panel/contact_panel.hpp"
 
 using namespace mock;
 

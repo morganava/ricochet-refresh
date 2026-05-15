@@ -1,8 +1,8 @@
 #include "general_settings_panel.hpp"
 
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
 
 GeneralSettingsPanel::GeneralSettingsPanel(wxWindow* parent) :
     wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {

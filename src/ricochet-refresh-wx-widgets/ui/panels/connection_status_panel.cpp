@@ -1,9 +1,9 @@
 #include "connection_status_panel.hpp"
 
 #include "enums.hpp"
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
 
 ConnectionStatusPanel::ConnectionStatusPanel(
     wxWindow* parent,

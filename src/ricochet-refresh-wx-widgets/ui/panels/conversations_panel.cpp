@@ -1,12 +1,12 @@
 #include "conversations_panel.hpp"
 
-#include "chat_panel.hpp"
-#include "contact_list_panel.hpp"
-#include "events.hpp"
-#include "message_entry_panel.hpp"
 #include "mock_ffi.hpp"
 #include "strings.hpp"
-#include "user_status_panel.hpp"
+#include "ui/events.hpp"
+#include "ui/panels/conversations_panel/chat_panel.hpp"
+#include "ui/panels/conversations_panel/contact_list_panel.hpp"
+#include "ui/panels/conversations_panel/message_entry_panel.hpp"
+#include "ui/panels/conversations_panel/user_status_panel.hpp"
 
 ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const ContactHandle> contacts) :
     wxSplitterWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE) {

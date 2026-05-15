@@ -1,16 +1,13 @@
 #include "main_frame.hpp"
 
-#include "bootstrap_panel.hpp"
-#include "connection_settings_panel.hpp"
-#include "connection_status_panel.hpp"
-#include "conversations_panel.hpp"
 #include "enums.hpp"
-#include "general_settings_panel.hpp"
-#include "interface_settings_panel.hpp"
-#include "metrics.hpp"
-#include "settings_panel.hpp"
 #include "strings.hpp"
-#include "wrapped_static_text.hpp"
+#include "ui/metrics.hpp"
+#include "ui/panels/bootstrap_panel.hpp"
+#include "ui/panels/connection_status_panel.hpp"
+#include "ui/panels/conversations_panel.hpp"
+#include "ui/panels/settings_panel.hpp"
+#include "ui/widgets/wrapped_static_text.hpp"
 
 MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, Strings::MainFrame::title()) {
     this->setup_menubar();

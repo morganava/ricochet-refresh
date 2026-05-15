@@ -39,48 +39,48 @@ set(RICOCHET_REFRESH_SOURCE
     precomp.hpp
     strings.cpp
     strings.hpp
-    ui/bootstrap_panel.cpp
-    ui/bootstrap_panel.hpp
-    ui/chat_panel.cpp
-    ui/chat_panel.hpp
-    ui/connected_panel.cpp
-    ui/connected_panel.hpp
-    ui/connecting_panel.cpp
-    ui/connecting_panel.hpp
-    ui/connection_settings_panel.cpp
-    ui/connection_settings_panel.hpp
-    ui/connection_status_panel.cpp
-    ui/connection_status_panel.hpp
-    ui/contact_group_heading_panel.cpp
-    ui/contact_group_heading_panel.hpp
-    ui/contact_list_panel.cpp
-    ui/contact_list_panel.hpp
-    ui/contact_panel.cpp
-    ui/contact_panel.hpp
-    ui/conversations_panel.cpp
-    ui/conversations_panel.hpp
-    ui/disconnected_panel.cpp
-    ui/disconnected_panel.hpp
     ui/events.cpp
     ui/events.hpp
     ui/fonts.cpp
     ui/fonts.hpp
-    ui/general_settings_panel.cpp
-    ui/general_settings_panel.hpp
-    ui/interface_settings_panel.cpp
-    ui/interface_settings_panel.hpp
     ui/main_frame.cpp
     ui/main_frame.hpp
-    ui/message_entry_panel.cpp
-    ui/message_entry_panel.hpp
     ui/metrics.cpp
     ui/metrics.hpp
-    ui/settings_panel.cpp
-    ui/settings_panel.hpp
-    ui/user_status_panel.cpp
-    ui/user_status_panel.hpp
-    ui/wrapped_static_text.cpp
-    ui/wrapped_static_text.hpp
+    ui/panels/bootstrap_panel/connected_panel.cpp
+    ui/panels/bootstrap_panel/connected_panel.hpp
+    ui/panels/bootstrap_panel/connecting_panel.cpp
+    ui/panels/bootstrap_panel/connecting_panel.hpp
+    ui/panels/bootstrap_panel.cpp
+    ui/panels/bootstrap_panel/disconnected_panel.cpp
+    ui/panels/bootstrap_panel/disconnected_panel.hpp
+    ui/panels/bootstrap_panel.hpp
+    ui/panels/connection_status_panel.cpp
+    ui/panels/connection_status_panel.hpp
+    ui/panels/conversations_panel/chat_panel.cpp
+    ui/panels/conversations_panel/chat_panel.hpp
+    ui/panels/conversations_panel/contact_group_heading_panel.cpp
+    ui/panels/conversations_panel/contact_group_heading_panel.hpp
+    ui/panels/conversations_panel/contact_list_panel.cpp
+    ui/panels/conversations_panel/contact_list_panel.hpp
+    ui/panels/conversations_panel/contact_panel.cpp
+    ui/panels/conversations_panel/contact_panel.hpp
+    ui/panels/conversations_panel.cpp
+    ui/panels/conversations_panel.hpp
+    ui/panels/conversations_panel/message_entry_panel.cpp
+    ui/panels/conversations_panel/message_entry_panel.hpp
+    ui/panels/conversations_panel/user_status_panel.cpp
+    ui/panels/conversations_panel/user_status_panel.hpp
+    ui/panels/settings_panel/connection_settings_panel.cpp
+    ui/panels/settings_panel/connection_settings_panel.hpp
+    ui/panels/settings_panel.cpp
+    ui/panels/settings_panel/general_settings_panel.cpp
+    ui/panels/settings_panel/general_settings_panel.hpp
+    ui/panels/settings_panel.hpp
+    ui/panels/settings_panel/interface_settings_panel.cpp
+    ui/panels/settings_panel/interface_settings_panel.hpp
+    ui/widgets/wrapped_static_text.cpp
+    ui/widgets/wrapped_static_text.hpp
 )
 
 target_sources(ricochet-refresh-wx-widgets PRIVATE ${RICOCHET_REFRESH_SOURCE})

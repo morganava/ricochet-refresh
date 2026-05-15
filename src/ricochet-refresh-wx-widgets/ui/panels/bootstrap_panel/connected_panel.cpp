@@ -1,8 +1,8 @@
 #include "connected_panel.hpp"
 
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
 
 ConnectedPanel::ConnectedPanel(wxWindow* parent) : wxPanel(parent) {
     auto v_sizer = new wxBoxSizer(wxVERTICAL);

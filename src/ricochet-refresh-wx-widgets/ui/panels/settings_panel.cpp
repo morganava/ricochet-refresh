@@ -1,11 +1,11 @@
 #include "settings_panel.hpp"
 
-#include "connection_settings_panel.hpp"
-#include "fonts.hpp"
-#include "general_settings_panel.hpp"
-#include "interface_settings_panel.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
+#include "ui/panels/settings_panel/connection_settings_panel.hpp"
+#include "ui/panels/settings_panel/general_settings_panel.hpp"
+#include "ui/panels/settings_panel/interface_settings_panel.hpp"
 
 SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
     auto v_sizer = new wxBoxSizer(wxVERTICAL);

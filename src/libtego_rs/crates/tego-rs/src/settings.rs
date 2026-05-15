@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 // extern
-use anyhow::{bail, Result};
+use anyhow::Result;
 use rico_settings::v3::settings::Settings as SettingsV3;
 use rico_settings::v4::settings::Settings as SettingsV4;
 

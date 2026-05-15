@@ -1,12 +1,12 @@
 #include "bootstrap_panel.hpp"
 
-#include "connected_panel.hpp"
-#include "connecting_panel.hpp"
-#include "disconnected_panel.hpp"
-#include "fonts.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
-#include "wrapped_static_text.hpp"
+#include "ui/fonts.hpp"
+#include "ui/metrics.hpp"
+#include "ui/panels/bootstrap_panel/connected_panel.hpp"
+#include "ui/panels/bootstrap_panel/connecting_panel.hpp"
+#include "ui/panels/bootstrap_panel/disconnected_panel.hpp"
+#include "ui/widgets/wrapped_static_text.hpp"
 
 constexpr int BOOTSTRAP_PANEL_MIN_WIDTH = 600;
 constexpr int BOOTSTRAP_PANEL_MIN_HEIGHT = 400;

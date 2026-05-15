@@ -1,8 +1,8 @@
 #include "message_entry_panel.hpp"
 
-#include "events.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/events.hpp"
+#include "ui/metrics.hpp"
 
 MessageEntryPanel::MessageEntryPanel(wxWindow* parent) : wxPanel(parent) {
     auto v_sizer = new wxBoxSizer(wxVERTICAL);

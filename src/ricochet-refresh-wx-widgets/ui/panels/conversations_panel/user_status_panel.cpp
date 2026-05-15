@@ -1,8 +1,8 @@
 #include "user_status_panel.hpp"
 
 #include "enums.hpp"
-#include "metrics.hpp"
 #include "strings.hpp"
+#include "ui/metrics.hpp"
 
 UserStatusPanel::UserStatusPanel(wxWindow* parent) : wxPanel(parent) {
     auto h_sizer = new wxBoxSizer(wxHORIZONTAL);
