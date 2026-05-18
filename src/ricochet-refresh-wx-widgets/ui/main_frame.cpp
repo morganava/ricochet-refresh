@@ -21,8 +21,65 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, Strings::MainFrame::title())
     this->SetSize(wxSize(800, 600));
 
     // Bind Event Handlers
-    this->Bind(wxEVT_MENU, &MainFrame::on_exit, this, wxID_EXIT);
+    this->Bind(wxEVT_MENU, [this](wxCommandEvent&) { this->Close(true); }, wxID_EXIT);
+
+    this->show_bootstrap_panel();
 }
+
+//
+// Show/Hide panel functions
+//
+
+void MainFrame::show_bootstrap_panel() {
+    this->show_main_panel(this->main_panels.bootstrap_panel);
+}
+
+void MainFrame::show_profile_notebook_panel() {
+    // todo
+}
+
+void MainFrame::show_settings_panel() {
+    this->show_overlay_panel(this->overlay_panels.settings_panel);
+}
+
+void MainFrame::show_connection_status_panel() {
+    this->show_overlay_panel(this->overlay_panels.connection_status_panel);
+}
+
+void MainFrame::hide_overlay_panel() {
+    assert(this->main_panels.current != nullptr);
+    assert(this->overlay_panels.current != nullptr);
+
+    this->overlay_panels.current->Show(false);
+    this->overlay_panels.current = nullptr;
+
+    this->main_panels.current->Show(true);
+}
+
+void MainFrame::show_main_panel(wxPanel* panel) {
+    assert(this->main_panels.current != panel);
+    if (this->main_panels.current) {
+        this->main_panels.current->Show(false);
+    }
+    this->main_panels.current = panel;
+    this->main_panels.current->Show(true);
+}
+
+void MainFrame::show_overlay_panel(wxPanel* panel) {
+    assert(this->main_panels.current != nullptr);
+    this->main_panels.current->Show(false);
+
+    if (this->overlay_panels.current != nullptr) {
+        this->overlay_panels.current->Show(false);
+    }
+
+    this->overlay_panels.current = panel;
+    this->overlay_panels.current->Show(true);
+}
+
+//
+// Widget initialisation
+//
 
 void MainFrame::setup_menubar() {
     // create MenuBar
@@ -146,18 +203,25 @@ void MainFrame::setup_menubar() {
 }
 
 void MainFrame::setup_main_panels(wxBoxSizer* sizer) {
+    auto& main_panels = this->main_panels;
+
     auto bootstrap_panel = new BootstrapPanel(this);
     bootstrap_panel->ShowDisconnected();
     sizer->Add(bootstrap_panel, 1, wxEXPAND);
-    this->bootstrap_panel = bootstrap_panel;
+    bootstrap_panel->Hide();
+    main_panels.bootstrap_panel = bootstrap_panel;
+
+    // todo develop the profile ntebook panel
 }
 
 void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
+    auto& overlay_panels = this->overlay_panels;
+
     // todo: ensure exiting these panels is consistent (e.g. with an 'Ok' button)
     auto settings_panel = new SettingsPanel(this);
     sizer->Add(settings_panel, 1, wxEXPAND);
     settings_panel->Hide();
-    this->settings_panel = settings_panel;
+    overlay_panels.settings_panel = settings_panel;
 
     auto connection_status_panel = new ConnectionStatusPanel(
         this,
@@ -166,5 +230,5 @@ void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
     );
     sizer->Add(connection_status_panel, 1, wxEXPAND);
     connection_status_panel->Hide();
-    this->connection_status_panel = connection_status_panel;
+    overlay_panels.connection_status_panel = connection_status_panel;
 }
