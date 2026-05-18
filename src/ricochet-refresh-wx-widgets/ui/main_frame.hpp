@@ -1,5 +1,7 @@
 #pragma once
 
+enum class Settings;
+
 class MainFrame: public wxFrame {
 public:
     MainFrame();
@@ -7,7 +9,7 @@ public:
     void show_bootstrap_panel();
     void show_profile_notebook_panel();
 
-    void show_settings_panel();
+    void show_settings_panel(Settings);
     void show_connection_status_panel();
     void hide_overlay_panel();
 

@@ -2,6 +2,7 @@
 
 #include "strings.hpp"
 #include "ui/fonts.hpp"
+#include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
 #include "ui/panels/settings_panel/connection_settings_panel.hpp"
 #include "ui/panels/settings_panel/general_settings_panel.hpp"
@@ -108,8 +109,10 @@ void SettingsPanel::apply() {
 
 void SettingsPanel::cancel() {
     LOG_INFO("Cancel Pressed");
+    wxGetApp().get_main_frame().hide_overlay_panel();
 }
 
 void SettingsPanel::ok() {
     LOG_INFO("Ok Pressed");
+    wxGetApp().get_main_frame().hide_overlay_panel();
 }

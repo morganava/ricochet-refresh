@@ -38,8 +38,9 @@ void MainFrame::show_profile_notebook_panel() {
     // todo
 }
 
-void MainFrame::show_settings_panel() {
+void MainFrame::show_settings_panel(Settings settings) {
     this->show_overlay_panel(this->overlay_panels.settings_panel);
+    this->overlay_panels.settings_panel->set_current_settings_panel(settings);
 }
 
 void MainFrame::show_connection_status_panel() {
@@ -54,6 +55,7 @@ void MainFrame::hide_overlay_panel() {
     this->overlay_panels.current = nullptr;
 
     this->main_panels.current->Show(true);
+    this->Layout();
 }
 
 void MainFrame::show_main_panel(wxPanel* panel) {
@@ -63,6 +65,7 @@ void MainFrame::show_main_panel(wxPanel* panel) {
     }
     this->main_panels.current = panel;
     this->main_panels.current->Show(true);
+    this->Layout();
 }
 
 void MainFrame::show_overlay_panel(wxPanel* panel) {
@@ -75,6 +78,7 @@ void MainFrame::show_overlay_panel(wxPanel* panel) {
 
     this->overlay_panels.current = panel;
     this->overlay_panels.current->Show(true);
+    this->Layout();
 }
 
 //

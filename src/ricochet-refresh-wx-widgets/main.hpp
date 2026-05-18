@@ -6,6 +6,10 @@ public:
     void OnInitCmdLine(wxCmdLineParser& parser) override;
     bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
+    class MainFrame& get_main_frame() {
+        return *this->main_frame;
+    }
+
 private:
     void init_settings();
 
@@ -20,3 +24,5 @@ private:
     // the initial profiles to load after bootstrap
     std::optional<std::vector<std::filesystem::path>> profiles_to_load = std::nullopt;
 };
+
+wxDECLARE_APP(RicochetRefresh);

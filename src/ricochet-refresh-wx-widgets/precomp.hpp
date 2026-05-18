@@ -14,6 +14,7 @@
 #include <utility>
 
 // wxWidgets
+#include <wx/app.h>
 #include <wx/cmdline.h>
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
@@ -38,3 +39,6 @@ inline auto format_as(const wxString& str) {
 
 // tego-rs
 #include <tego/tego.hpp>
+
+// ricochet-refresh
+#include <main.hpp>

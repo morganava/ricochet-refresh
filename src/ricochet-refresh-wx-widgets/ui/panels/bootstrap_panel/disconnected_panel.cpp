@@ -3,6 +3,7 @@
 #include "enums.hpp"
 #include "strings.hpp"
 #include "ui/fonts.hpp"
+#include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
@@ -57,6 +58,7 @@ void DisconnectedPanel::set_quickstart(bool enabled) {
 void DisconnectedPanel::configure() {
     // todo: open the settings panel to the tor
     LOG_INFO("Configure");
+    wxGetApp().get_main_frame().show_settings_panel(Settings::Connection);
 }
 
 void DisconnectedPanel::connect() {
