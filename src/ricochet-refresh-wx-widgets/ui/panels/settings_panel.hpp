@@ -9,10 +9,10 @@ class SettingsPanel: public wxPanel {
 public:
     explicit SettingsPanel(wxWindow* parent);
 
-private:
     // setters
     void set_current_settings_panel(Settings);
 
+private:
     // actions
     void show_general_settings();
     void show_interface_settings();
@@ -22,7 +22,10 @@ private:
     void cancel();
     void ok();
 
-    // widgets
+    // panel selection listbox
+    wxListBox* settings_listbox = nullptr;
+
+    // panels
     GeneralSettingsPanel* general_settings_panel = nullptr;
     InterfaceSettingsPanel* interface_settings_panel = nullptr;
     ConnectionSettingsPanel* connection_settings_panel = nullptr;

@@ -20,7 +20,7 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
         Strings::SettingsPanel::connection_settings_choice(),
     };
 
-    auto settings_listbox = new wxListBox(
+    this->settings_listbox = new wxListBox(
         this,
         wxID_ANY,
         wxDefaultPosition,
@@ -29,7 +29,7 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
         settings_listbox_choices,
         wxLB_SINGLE
     );
-    settings_listbox->Bind(wxEVT_LISTBOX, [this](wxCommandEvent& evt) {
+    this->settings_listbox->Bind(wxEVT_LISTBOX, [this](wxCommandEvent& evt) {
         this->set_current_settings_panel(static_cast<Settings>(evt.GetInt()));
     });
 
@@ -42,7 +42,7 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
     v_sizer->Add(title, 0, wxEXPAND | wxALL, Metrics::PADDING_MEDIUM);
 
     auto h_sizer = new wxBoxSizer(wxHORIZONTAL);
-    h_sizer->Add(settings_listbox, 0, wxEXPAND);
+    h_sizer->Add(this->settings_listbox, 0, wxEXPAND);
     h_sizer->Add(this->general_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
     h_sizer->Add(this->interface_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
     h_sizer->Add(this->connection_settings_panel, 1, wxEXPAND | wxLEFT, Metrics::PADDING_MEDIUM);
@@ -69,6 +69,7 @@ SettingsPanel::SettingsPanel(wxWindow* parent) : wxPanel(parent) {
 }
 
 void SettingsPanel::set_current_settings_panel(Settings settings) {
+    this->settings_listbox->SetSelection(static_cast<int>(settings));
     switch (settings) {
         case Settings::General:
             this->show_general_settings();
