@@ -115,6 +115,9 @@ if (ENABLE_FORMATTING)
 
 endif()
 
+# Enable logging gated on RICOCHET_REFRESH_LOG_LEVEL environment variable
+option(ENABLE_RICOCHET_REFRESH_LOGGING "Enable RICOCHET_REFRESH_LOG_LEVEL-gated logging" OFF)
+
 add_subdirectory(extern)
 add_subdirectory(libtego_rs)
 

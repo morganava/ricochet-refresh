@@ -50,7 +50,6 @@ file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/include/tego/logger.hpp ${tego_rs_i
 #
 # tego-rs crate feature flags
 #
-option(ENABLE_RICOCHET_REFRESH_LOGGING "Enable RICOCHET_REFRESH_LOG_LEVEL-gated logging" OFF)
 if (ENABLE_RICOCHET_REFRESH_LOGGING)
     set(TEGO_RS_FEATURES "--features;logging")
 endif()
