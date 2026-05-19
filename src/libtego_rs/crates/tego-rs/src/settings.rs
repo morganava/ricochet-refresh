@@ -63,7 +63,7 @@ impl SettingsFile {
             // otherwise create a new default-initialised settings
             } else {
                 std::fs::create_dir_all(&config_location)?;
-                SettingsV4::default()
+                SettingsV4::default_bundled_tor()
             };
             // write new settings to default location
             std::fs::write(&settings_location, settings.to_string())?;
@@ -87,7 +87,7 @@ impl SettingsFile {
             SettingsV4::from_str(settings_json.as_str())?
         // otherewise write default settings to location
         } else {
-            let settings = SettingsV4::default();
+            let settings = SettingsV4::default_bundled_tor();
             std::fs::write(&settings_location, settings.to_string())?;
             settings
         };

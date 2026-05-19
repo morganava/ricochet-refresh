@@ -118,6 +118,22 @@ endif()
 # Enable logging gated on RICOCHET_REFRESH_LOG_LEVEL environment variable
 option(ENABLE_RICOCHET_REFRESH_LOGGING "Enable RICOCHET_REFRESH_LOG_LEVEL-gated logging" OFF)
 
+# Tor Provider options
+option(ENABLE_BUNDLED_TOR "Enable Ricochet Refresh-managed legacy tor daemon support" ON)
+option(ENABLE_EXTERNAL_TOR "Enable system-managed legacy tor daemon support" OFF)
+option(ENABLE_ARTI_CLIENT "Enable in-process arti-client support" OFF)
+
+# Ensure at least one Tor Provider is selected
+if(NOT ENABLE_BUNDLED_TOR AND NOT ENABLE_EXTERNAL_TOR AND NOT ENABLE_ARTI_CLIENT)
+    message(FATAL_ERROR
+        "At least one Tor Provider must be enabled:\n"
+        "  - ENABLE_BUNDLED_TOR\n"
+        "  - ENABLE_EXTERNAL_TOR\n"
+        "  - ENABLE_ARTI_CLIENT"
+    )
+endif()
+
+# Sources
 add_subdirectory(extern)
 add_subdirectory(libtego_rs)
 

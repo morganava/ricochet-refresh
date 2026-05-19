@@ -24,6 +24,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
         Strings::ConnectionSettingsPanel::backend_description()
     );
 
+#ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
     auto bundled_legacy_tor_option = new wxRadioButton(
         this,
         wxID_ANY,
@@ -35,16 +36,20 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     bundled_legacy_tor_option->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent&) {
         this->set_tor_backend(TorBackend::BundledLegacyTor);
     });
+#endif // ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
+
+#ifdef ENABLE_RICOCHET_REFRESH_EXTERNAL_TOR
     auto external_legacy_tor_option = new wxRadioButton(
         this,
         wxID_ANY,
         Strings::ConnectionSettingsPanel::external_legacy_tor_option()
     );
-
     external_legacy_tor_option->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent&) {
         this->set_tor_backend(TorBackend::ExternalLegacyTor);
     });
+#endif // ENABLE_RICOCHET_REFRESH_EXTERNAL_TOR
 
+#ifdef ENABLE_RICOCHET_REFRESH_ARTI_CLIENT
     auto in_process_arti_option = new wxRadioButton(
         this,
         wxID_ANY,
@@ -53,6 +58,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     in_process_arti_option->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent&) {
         this->set_tor_backend(TorBackend::InProcessArti);
     });
+#endif // ENABLE_RICOCHET_REFRESH_ARTI_CLIENT
 
     // Quickstart
 
@@ -255,10 +261,16 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     // Layout
 
     v_sizer->Add(backend_heading, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
+#ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
     v_sizer->Add(backend_description, 0, wxEXPAND | wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer->Add(bundled_legacy_tor_option, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_SMALL);
+#endif // ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
+#ifdef ENABLE_RICOCHET_REFRESH_EXTERNAL_TOR
     v_sizer->Add(external_legacy_tor_option, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_SMALL);
+#endif // ENABLE_RICOCHET_REFRESH_EXTERNAL_TOR
+#ifdef ENABLE_RICOCHET_REFRESH_ARTI_CLIENT
     v_sizer->Add(in_process_arti_option, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
+#endif // ENABLE_RICOCHET_REFRESH_ARTI_CLIENT
 
     v_sizer->Add(quickstart_heading, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer->Add(quickstart_description, 0, wxEXPAND | wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);

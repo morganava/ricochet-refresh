@@ -43,16 +43,6 @@ endif()
 
 add_subdirectory(crates)
 
-if (ENABLE_LINTING)
-    #
-    # Run crate linting
-    #
-    add_custom_target(cargo_clippy_target
-        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo clippy
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    add_dependencies(linting cargo_clippy_target)
-endif()
-
 if (ENABLE_FORMATTING)
     #
     # Run rust formatting

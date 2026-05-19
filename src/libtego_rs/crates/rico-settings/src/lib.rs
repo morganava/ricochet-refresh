@@ -1,6 +1,7 @@
 pub mod common;
 pub mod v3;
 pub mod v4;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Not Implemented")]
@@ -21,3 +22,10 @@ pub enum Error {
     #[error(transparent)]
     SerdeError(#[from] serde_json::Error),
 }
+
+#[cfg(not(any(
+    feature = "bundled-tor",
+    feature = "external-tor",
+    feature = "arti-client"
+)))]
+compile_error!("At least one of the features \"bundled-tor\", \"external-tor\", or \"arti-client\" must be enabled.");

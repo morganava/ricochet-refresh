@@ -92,6 +92,40 @@ pub struct Settings {
     pub tor_config: TorConfig,
 }
 
+impl Settings {
+    pub fn new(tor_config: TorConfig) -> Self {
+        Self {
+            start_only_single_instance: true,
+            check_for_updates_automatically: true,
+            language: Language::System,
+            show_toolbar: true,
+            show_desktop_notifications: false,
+            blink_taskbar_icon: false,
+            play_audio_notifications: false,
+            minimize_instead_of_exit: false,
+            show_system_tray_icon: false,
+            minimize_to_system_tray: false,
+            connect_automatically: false,
+            tor_config,
+        }
+    }
+
+    #[cfg(feature = "bundled-tor")]
+    pub fn default_bundled_tor() -> Self {
+        Self::new(TorConfig::default_bundled_tor())
+    }
+
+    #[cfg(feature = "external-tor")]
+    pub fn default_external_tor() -> Self {
+        Self::new(TorConfig::default_external_tor())
+    }
+
+    #[cfg(feature = "arti-client")]
+    pub fn default_arti_client() -> Self {
+        Self::new(TorConfig::default_arti_client())
+    }
+}
+
 impl FromStr for Settings {
     type Err = crate::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -105,25 +139,6 @@ impl Display for Settings {
         let json: String = serde_json::to_string_pretty(self)
             .expect("Settins should always be Serializable to JSON");
         write!(f, "{json}")
-    }
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            start_only_single_instance: true,
-            check_for_updates_automatically: true,
-            language: Language::System,
-            show_toolbar: true,
-            show_desktop_notifications: false,
-            blink_taskbar_icon: false,
-            play_audio_notifications: false,
-            minimize_instead_of_exit: false,
-            show_system_tray_icon: false,
-            minimize_to_system_tray: false,
-            connect_automatically: false,
-            tor_config: TorConfig::default(),
-        }
     }
 }
 
@@ -163,6 +178,12 @@ impl TryFrom<SettingsRaw> for Settings {
 
 impl From<v3::settings::Settings> for Settings {
     fn from(value: v3::settings::Settings) -> Self {
+        #[cfg(feature = "bundled-tor")]
+        let tor_config = TorConfig::BundledTor {
+            bridge_config: value.bridge_config.clone(),
+            proxy_config: value.proxy_config.clone(),
+            firewall_config: value.firewall_config.clone(),
+        };
         Self {
             language: match value.language {
                 v3::settings::Language::SystemDefault => Language::System,
@@ -173,12 +194,7 @@ impl From<v3::settings::Settings> for Settings {
                 _ => Language::System,
             },
             play_audio_notifications: value.play_audio_notification,
-            tor_config: TorConfig::BundledTor {
-                bridge_config: value.bridge_config.clone(),
-                proxy_config: value.proxy_config.clone(),
-                firewall_config: value.firewall_config.clone(),
-            },
-            ..Self::default()
+            ..Self::new(tor_config)
         }
     }
 }
@@ -231,36 +247,34 @@ pub enum Language {
 
 #[derive(Deserialize, Serialize)]
 enum TorConfigRaw {
+    #[cfg(feature = "bundled-tor")]
     #[serde(rename = "bundled-tor")]
     BundledTor {
         bridge_config: BridgeConfigRaw,
         proxy_config: ProxyConfigRaw,
         firewall_config: FirewallConfigRaw,
     },
+    #[cfg(feature = "external-tor")]
     #[serde(rename = "external-tor")]
     ExternalTor {
         // todo
     },
+    #[cfg(feature = "arti-client")]
     #[serde(rename = "arti-client")]
     ArtiClient {
         // todo
     },
 }
 
-impl Default for TorConfigRaw {
-    fn default() -> Self {
-        TorConfigRaw::BundledTor{
-            bridge_config: Default::default(),
-            proxy_config: Default::default(),
-            firewall_config: Default::default(),
-        }
-    }
-}
-
 impl From<&TorConfig> for TorConfigRaw {
     fn from(value: &TorConfig) -> Self {
         match value {
-            TorConfig::BundledTor{bridge_config, proxy_config, firewall_config} => {
+            #[cfg(feature = "bundled-tor")]
+            TorConfig::BundledTor {
+                bridge_config,
+                proxy_config,
+                firewall_config,
+            } => {
                 let bridge_config = match bridge_config {
                     None => BridgeConfigRaw::None,
                     Some(BridgeConfig::Custom(first, bridge_lines)) => {
@@ -272,8 +286,12 @@ impl From<&TorConfig> for TorConfigRaw {
                         bridge_strings.insert(0, first);
                         BridgeConfigRaw::Custom(bridge_strings)
                     }
-                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)) => BridgeConfigRaw::BuiltInObfs4,
-                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)) => BridgeConfigRaw::BuiltInMeek,
+                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)) => {
+                        BridgeConfigRaw::BuiltInObfs4
+                    }
+                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)) => {
+                        BridgeConfigRaw::BuiltInMeek
+                    }
                     Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake)) => {
                         BridgeConfigRaw::BuiltInSnowflake
                     }
@@ -319,32 +337,50 @@ impl From<&TorConfig> for TorConfigRaw {
                         FirewallConfigRaw::AllowedPorts(firewall_config.allowed_ports().clone())
                     }
                 };
-                TorConfigRaw::BundledTor{bridge_config, proxy_config, firewall_config}
-            },
-            TorConfig::ExternalTor => TorConfigRaw::ExternalTor{},
-            TorConfig::ArtiClient => TorConfigRaw::ArtiClient{},
+                TorConfigRaw::BundledTor {
+                    bridge_config,
+                    proxy_config,
+                    firewall_config,
+                }
+            }
+            #[cfg(feature = "external-tor")]
+            TorConfig::ExternalTor => TorConfigRaw::ExternalTor {},
+            #[cfg(feature = "arti-client")]
+            TorConfig::ArtiClient => TorConfigRaw::ArtiClient {},
         }
     }
 }
 
-#[derive(Clone, Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TorConfig {
+    #[cfg(feature = "bundled-tor")]
     BundledTor {
         bridge_config: Option<BridgeConfig>,
         proxy_config: Option<ProxyConfig>,
         firewall_config: Option<FirewallConfig>,
     },
+    #[cfg(feature = "external-tor")]
     ExternalTor,
+    #[cfg(feature = "arti-client")]
     ArtiClient,
 }
 
-impl Default for TorConfig {
-    fn default() -> Self {
-        TorConfig::BundledTor{
+impl TorConfig {
+    #[cfg(feature = "bundled-tor")]
+    pub fn default_bundled_tor() -> Self {
+        TorConfig::BundledTor {
             bridge_config: None,
             proxy_config: None,
             firewall_config: None,
         }
+    }
+    #[cfg(feature = "external-tor")]
+    pub fn default_external_tor() -> Self {
+        TorConfig::ExternalTor
+    }
+    #[cfg(feature = "arti-client")]
+    pub fn default_arti_client() -> Self {
+        TorConfig::ArtiClient
     }
 }
 
@@ -353,7 +389,12 @@ impl TryFrom<TorConfigRaw> for TorConfig {
 
     fn try_from(value: TorConfigRaw) -> Result<Self, Self::Error> {
         let tor_config = match value {
-            TorConfigRaw::BundledTor{bridge_config, proxy_config, firewall_config} => {
+            #[cfg(feature = "bundled-tor")]
+            TorConfigRaw::BundledTor {
+                bridge_config,
+                proxy_config,
+                firewall_config,
+            } => {
                 let bridge_config = match bridge_config {
                     BridgeConfigRaw::None => None,
                     BridgeConfigRaw::Custom(bridge_strings) => {
@@ -372,8 +413,12 @@ impl TryFrom<TorConfigRaw> for TorConfig {
                             Some(BridgeConfig::Custom(first, bridge_lines))
                         }
                     }
-                    BridgeConfigRaw::BuiltInObfs4 => Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)),
-                    BridgeConfigRaw::BuiltInMeek => Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)),
+                    BridgeConfigRaw::BuiltInObfs4 => {
+                        Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4))
+                    }
+                    BridgeConfigRaw::BuiltInMeek => {
+                        Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek))
+                    }
                     BridgeConfigRaw::BuiltInSnowflake => {
                         Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake))
                     }
@@ -412,10 +457,17 @@ impl TryFrom<TorConfigRaw> for TorConfig {
                         Some(FirewallConfig::try_from(allowed_ports_list)?)
                     }
                 };
-                TorConfig::BundledTor{bridge_config, proxy_config, firewall_config}
-            },
-            TorConfigRaw::ExternalTor{} => TorConfig::ExternalTor,
-            TorConfigRaw::ArtiClient{} => TorConfig::ArtiClient,
+                TorConfig::BundledTor {
+                    bridge_config,
+                    proxy_config,
+                    firewall_config,
+                }
+            }
+            #[cfg(feature = "external-tor")]
+            TorConfigRaw::ExternalTor {} => TorConfig::ExternalTor,
+            #[cfg(feature = "arti-client")]
+            TorConfigRaw::ArtiClient {} => TorConfig::ArtiClient,
+            _ => unreachable!(),
         };
         Ok(tor_config)
     }

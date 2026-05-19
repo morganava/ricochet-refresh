@@ -26,3 +26,6 @@ crate-type = ["staticlib"]
 
 [features]
 logging = ["time"]
+bundled-tor = ["rico-settings/bundled-tor"]
+external-tor = ["rico-settings/external-tor"]
+arti-client = ["rico-settings/arti-client"]

@@ -95,6 +95,16 @@ target_include_directories(ricochet-refresh-wx-widgets PRIVATE ${CMAKE_CURRENT_S
 target_link_libraries(ricochet-refresh-wx-widgets PRIVATE ${wxWidgets_LIBRARIES})
 target_link_libraries(ricochet-refresh-wx-widgets PRIVATE tego_rs)
 target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE RICOCHET_REFRESH_VERSION="${RICOCHET_REFRESH_VERSION}")
+# enable our various tor-providers
+if (ENABLE_BUNDLED_TOR)
+    target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE ENABLE_RICOCHET_REFRESH_BUNDLED_TOR=1)
+endif()
+if (ENABLE_EXTERNAL_TOR)
+    target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE ENABLE_RICOCHET_REFRESH_EXTERNAL_TOR=1)
+endif()
+if (ENABLE_ARTI_CLIENT)
+    target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE ENABLE_RICOCHET_REFRESH_ARTI_CLIENT=1)
+endif()
 
 #
 # Localisation

@@ -12,23 +12,51 @@ set(rico_settings_outputs
     ${CARGO_TARGET_DIR}/${CARGO_PROFILE}/librico_settings.rlib)
 
 #
+# rico-settings crate feature flags
+#
+set(RICO_SETTINGS_FEATURE_LIST)
+if(ENABLE_BUNDLED_TOR)
+    list(APPEND RICO_SETTINGS_FEATURE_LIST "bundled-tor")
+endif()
+if(ENABLE_EXTERNAL_TOR)
+    list(APPEND RICO_SETTINGS_FEATURE_LIST "external-tor")
+endif()
+if(ENABLE_ARTI_CLIENT)
+    list(APPEND RICO_SETTINGS_FEATURE_LIST "arti-client")
+endif()
+
+list(JOIN RICO_SETTINGS_FEATURE_LIST "," RICO_SETTINGS_FEATURES)
+if (RICO_SETTINGS_FEATURES)
+    set(RICO_SETTINGS_FEATURES "--features" "${RICO_SETTINGS_FEATURES}")
+endif()
+
+#
 # build target
 #
 add_custom_command(
     DEPENDS ${rico_settings_depends}
     OUTPUT ${rico_settings_outputs}
-    COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo build ${CARGO_FLAGS}
+    COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo build ${CARGO_FLAGS} ${RICO_SETTINGS_FEATURES}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_custom_target(rico_settings_target
     DEPENDS ${rico_settings_outputs})
+
+if (ENABLE_LINTING)
+    #
+    # Run crate linting
+    #
+    add_custom_target(rico_settings_cargo_clippy_target
+        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo clippy --features=bundled-tor,external-tor,arti-client
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
 #
 # cargo test target
 #
 if (ENABLE_TESTS)
     add_test(NAME rico_settings_cargo_test
-        COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} RUST_BACKTRACE=full cargo test ${CARGO_FLAGS} -- --nocapture
+        COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} RUST_BACKTRACE=full cargo test ${CARGO_FLAGS} --features=bundled-tor,external-tor,arti-client -- --nocapture
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

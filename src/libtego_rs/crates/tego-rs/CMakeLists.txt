@@ -50,9 +50,25 @@ file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/include/tego/logger.hpp ${tego_rs_i
 #
 # tego-rs crate feature flags
 #
+set(TEGO_RS_FEATURE_LIST)
 if (ENABLE_RICOCHET_REFRESH_LOGGING)
-    set(TEGO_RS_FEATURES "--features;logging")
+    list(APPEND TEGO_RS_FEATURE_LIST "logging")
 endif()
+if(ENABLE_BUNDLED_TOR)
+    list(APPEND TEGO_RS_FEATURE_LIST "bundled-tor")
+endif()
+if(ENABLE_EXTERNAL_TOR)
+    list(APPEND TEGO_RS_FEATURE_LIST "external-tor")
+endif()
+if(ENABLE_ARTI_CLIENT)
+    list(APPEND TEGO_RS_FEATURE_LIST "arti-client")
+endif()
+
+list(JOIN TEGO_RS_FEATURE_LIST "," TEGO_RS_FEATURES)
+if (TEGO_RS_FEATURES)
+    set(TEGO_RS_FEATURES "--features" "${TEGO_RS_FEATURES}")
+endif()
+
 
 #
 # build tego-rs static lib
@@ -90,4 +106,14 @@ if (WIN32)
     target_link_libraries(tego_rs INTERFACE userenv)
     target_link_libraries(tego_rs INTERFACE bcrypt)
     target_link_libraries(tego_rs INTERFACE ntdll)
+endif()
+
+if (ENABLE_LINTING)
+    #
+    # Run crate linting
+    #
+    add_custom_target(tego_rs_cargo_clippy_target
+        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo clippy ${TEGO_RS_FEATURES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_dependencies(linting tego_rs_cargo_clippy_target)
 endif()

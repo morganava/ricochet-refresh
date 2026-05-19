@@ -25,6 +25,15 @@ add_custom_command(
 add_custom_target(rico_profile_target
     DEPENDS ${rico_profile_outputs})
 
+if (ENABLE_LINTING)
+    #
+    # Run crate linting
+    #
+    add_custom_target(rico_profile_cargo_clippy_target
+        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo clippy --features v3-profile,v4-profile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 #
 # cargo test target
 #

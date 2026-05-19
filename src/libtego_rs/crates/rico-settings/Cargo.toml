@@ -15,3 +15,8 @@ tor-interface = { version = "0.6.7", features = ["legacy-tor-provider"] }
 
 [dev-dependencies]
 anyhow = "1.0"
+
+[features]
+bundled-tor = []
+external-tor = []
+arti-client = []
