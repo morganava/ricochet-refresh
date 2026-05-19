@@ -83,6 +83,7 @@ if (ENABLE_LINTING)
 
 endif()
 
+# Run cargo-fmt for Rust targets and clang-format for C++ targets
 option(ENABLE_FORMATTING "Enable format make target" OFF)
 if (ENABLE_FORMATTING)
     find_program(CARGO_FMT_EXECUTABLE NAMES cargo-fmt)
