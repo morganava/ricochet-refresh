@@ -32,11 +32,8 @@ pub struct SettingsRaw {
     show_system_tray_icon: bool,
     minimize_to_system_tray: bool,
     // connection settings
-    tor_backend: TorBackend,
     connect_automatically: bool,
-    bridge_config: BridgeConfigRaw,
-    proxy_config: ProxyConfigRaw,
-    firewall_config: FirewallConfigRaw,
+    tor_config: TorConfigRaw,
 }
 
 impl From<&Settings> for SettingsRaw {
@@ -52,66 +49,8 @@ impl From<&Settings> for SettingsRaw {
         let minimize_instead_of_exit = value.minimize_instead_of_exit;
         let show_system_tray_icon = value.show_system_tray_icon;
         let minimize_to_system_tray = value.minimize_to_system_tray;
-        let tor_backend = value.tor_backend;
         let connect_automatically = value.connect_automatically;
-        let bridge_config = match &value.bridge_config {
-            None => BridgeConfigRaw::None,
-            Some(BridgeConfig::Custom(first, bridge_lines)) => {
-                let first = first.as_legacy_tor_setconf_value();
-                let mut bridge_strings: Vec<String> = bridge_lines
-                    .iter()
-                    .map(|bridge_line| bridge_line.as_legacy_tor_setconf_value())
-                    .collect();
-                bridge_strings.insert(0, first);
-                BridgeConfigRaw::Custom(bridge_strings)
-            }
-            Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)) => BridgeConfigRaw::BuiltInObfs4,
-            Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)) => BridgeConfigRaw::BuiltInMeek,
-            Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake)) => {
-                BridgeConfigRaw::BuiltInSnowflake
-            }
-        };
-        let proxy_config = match &value.proxy_config {
-            None => ProxyConfigRaw::None,
-            Some(ProxyConfig::Socks4(config)) => {
-                let address = config.address();
-                let host = address.host();
-                let port = address.port();
-                ProxyConfigRaw::Socks4 { host, port }
-            }
-            Some(ProxyConfig::Socks5(config)) => {
-                let address = config.address();
-                let host = address.host();
-                let port = address.port();
-                let username = config.username().clone();
-                let password = config.password().clone();
-                ProxyConfigRaw::Socks5 {
-                    host,
-                    port,
-                    username,
-                    password,
-                }
-            }
-            Some(ProxyConfig::Https(config)) => {
-                let address = config.address();
-                let host = address.host();
-                let port = address.port();
-                let username = config.username().clone();
-                let password = config.password().clone();
-                ProxyConfigRaw::Https {
-                    host,
-                    port,
-                    username,
-                    password,
-                }
-            }
-        };
-        let firewall_config = match &value.firewall_config {
-            None => FirewallConfigRaw::None,
-            Some(firewall_config) => {
-                FirewallConfigRaw::AllowedPorts(firewall_config.allowed_ports().clone())
-            }
-        };
+        let tor_config = TorConfigRaw::from(&value.tor_config);
 
         SettingsRaw {
             version,
@@ -125,11 +64,8 @@ impl From<&Settings> for SettingsRaw {
             minimize_instead_of_exit,
             show_system_tray_icon,
             minimize_to_system_tray,
-            tor_backend,
             connect_automatically,
-            bridge_config,
-            proxy_config,
-            firewall_config,
+            tor_config,
         }
     }
 }
@@ -152,11 +88,8 @@ pub struct Settings {
     pub show_system_tray_icon: bool,
     pub minimize_to_system_tray: bool,
     // connection settings
-    pub tor_backend: TorBackend,
     pub connect_automatically: bool,
-    pub bridge_config: Option<BridgeConfig>,
-    pub proxy_config: Option<ProxyConfig>,
-    pub firewall_config: Option<FirewallConfig>,
+    pub tor_config: TorConfig,
 }
 
 impl FromStr for Settings {
@@ -188,11 +121,8 @@ impl Default for Settings {
             minimize_instead_of_exit: false,
             show_system_tray_icon: false,
             minimize_to_system_tray: false,
-            tor_backend: TorBackend::BundledTor,
             connect_automatically: false,
-            bridge_config: None,
-            proxy_config: None,
-            firewall_config: None,
+            tor_config: TorConfig::default(),
         }
     }
 }
@@ -211,66 +141,8 @@ impl TryFrom<SettingsRaw> for Settings {
         let minimize_instead_of_exit = value.minimize_instead_of_exit;
         let show_system_tray_icon = value.show_system_tray_icon;
         let minimize_to_system_tray = value.minimize_to_system_tray;
-        let tor_backend = value.tor_backend;
         let connect_automatically = value.connect_automatically;
-        let bridge_config = match value.bridge_config {
-            BridgeConfigRaw::None => None,
-            BridgeConfigRaw::Custom(bridge_strings) => {
-                if bridge_strings.is_empty() {
-                    return Err(Self::Error::ConversionFailed(
-                        "custom bridge_config must contain at least one bridge line",
-                    ));
-                } else {
-                    let mut bridge_lines: Vec<BridgeLine> =
-                        Vec::with_capacity(bridge_strings.len());
-                    for bridge_string in bridge_strings {
-                        let bridge_line = BridgeLine::from_str(bridge_string.as_ref())?;
-                        bridge_lines.push(bridge_line);
-                    }
-                    let first = bridge_lines.remove(0);
-                    Some(BridgeConfig::Custom(first, bridge_lines))
-                }
-            }
-            BridgeConfigRaw::BuiltInObfs4 => Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)),
-            BridgeConfigRaw::BuiltInMeek => Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)),
-            BridgeConfigRaw::BuiltInSnowflake => {
-                Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake))
-            }
-        };
-        let proxy_config = match value.proxy_config {
-            ProxyConfigRaw::None => None,
-            ProxyConfigRaw::Socks4 { host, port } => {
-                let address = TargetAddr::try_from((host, port))?;
-                let config = Socks4ProxyConfig::new(address)?;
-                Some(ProxyConfig::from(config))
-            }
-            ProxyConfigRaw::Socks5 {
-                host,
-                port,
-                username,
-                password,
-            } => {
-                let address = TargetAddr::try_from((host, port))?;
-                let config = Socks5ProxyConfig::new(address, username, password)?;
-                Some(ProxyConfig::from(config))
-            }
-            ProxyConfigRaw::Https {
-                host,
-                port,
-                username,
-                password,
-            } => {
-                let address = TargetAddr::try_from((host, port))?;
-                let config = HttpsProxyConfig::new(address, username, password)?;
-                Some(ProxyConfig::from(config))
-            }
-        };
-        let firewall_config = match value.firewall_config {
-            FirewallConfigRaw::None => None,
-            FirewallConfigRaw::AllowedPorts(allowed_ports_list) => {
-                Some(FirewallConfig::try_from(allowed_ports_list)?)
-            }
-        };
+        let tor_config = TorConfig::try_from(value.tor_config)?;
 
         Ok(Self {
             start_only_single_instance,
@@ -283,11 +155,8 @@ impl TryFrom<SettingsRaw> for Settings {
             minimize_instead_of_exit,
             show_system_tray_icon,
             minimize_to_system_tray,
-            tor_backend,
             connect_automatically,
-            bridge_config,
-            proxy_config,
-            firewall_config,
+            tor_config,
         })
     }
 }
@@ -304,9 +173,11 @@ impl From<v3::settings::Settings> for Settings {
                 _ => Language::System,
             },
             play_audio_notifications: value.play_audio_notification,
-            bridge_config: value.bridge_config.clone(),
-            proxy_config: value.proxy_config.clone(),
-            firewall_config: value.firewall_config.clone(),
+            tor_config: TorConfig::BundledTor {
+                bridge_config: value.bridge_config.clone(),
+                proxy_config: value.proxy_config.clone(),
+                firewall_config: value.firewall_config.clone(),
+            },
             ..Self::default()
         }
     }
@@ -358,19 +229,200 @@ pub enum Language {
     Dutch,
 }
 
-#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub enum TorBackend {
-    #[default]
+#[derive(Deserialize, Serialize)]
+enum TorConfigRaw {
     #[serde(rename = "bundled-tor")]
-    BundledTor,
-    #[serde(rename = "system-tor")]
-    SystemTor,
+    BundledTor {
+        bridge_config: BridgeConfigRaw,
+        proxy_config: ProxyConfigRaw,
+        firewall_config: FirewallConfigRaw,
+    },
+    #[serde(rename = "external-tor")]
+    ExternalTor {
+        // todo
+    },
     #[serde(rename = "arti-client")]
+    ArtiClient {
+        // todo
+    },
+}
+
+impl Default for TorConfigRaw {
+    fn default() -> Self {
+        TorConfigRaw::BundledTor{
+            bridge_config: Default::default(),
+            proxy_config: Default::default(),
+            firewall_config: Default::default(),
+        }
+    }
+}
+
+impl From<&TorConfig> for TorConfigRaw {
+    fn from(value: &TorConfig) -> Self {
+        match value {
+            TorConfig::BundledTor{bridge_config, proxy_config, firewall_config} => {
+                let bridge_config = match bridge_config {
+                    None => BridgeConfigRaw::None,
+                    Some(BridgeConfig::Custom(first, bridge_lines)) => {
+                        let first = first.as_legacy_tor_setconf_value();
+                        let mut bridge_strings: Vec<String> = bridge_lines
+                            .iter()
+                            .map(|bridge_line| bridge_line.as_legacy_tor_setconf_value())
+                            .collect();
+                        bridge_strings.insert(0, first);
+                        BridgeConfigRaw::Custom(bridge_strings)
+                    }
+                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)) => BridgeConfigRaw::BuiltInObfs4,
+                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)) => BridgeConfigRaw::BuiltInMeek,
+                    Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake)) => {
+                        BridgeConfigRaw::BuiltInSnowflake
+                    }
+                };
+                let proxy_config = match proxy_config {
+                    None => ProxyConfigRaw::None,
+                    Some(ProxyConfig::Socks4(config)) => {
+                        let address = config.address();
+                        let host = address.host();
+                        let port = address.port();
+                        ProxyConfigRaw::Socks4 { host, port }
+                    }
+                    Some(ProxyConfig::Socks5(config)) => {
+                        let address = config.address();
+                        let host = address.host();
+                        let port = address.port();
+                        let username = config.username().clone();
+                        let password = config.password().clone();
+                        ProxyConfigRaw::Socks5 {
+                            host,
+                            port,
+                            username,
+                            password,
+                        }
+                    }
+                    Some(ProxyConfig::Https(config)) => {
+                        let address = config.address();
+                        let host = address.host();
+                        let port = address.port();
+                        let username = config.username().clone();
+                        let password = config.password().clone();
+                        ProxyConfigRaw::Https {
+                            host,
+                            port,
+                            username,
+                            password,
+                        }
+                    }
+                };
+                let firewall_config = match firewall_config {
+                    None => FirewallConfigRaw::None,
+                    Some(firewall_config) => {
+                        FirewallConfigRaw::AllowedPorts(firewall_config.allowed_ports().clone())
+                    }
+                };
+                TorConfigRaw::BundledTor{bridge_config, proxy_config, firewall_config}
+            },
+            TorConfig::ExternalTor => TorConfigRaw::ExternalTor{},
+            TorConfig::ArtiClient => TorConfigRaw::ArtiClient{},
+        }
+    }
+}
+
+#[derive(Clone, Debug,PartialEq)]
+pub enum TorConfig {
+    BundledTor {
+        bridge_config: Option<BridgeConfig>,
+        proxy_config: Option<ProxyConfig>,
+        firewall_config: Option<FirewallConfig>,
+    },
+    ExternalTor,
     ArtiClient,
 }
 
+impl Default for TorConfig {
+    fn default() -> Self {
+        TorConfig::BundledTor{
+            bridge_config: None,
+            proxy_config: None,
+            firewall_config: None,
+        }
+    }
+}
+
+impl TryFrom<TorConfigRaw> for TorConfig {
+    type Error = crate::Error;
+
+    fn try_from(value: TorConfigRaw) -> Result<Self, Self::Error> {
+        let tor_config = match value {
+            TorConfigRaw::BundledTor{bridge_config, proxy_config, firewall_config} => {
+                let bridge_config = match bridge_config {
+                    BridgeConfigRaw::None => None,
+                    BridgeConfigRaw::Custom(bridge_strings) => {
+                        if bridge_strings.is_empty() {
+                            return Err(Self::Error::ConversionFailed(
+                                "custom bridge_config must contain at least one bridge line",
+                            ));
+                        } else {
+                            let mut bridge_lines: Vec<BridgeLine> =
+                                Vec::with_capacity(bridge_strings.len());
+                            for bridge_string in bridge_strings {
+                                let bridge_line = BridgeLine::from_str(bridge_string.as_ref())?;
+                                bridge_lines.push(bridge_line);
+                            }
+                            let first = bridge_lines.remove(0);
+                            Some(BridgeConfig::Custom(first, bridge_lines))
+                        }
+                    }
+                    BridgeConfigRaw::BuiltInObfs4 => Some(BridgeConfig::BuiltIn(BuiltInBridge::Obfs4)),
+                    BridgeConfigRaw::BuiltInMeek => Some(BridgeConfig::BuiltIn(BuiltInBridge::Meek)),
+                    BridgeConfigRaw::BuiltInSnowflake => {
+                        Some(BridgeConfig::BuiltIn(BuiltInBridge::Snowflake))
+                    }
+                };
+                let proxy_config = match proxy_config {
+                    ProxyConfigRaw::None => None,
+                    ProxyConfigRaw::Socks4 { host, port } => {
+                        let address = TargetAddr::try_from((host, port))?;
+                        let config = Socks4ProxyConfig::new(address)?;
+                        Some(ProxyConfig::from(config))
+                    }
+                    ProxyConfigRaw::Socks5 {
+                        host,
+                        port,
+                        username,
+                        password,
+                    } => {
+                        let address = TargetAddr::try_from((host, port))?;
+                        let config = Socks5ProxyConfig::new(address, username, password)?;
+                        Some(ProxyConfig::from(config))
+                    }
+                    ProxyConfigRaw::Https {
+                        host,
+                        port,
+                        username,
+                        password,
+                    } => {
+                        let address = TargetAddr::try_from((host, port))?;
+                        let config = HttpsProxyConfig::new(address, username, password)?;
+                        Some(ProxyConfig::from(config))
+                    }
+                };
+                let firewall_config = match firewall_config {
+                    FirewallConfigRaw::None => None,
+                    FirewallConfigRaw::AllowedPorts(allowed_ports_list) => {
+                        Some(FirewallConfig::try_from(allowed_ports_list)?)
+                    }
+                };
+                TorConfig::BundledTor{bridge_config, proxy_config, firewall_config}
+            },
+            TorConfigRaw::ExternalTor{} => TorConfig::ExternalTor,
+            TorConfigRaw::ArtiClient{} => TorConfig::ArtiClient,
+        };
+        Ok(tor_config)
+    }
+}
+
 #[derive(Default, Deserialize, Serialize)]
-pub enum BridgeConfigRaw {
+enum BridgeConfigRaw {
     #[default]
     #[serde(rename = "none")]
     None,

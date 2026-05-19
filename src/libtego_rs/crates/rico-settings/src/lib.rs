@@ -3,6 +3,9 @@ pub mod v3;
 pub mod v4;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("Not Implemented")]
+    NotImplemented,
+
     #[error("Conversion failed: {0}")]
     ConversionFailed(&'static str),
 
