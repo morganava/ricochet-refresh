@@ -9,6 +9,7 @@ InterfaceSettingsPanel::InterfaceSettingsPanel(wxWindow* parent) :
     wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {
     this->SetScrollRate(0, this->FromDIP(Metrics::VSCROLL_RATE));
 
+    auto h_sizer = new wxBoxSizer(wxHORIZONTAL);
     auto v_sizer = new wxBoxSizer(wxVERTICAL);
 
     // Language
@@ -166,7 +167,8 @@ InterfaceSettingsPanel::InterfaceSettingsPanel(wxWindow* parent) :
     v_sizer->Add(show_system_tray_icon_toggle, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer->Add(minimize_to_system_tray_v_sizer, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
 
-    this->SetSizerAndFit(v_sizer);
+    h_sizer->Add(v_sizer, 1, wxEXPAND | wxLEFT | wxRIGHT, Metrics::HORIZONTAL_PADDING_MEDIUM);
+    this->SetSizerAndFit(h_sizer);
 
     // todo: configure UX based on loaded settings
 

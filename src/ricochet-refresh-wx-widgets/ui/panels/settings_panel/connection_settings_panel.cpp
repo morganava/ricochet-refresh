@@ -10,6 +10,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {
     this->SetScrollRate(0, this->FromDIP(Metrics::VSCROLL_RATE));
 
+    auto h_sizer = new wxBoxSizer(wxHORIZONTAL);
     auto v_sizer = new wxBoxSizer(wxVERTICAL);
 
     // Backend
@@ -398,7 +399,8 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     firewall_v_sizer->Add(firewall_h_sizer, 0, wxEXPAND);
     v_sizer->Add(firewall_v_sizer, 0, wxEXPAND | wxLEFT, Metrics::HORIZONTAL_PADDING_XLARGE);
 
-    this->SetSizerAndFit(v_sizer);
+    h_sizer->Add(v_sizer, 1, wxEXPAND | wxLEFT | wxRIGHT, Metrics::HORIZONTAL_PADDING_MEDIUM);
+    this->SetSizerAndFit(h_sizer);
 
     // todo configure UX from loaded settings
     this->disable_bridge_controls();
