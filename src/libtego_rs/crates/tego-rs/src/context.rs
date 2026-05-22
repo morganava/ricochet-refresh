@@ -128,6 +128,7 @@ impl Context {
                     // start event loop
                     if let Err(_err) = task.run(tor_config) {
                         log_error!("{_err:?}");
+                        log_flush!();
                         panic!();
                     }
                 })?,

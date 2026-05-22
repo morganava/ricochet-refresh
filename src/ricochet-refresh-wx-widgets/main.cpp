@@ -25,6 +25,7 @@ bool RicochetRefresh::OnInit() try {
 
 } catch (std::exception& ex) {
     LOG_ERROR(ex.what());
+    LOG_FLUSH();
     return false;
 }
 

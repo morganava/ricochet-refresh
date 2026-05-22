@@ -8,6 +8,8 @@ use crate::macros::*;
 // Logging functions
 //
 
+/// Log a message to the 'Error' channel
+///
 /// @param message : utf8 encoded 'Error' message
 /// @param message_length : length of message not including null-terminator
 ///
@@ -26,6 +28,7 @@ pub unsafe extern "C" fn tego_log_error(message: *const c_char, message_length: 
     }
 }
 
+/// Log a message to the 'Info' channel
 /// @param message : utf8 encoded 'Info' message
 /// @param message_length : length of message not including null-terminator
 ///
@@ -44,8 +47,15 @@ pub unsafe extern "C" fn tego_log_info(message: *const c_char, message_length: u
     }
 }
 
-/// @param message : utf8 encoded 'Info' message
+/// Log a message to the 'Trace' channel (and trace the message location)
+///
+/// @param message : utf8 encoded 'Trace' message
 /// @param message_length : length of message not including null-terminator
+/// @param function_name : utf8 encoded function name
+/// @param function_name_length : length of function_name not including null-terminator
+/// @param source_path: utf8 encoded function name
+/// @param source_path_length: length of source_path not including null-terminator
+/// @param line_number: the line of the calling trace
 ///
 /// # Safety
 ///
@@ -84,4 +94,11 @@ pub unsafe extern "C" fn tego_log_trace(
             format!("{function_name} in {source_path}:{line_number} {message}"),
         );
     }
+}
+
+/// Blocks until all messages have been printed
+#[no_mangle]
+#[cfg(feature = "logging")]
+pub extern "C" fn tego_log_flush() {
+    crate::logger::Logger::flush();
 }

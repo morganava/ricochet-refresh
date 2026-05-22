@@ -154,3 +154,11 @@ macro_rules! log_packet {
     }};
 }
 pub(crate) use log_packet;
+
+macro_rules! log_flush {
+    ($($arg:tt)*) => {{
+        #[cfg(feature = "logging")]
+        crate::logger::Logger::flush()
+    }};
+}
+pub(crate) use log_flush;

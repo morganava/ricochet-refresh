@@ -1,7 +1,7 @@
 // standard
 use std::convert::TryFrom;
 use std::io::Write;
-use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::sync::{Arc, Condvar, Mutex, OnceLock, Weak};
 
 // extern
 use time::UtcDateTime;
@@ -53,10 +53,13 @@ impl From<LogLevel> for u32 {
     }
 }
 
-struct Message {
-    log_level: u32,
-    timestamp: UtcDateTime,
-    text: String,
+enum Message {
+    Line {
+        log_level: u32,
+        timestamp: UtcDateTime,
+        text: String,
+    },
+    Flush(Weak<Condvar>),
 }
 
 pub(crate) struct Logger {
@@ -75,7 +78,7 @@ impl Logger {
         };
 
         // get log level from env variable
-        let log_level: u32 = {
+        let requested_log_level: u32 = {
             match std::env::var("RICOCHET_REFRESH_LOG_LEVEL") {
                 Ok(val) => val
                     .split(",")
@@ -119,24 +122,38 @@ impl Logger {
 
                     // print all our messages
                     for msg in local_queue.drain(..) {
-                        if msg.log_level <= log_level {
-                            let timestamp = msg.timestamp.format(&format).unwrap();
-                            let text = msg.text;
-                            match msg.log_level & log_level {
-                                LOG_LEVEL_NONE => (),
-                                LOG_LEVEL_ERROR => {
-                                    let _ = writeln!(stderr, "[ERROR][{timestamp}] {text}");
+                        match msg {
+                            Message::Line {
+                                log_level,
+                                timestamp,
+                                text,
+                            } => {
+                                if log_level <= requested_log_level {
+                                    let timestamp = timestamp.format(&format).unwrap();
+                                    match log_level & requested_log_level {
+                                        LOG_LEVEL_NONE => (),
+                                        LOG_LEVEL_ERROR => {
+                                            let _ = writeln!(stderr, "[ERROR][{timestamp}] {text}");
+                                        }
+                                        LOG_LEVEL_INFO => {
+                                            let _ = writeln!(stdout, "[INFO][{timestamp}] {text}");
+                                        }
+                                        LOG_LEVEL_TRACE => {
+                                            let _ = writeln!(stdout, "[TRACE][{timestamp}] {text}");
+                                        }
+                                        LOG_LEVEL_PACKET => {
+                                            let _ =
+                                                writeln!(stdout, "[PACKET][{timestamp}] {text}");
+                                        }
+                                        _ => (),
+                                    }
                                 }
-                                LOG_LEVEL_INFO => {
-                                    let _ = writeln!(stdout, "[INFO][{timestamp}] {text}");
+                            }
+                            Message::Flush(cvar) => {
+                                // notify flush() caller that messages have been printed
+                                if let Some(cvar) = cvar.upgrade() {
+                                    cvar.notify_one();
                                 }
-                                LOG_LEVEL_TRACE => {
-                                    let _ = writeln!(stdout, "[TRACE][{timestamp}] {text}");
-                                }
-                                LOG_LEVEL_PACKET => {
-                                    let _ = writeln!(stdout, "[PACKET][{timestamp}] {text}");
-                                }
-                                _ => (),
                             }
                         }
                     }
@@ -145,12 +162,7 @@ impl Logger {
         logger
     }
 
-    pub fn log(log_level: LogLevel, text: String) {
-        let message = Message {
-            log_level: log_level.into(),
-            timestamp: UtcDateTime::now(),
-            text,
-        };
+    fn push_message(message: Message) {
         let logger = LOGGER.get_or_init(init_logger);
         let (queue, cvar) = &*logger.queue;
         let mut queue = queue.lock().expect("LOGGER queue mutex poisoned");
@@ -158,5 +170,23 @@ impl Logger {
         queue.push(message);
         // signal thread new message is available
         cvar.notify_one();
+    }
+
+    // append a cvar for the work queue to signal once it gets to it
+    pub fn flush() {
+        let mutex: Mutex<()> = Default::default();
+        let cvar: Arc<Condvar> = Default::default();
+        Self::push_message(Message::Flush(Arc::downgrade(&cvar)));
+        let _unused = cvar.wait(mutex.lock().unwrap()).unwrap();
+    }
+
+    // append a message to print
+    pub fn log(log_level: LogLevel, text: String) {
+        let message = Message::Line {
+            log_level: log_level.into(),
+            timestamp: UtcDateTime::now(),
+            text,
+        };
+        Self::push_message(message);
     }
 }
