@@ -52,6 +52,16 @@ macro_rules! bail_if_not_equal {
 }
 pub(crate) use bail_if_not_equal;
 
+// alwys bail
+#[allow(unused_macros)]
+macro_rules! bail_not_implemented {
+    () => {
+        anyhow::bail!("not implemented");
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use bail_not_implemented;
+
 //
 // ffi helpers
 //
