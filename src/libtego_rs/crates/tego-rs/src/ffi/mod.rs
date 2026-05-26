@@ -1,8 +1,10 @@
 pub mod context;
 pub mod ed25519_private_key;
 pub mod error;
+pub mod handle;
 #[cfg(feature = "logging")]
 pub mod logger;
+pub mod object_map;
 pub mod pluggable_transport_config;
 pub mod settings;
 pub mod tor_daemon_config;
@@ -22,6 +24,8 @@ use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 // internal
 use crate::context::Context;
 use crate::error::{translate_failures, Error};
+use crate::ffi;
+use crate::ffi::handle::*;
 use crate::macros::*;
 use crate::object_map::ObjectMap;
 use crate::settings::SettingsFile;
@@ -30,7 +34,6 @@ pub(crate) type TegoKey = usize;
 pub(crate) enum TegoObject {
     Error(Error),
     Context(Box<Context>),
-    Settings(SettingsFile),
     Ed25519PrivateKey(Ed25519PrivateKey),
     V3OnionServiceId(V3OnionServiceId),
     UserId(V3OnionServiceId),
@@ -47,6 +50,17 @@ pub(crate) fn get_object_map<'a>() -> std::sync::MutexGuard<'a, TegoObjectMap> {
         .lock()
         .expect("another thread panicked while holding OBJECT_MAP's mutex")
 }
+
+pub(crate) const TEGO_TAG_BITS: usize = 4usize;
+pub(crate) const TEGO_SETTINGS_TAG: usize = 2usize;
+
+impl_object_map!(
+    SettingsFile,
+    tego_settings,
+    TEGO_TAG_BITS,
+    TEGO_SETTINGS_TAG,
+    tego_settings_map
+);
 
 pub const TEGO_TRUE: i32 = 1;
 pub const TEGO_FALSE: i32 = 0;
@@ -662,7 +676,13 @@ pub extern "C" fn tego_context_delete(value: *mut tego_context) {
 
 #[no_mangle]
 pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
-    impl_deleter!(TegoObject::Settings(_), value);
+    let handle = Handle::try_from(value)
+        .map_err(|err| panic!("{err}"))
+        .unwrap();
+    tego_settings_map()
+        .remove(&handle)
+        .map_err(|err| panic!("{err}"))
+        .unwrap();
 }
 
 #[no_mangle]

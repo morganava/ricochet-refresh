@@ -13,8 +13,10 @@ set(tego_rs_sources
     src/ffi/context.rs
     src/ffi/ed25519_private_key.rs
     src/ffi/error.rs
+    src/ffi/handle.rs
     src/ffi/logger.rs
     src/ffi/mod.rs
+    src/ffi/object_map.rs
     src/ffi/pluggable_transport_config.rs
     src/ffi/settings.rs
     src/ffi/tor_daemon_config.rs

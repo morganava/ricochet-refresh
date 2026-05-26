@@ -66,6 +66,33 @@ pub(crate) use bail_not_implemented;
 // ffi helpers
 //
 
+// implement object storage
+macro_rules! impl_object_map {
+    (
+        $obj_type:ty,
+        $ffi_type:ty,
+        $tag_bits:expr,
+        $tag:expr,
+        $getter_fn:ident
+    ) => {
+        paste::paste! {
+            static [<$getter_fn:upper>]: std::sync::Mutex<
+                ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>
+            > = std::sync::Mutex::new(ffi::object_map::ObjectMap::new());
+
+            pub(crate) fn $getter_fn<'a>() -> std::sync::MutexGuard<
+                'a,
+                ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>,
+            > {
+                [<$getter_fn:upper>]
+                    .lock()
+                    .expect("another thread panicked while holding object map's mutex")
+            }
+        }
+    };
+}
+pub(crate) use impl_object_map;
+
 // implement callback setter code block
 macro_rules! impl_callback_setter {
     ($dest:ident, $context:expr, $callback:expr, $error:expr) => {

@@ -23,10 +23,10 @@ pub unsafe extern "C" fn tego_settings_load_default(
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(out_settings);
 
-        let object = TegoObject::Settings(SettingsFile::load_default()?);
-        let key = get_object_map().insert(object);
+        let settings = SettingsFile::load_default()?;
+        let handle = tego_settings_map().insert(settings);
         unsafe {
-            *out_settings = key as *mut tego_settings;
+            *out_settings = handle.into();
         }
         Ok(())
     });
@@ -57,10 +57,11 @@ pub unsafe extern "C" fn tego_settings_load(
         bail_if_equal!(settings_file_path_length, 0usize);
 
         let settings_file_path = raw_to_str!(settings_file_path, settings_file_path_length)?;
-        let object = TegoObject::Settings(SettingsFile::load_custom(settings_file_path.into())?);
-        let key = get_object_map().insert(object);
+        let settings = SettingsFile::load_custom(settings_file_path.into())?;
+
+        let handle = tego_settings_map().insert(settings);
         unsafe {
-            *out_settings = key as *mut tego_settings;
+            *out_settings = handle.into();
         }
         Ok(())
     });
@@ -82,19 +83,8 @@ pub unsafe extern "C" fn tego_settings_flush(
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(settings);
 
-        let mut object_map = get_object_map();
-
-        let settings = settings as TegoKey;
-        let settings = match object_map.get_mut(&settings) {
-            Some(TegoObject::Settings(settings)) => settings,
-            Some(_) => bail!(
-                "not a tego_settings pointer: {:?}",
-                settings as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", settings as *const c_void),
-        };
-        settings.flush()?;
-
+        let handle = Handle::try_from(settings)?;
+        tego_settings_map().get_mut(&handle)?.flush()?;
         Ok(())
     });
 }
