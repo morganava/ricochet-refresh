@@ -2,7 +2,7 @@
 use crate::error::translate_failures;
 use crate::ffi::*;
 use crate::macros::*;
-use crate::settings::SettingsFile;
+use crate::settings::SettingsStore;
 
 /// Initialize a new tego_settings by attempting to read
 /// from the default location.
@@ -21,7 +21,7 @@ pub unsafe extern "C" fn tego_settings_load_default(
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(out_settings);
 
-        let settings = SettingsFile::load_default()?;
+        let settings = SettingsStore::load_default()?;
         let handle = tego_settings_map().insert(settings);
         unsafe {
             *out_settings = handle.into();
@@ -55,7 +55,7 @@ pub unsafe extern "C" fn tego_settings_load(
         bail_if_equal!(settings_file_path_length, 0usize);
 
         let settings_file_path = raw_to_str!(settings_file_path, settings_file_path_length)?;
-        let settings = SettingsFile::load_custom(settings_file_path.into())?;
+        let settings = SettingsStore::load_custom(settings_file_path.into())?;
 
         let handle = tego_settings_map().insert(settings);
         unsafe {

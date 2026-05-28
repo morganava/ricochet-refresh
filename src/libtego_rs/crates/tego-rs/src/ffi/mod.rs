@@ -28,7 +28,7 @@ use crate::error::{translate_failures, Error};
 use crate::ffi;
 use crate::ffi::handle::*;
 use crate::macros::*;
-use crate::settings::SettingsFile;
+use crate::settings::SettingsStore;
 
 // tags for handles representing each of our FFI types
 impl_handle_tags!(
@@ -47,7 +47,7 @@ pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usiz
 
 impl_object_map!(tego_error, Error);
 impl_object_map!(tego_context, Context);
-impl_object_map!(tego_settings, SettingsFile);
+impl_object_map!(tego_settings, SettingsStore);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
 impl_object_map!(tego_user_id, V3OnionServiceId);

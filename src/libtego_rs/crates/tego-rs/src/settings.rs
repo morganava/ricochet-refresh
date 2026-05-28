@@ -9,12 +9,12 @@ use anyhow::Result;
 use rico_settings::v3::settings::Settings as SettingsV3;
 use rico_settings::v4::settings::Settings as SettingsV4;
 
-pub(crate) struct SettingsFile {
+pub(crate) struct SettingsStore {
     settings_location: PathBuf,
     settings: SettingsV4,
 }
 
-impl SettingsFile {
+impl SettingsStore {
     // Returns "%USERPROFILE%/AppData/Local/ricochet-refresh"
     #[cfg(target_os = "windows")]
     fn app_config_location() -> Result<PathBuf> {
@@ -46,7 +46,7 @@ impl SettingsFile {
     /// If the v4 settings.json config file does not exist, we attempt to read
     /// the v3 ricochet.json config file.
     /// If v3 does not exist, we create a new default-initialised v4 settings.json file
-    pub fn load_default() -> Result<SettingsFile> {
+    pub fn load_default() -> Result<Self> {
         let config_location = Self::app_config_location()?;
         let settings_location = config_location.join("settings.json");
 
@@ -71,7 +71,7 @@ impl SettingsFile {
             settings
         };
 
-        Ok(SettingsFile {
+        Ok(Self {
             settings_location,
             settings,
         })
@@ -80,7 +80,7 @@ impl SettingsFile {
     /// Attempt to red settings from a user-specified location
     /// If the file does not exist, a new config is created at the specified location
     /// Fails if the path to the file does not exist
-    pub fn load_custom(settings_location: PathBuf) -> Result<SettingsFile> {
+    pub fn load_custom(settings_location: PathBuf) -> Result<Self> {
         let settings_location = std::path::absolute(settings_location.as_path())?;
         // load settings from src if it exits
         let settings = if settings_location.exists() {
@@ -93,7 +93,7 @@ impl SettingsFile {
             settings
         };
 
-        Ok(SettingsFile {
+        Ok(Self {
             settings_location,
             settings,
         })
@@ -105,14 +105,14 @@ impl SettingsFile {
     }
 }
 
-impl Deref for SettingsFile {
+impl Deref for SettingsStore {
     type Target = SettingsV4;
     fn deref(&self) -> &Self::Target {
         &self.settings
     }
 }
 
-impl DerefMut for SettingsFile {
+impl DerefMut for SettingsStore {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.settings
     }
