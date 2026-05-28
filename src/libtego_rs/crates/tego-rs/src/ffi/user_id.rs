@@ -1,8 +1,5 @@
-// standard
-use std::ffi::c_void;
-
 // extern
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 // internal
 use crate::error::translate_failures;
@@ -28,15 +25,8 @@ pub unsafe extern "C" fn tego_user_id_from_v3_onion_service_id(
         bail_if_null!(out_user_id);
         bail_if_null!(service_id);
 
-        let key = service_id as TegoKey;
-        let service_id = match get_object_map().get(&key) {
-            Some(TegoObject::V3OnionServiceId(service_id)) => service_id.clone(),
-            Some(_) => bail!(
-                "not a tego_v3_onion_service_id pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let service_id = Handle::try_from(service_id)?;
+        let service_id = tego_v3_onion_service_id_map().get(&service_id)?.clone();
 
         let handle = tego_user_id_map().insert(service_id);
         unsafe { *out_user_id = handle.into() };
@@ -66,9 +56,9 @@ pub unsafe extern "C" fn tego_user_id_get_v3_onion_service_id(
 
         let user_id = Handle::try_from(user_id)?;
         let service_id = tego_user_id_map().get(&user_id)?.clone();
-        let service_id = get_object_map().insert(TegoObject::V3OnionServiceId(service_id));
+        let service_id = tego_v3_onion_service_id_map().insert(service_id);
 
-        unsafe { *out_service_id = service_id as *mut tego_v3_onion_service_id };
+        unsafe { *out_service_id = service_id.into() };
 
         Ok(())
     })

@@ -1,8 +1,8 @@
 // standard
-use std::ffi::{c_char, c_void};
+use std::ffi::c_char;
 
 // extern
-use anyhow::{bail, Result};
+use anyhow::Result;
 use tor_interface::tor_crypto::V3OnionServiceId;
 
 // internal
@@ -67,11 +67,9 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_from_string(
         let service_id_string = raw_to_str!(service_id_string, service_id_string_length)?;
 
         let service_id = V3OnionServiceId::from_string(service_id_string)?;
-
-        let object = TegoObject::V3OnionServiceId(service_id);
-        let key = get_object_map().insert(object);
+        let service_id = tego_v3_onion_service_id_map().insert(service_id);
         unsafe {
-            *out_service_id = key as *mut tego_v3_onion_service_id;
+            *out_service_id = service_id.into();
         }
         Ok(())
     })
@@ -104,32 +102,24 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_to_string(
         bail_if_null!(out_service_id_string);
         bail_if!(service_id_string_size < TEGO_V3_ONION_SERVICE_ID_SIZE);
 
-        let key = service_id as TegoKey;
-        match get_object_map().get(&key) {
-            Some(TegoObject::V3OnionServiceId(service_id)) => {
-                let service_id = service_id.to_string();
-                let service_id = service_id.as_str();
-                assert!(service_id.len() == TEGO_V3_ONION_SERVICE_ID_LENGTH);
+        let service_id = Handle::try_from(service_id)?;
+        let service_id = tego_v3_onion_service_id_map().get(&service_id)?.to_string();
+        let service_id = service_id.to_string();
+        let service_id = service_id.as_str();
+        assert!(service_id.len() == TEGO_V3_ONION_SERVICE_ID_LENGTH);
 
-                unsafe {
-                    let out_service_id_string = std::slice::from_raw_parts_mut(
-                        out_service_id_string as *mut u8,
-                        service_id_string_size,
-                    );
-                    std::ptr::copy(
-                        service_id.as_ptr(),
-                        out_service_id_string.as_mut_ptr(),
-                        service_id.len(),
-                    );
-                    out_service_id_string[TEGO_V3_ONION_SERVICE_ID_LENGTH] = 0u8;
-                }
-                Ok(TEGO_V3_ONION_SERVICE_ID_SIZE)
-            }
-            Some(_) => bail!(
-                "not a tego_v3_onion_service_id pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
+        unsafe {
+            let out_service_id_string = std::slice::from_raw_parts_mut(
+                out_service_id_string as *mut u8,
+                service_id_string_size,
+            );
+            std::ptr::copy(
+                service_id.as_ptr(),
+                out_service_id_string.as_mut_ptr(),
+                service_id.len(),
+            );
+            out_service_id_string[TEGO_V3_ONION_SERVICE_ID_LENGTH] = 0u8;
         }
+        Ok(TEGO_V3_ONION_SERVICE_ID_SIZE)
     })
 }
