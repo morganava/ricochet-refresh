@@ -66,32 +66,73 @@ pub(crate) use bail_not_implemented;
 // ffi helpers
 //
 
+// implement handle tags
+macro_rules! impl_handle_tags {
+    ($($name:ident),* $(,)?) => {
+        impl_handle_tags!(@inner 1usize, $($name),*);
+    };
+    (@inner $counter:expr, $name:ident, $($rest:ident),* $(,)?) => {
+        const $name: usize = $counter;
+        impl_handle_tags!(@inner ($counter + 1), $($rest),*);
+    };
+    (@inner $counter:expr, $name:ident) => {
+        const $name: usize = $counter;
+    };
+}
+pub(crate) use impl_handle_tags;
+
 // implement object storage
 macro_rules! impl_object_map {
+    ($ffi_type:ty, $obj_type:ty) => {
+        paste::paste! {
+            impl_object_map!(
+                $ffi_type,
+                $obj_type,
+                TEGO_TAG_BITS,
+                [<$ffi_type:upper _TAG>],
+                [<$ffi_type:upper _MAP>],
+                [<$ffi_type _map>]
+            );
+        }
+    };
     (
-        $obj_type:ty,
         $ffi_type:ty,
+        $obj_type:ty,
         $tag_bits:expr,
         $tag:expr,
+        $static_name:ident,
         $getter_fn:ident
     ) => {
-        paste::paste! {
-            static [<$getter_fn:upper>]: std::sync::Mutex<
-                ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>
-            > = std::sync::Mutex::new(ffi::object_map::ObjectMap::new());
+        static $static_name: std::sync::Mutex<
+            ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>,
+        > = std::sync::Mutex::new(ffi::object_map::ObjectMap::new());
 
-            pub(crate) fn $getter_fn<'a>() -> std::sync::MutexGuard<
-                'a,
-                ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>,
-            > {
-                [<$getter_fn:upper>]
-                    .lock()
-                    .expect("another thread panicked while holding object map's mutex")
-            }
+        pub(crate) fn $getter_fn<'a>() -> std::sync::MutexGuard<
+            'a,
+            ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>,
+        > {
+            $static_name
+                .lock()
+                .expect("another thread panicked while holding object map's mutex")
         }
     };
 }
 pub(crate) use impl_object_map;
+
+macro_rules! impl_object_deleter {
+    ($ffi_type:ident, $value:expr) => {
+        paste::paste! {
+            let handle = Handle::try_from($value)
+                .map_err(|err| panic!("{err}"))
+                .unwrap();
+            [<$ffi_type _map>]()
+                .remove(&handle)
+                .map_err(|err| panic!("{err}"))
+                .unwrap();
+        }
+    };
+}
+pub(crate) use impl_object_deleter;
 
 // implement callback setter code block
 macro_rules! impl_callback_setter {

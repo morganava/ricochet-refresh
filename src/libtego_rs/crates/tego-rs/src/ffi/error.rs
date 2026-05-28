@@ -18,10 +18,11 @@ pub unsafe extern "C" fn tego_error_get_message(error: *const tego_error) -> *co
     if error.is_null() {
         std::ptr::null()
     } else {
-        let key = error as TegoKey;
-        match get_object_map().get(&key) {
-            Some(TegoObject::Error(err)) => err.message().as_ptr(),
-            _ => std::ptr::null(),
+        if let Ok(handle) = Handle::try_from(error) {
+            if let Ok(error) = tego_error_map().get(&handle) {
+                return error.message().as_ptr();
+            }
         }
+        std::ptr::null()
     }
 }

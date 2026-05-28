@@ -32,7 +32,6 @@ use crate::settings::SettingsFile;
 
 pub(crate) type TegoKey = usize;
 pub(crate) enum TegoObject {
-    Error(Error),
     Context(Box<Context>),
     Ed25519PrivateKey(Ed25519PrivateKey),
     V3OnionServiceId(V3OnionServiceId),
@@ -51,16 +50,23 @@ pub(crate) fn get_object_map<'a>() -> std::sync::MutexGuard<'a, TegoObjectMap> {
         .expect("another thread panicked while holding OBJECT_MAP's mutex")
 }
 
-pub(crate) const TEGO_TAG_BITS: usize = 4usize;
-pub(crate) const TEGO_SETTINGS_TAG: usize = 2usize;
-
-impl_object_map!(
-    SettingsFile,
-    tego_settings,
-    TEGO_TAG_BITS,
+// tags for handles representing each of our FFI types
+impl_handle_tags!(
+    TEGO_ERROR_TAG,
+    // TEGO_CONTEXT_TAG,
     TEGO_SETTINGS_TAG,
-    tego_settings_map
+    // TEGO_ED25519_PRIVATE_KEY_TAG,
+    // TEGO_V3_ONION_SERVICE_ID_TAG,
+    // TEGO_USER_ID_TAG,
+    // TEGO_PLUGGABLE_TRANSPORT_CONFIG_TAG,
+    // TEGO_TOR_DAEMON_CONFIG_TAG,
+    _TEGO_MAX_TAG,
 );
+// the number of bits requird to store the various TEGO_.*_TAG constants
+pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usize + 1usize;
+
+impl_object_map!(tego_error, Error);
+impl_object_map!(tego_settings, SettingsFile);
 
 pub const TEGO_TRUE: i32 = 1;
 pub const TEGO_FALSE: i32 = 0;
@@ -666,7 +672,7 @@ pub extern "C" fn tego_context_set_user_status_changed_callback(
 
 #[no_mangle]
 pub extern "C" fn tego_error_delete(value: *mut tego_error) {
-    impl_deleter!(TegoObject::Error(_), value);
+    impl_object_deleter!(tego_error, value);
 }
 
 #[no_mangle]
@@ -676,13 +682,7 @@ pub extern "C" fn tego_context_delete(value: *mut tego_context) {
 
 #[no_mangle]
 pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
-    let handle = Handle::try_from(value)
-        .map_err(|err| panic!("{err}"))
-        .unwrap();
-    tego_settings_map()
-        .remove(&handle)
-        .map_err(|err| panic!("{err}"))
-        .unwrap();
+    impl_object_deleter!(tego_settings, value);
 }
 
 #[no_mangle]

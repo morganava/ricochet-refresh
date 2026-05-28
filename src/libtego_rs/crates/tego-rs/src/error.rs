@@ -2,7 +2,7 @@
 use std::ffi::CString;
 
 // internal crates
-use crate::ffi::{get_object_map, tego_error, TegoObject};
+use crate::ffi::{tego_error, tego_error_map};
 
 pub(crate) struct Error {
     message: CString,
@@ -38,10 +38,9 @@ where
             if !out_error.is_null() {
                 // populate error with runtime error message
                 let error = Error::new(format!("{:?}", err).as_str());
-                let object = TegoObject::Error(error);
-                let key = get_object_map().insert(object);
+                let handle = tego_error_map().insert(error);
                 unsafe {
-                    *out_error = key as *mut tego_error;
+                    *out_error = handle.into();
                 };
             }
             default
@@ -51,10 +50,9 @@ where
             if !out_error.is_null() {
                 // populate error with panic message
                 let error = Error::new("panic occurred");
-                let object = TegoObject::Error(error);
-                let key = get_object_map().insert(object);
+                let handle = tego_error_map().insert(error);
                 unsafe {
-                    *out_error = key as *mut tego_error;
+                    *out_error = handle.into();
                 };
             }
             default

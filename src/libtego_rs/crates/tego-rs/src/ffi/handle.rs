@@ -7,7 +7,6 @@ use anyhow::bail;
 
 // crate
 use crate::ffi::*;
-use crate::macros::*;
 
 pub struct Handle<FFI_STRUCT, const TAG_BITS: usize, const TAG: usize> {
     // least significant bits hold the tag
