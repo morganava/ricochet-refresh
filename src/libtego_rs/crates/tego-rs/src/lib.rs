@@ -8,7 +8,6 @@ pub(crate) mod listener_task;
 #[cfg(feature = "logging")]
 pub(crate) mod logger;
 pub(crate) mod macros;
-pub(crate) mod object_map;
 pub(crate) mod promise;
 pub(crate) mod settings;
 

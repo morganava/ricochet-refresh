@@ -30,7 +30,7 @@ use crate::listener_task::*;
 use crate::macros::*;
 
 pub(crate) struct EventLoopTask {
-    context: TegoKey,
+    context: handle::Handle<tego_context, TEGO_TAG_BITS, TEGO_CONTEXT_TAG>,
     callbacks: Weak<Mutex<Callbacks>>,
     tor_version: Weak<Mutex<Option<LegacyTorVersion>>>,
     tor_logs: Weak<Mutex<String>>,
@@ -55,7 +55,7 @@ impl EventLoopTask {
     const FILE_READ_BUFFER_SIZE: usize = rico_protocol::v3::MAX_FILE_CHUNK_SIZE;
 
     pub fn new(
-        context: TegoKey,
+        context: handle::Handle<tego_context, TEGO_TAG_BITS, TEGO_CONTEXT_TAG>,
         callbacks: Weak<Mutex<Callbacks>>,
         tor_version: Weak<Mutex<Option<LegacyTorVersion>>>,
         tor_logs: Weak<Mutex<String>>,
@@ -1546,7 +1546,7 @@ impl EventLoopTask {
     }
 
     fn handle_callbacks(&mut self) -> Result<()> {
-        let context = self.context as *mut tego_context;
+        let context: *mut tego_context = self.context.into();
 
         let callbacks = self.callbacks.upgrade().context("callbacks dropped")?;
         let callbacks = callbacks.lock().expect("callbacks mutex poisoned");

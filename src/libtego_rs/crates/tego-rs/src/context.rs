@@ -24,9 +24,12 @@ use crate::promise::Promise;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
+type ContextHandle = handle::Handle<tego_context, TEGO_TAG_BITS, TEGO_CONTEXT_TAG>;
+
 #[derive(Default)]
 pub(crate) struct Context {
-    tego_key: TegoKey,
+    // todo: this can just be an argument to begin
+    context_handle: Option<ContextHandle>,
     // callback struct
     pub callbacks: Arc<Mutex<Callbacks>>,
     // tor runtime data
@@ -48,10 +51,10 @@ pub(crate) struct Context {
 }
 
 impl Context {
-    pub fn set_tego_key(&mut self, tego_key: TegoKey) {
+    pub fn set_tego_key(&mut self, context_handle: ContextHandle) {
         log_trace!();
 
-        self.tego_key = tego_key;
+        self.context_handle = Some(context_handle);
     }
 
     pub fn tor_version_string(&mut self) -> Option<&CString> {
@@ -101,7 +104,9 @@ impl Context {
         log_trace!();
 
         self.private_key = Some(private_key.clone());
-        let tego_key = self.tego_key;
+        let context_handle = self
+            .context_handle
+            .context("missing call to set_tego_key()")?;
         let callbacks = Arc::downgrade(&self.callbacks);
         let tor_version = Arc::downgrade(&self.tor_version);
         let tor_logs = Arc::downgrade(&self.tor_logs);
@@ -111,7 +116,7 @@ impl Context {
         let command_queue = self.command_queue.downgrade();
 
         let task = EventLoopTask::new(
-            tego_key,
+            context_handle,
             callbacks,
             tor_version,
             tor_logs,

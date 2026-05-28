@@ -12,7 +12,7 @@ pub mod user_id;
 pub mod v3_onion_service_id;
 
 // standard
-use std::ffi::{c_char, c_int, c_void};
+use std::ffi::{c_char, c_int};
 
 // extern
 use anyhow::{bail, Result};
@@ -27,28 +27,12 @@ use crate::error::{translate_failures, Error};
 use crate::ffi;
 use crate::ffi::handle::*;
 use crate::macros::*;
-use crate::object_map::ObjectMap;
 use crate::settings::SettingsFile;
-
-pub(crate) type TegoKey = usize;
-pub(crate) enum TegoObject {
-    Context(Box<Context>),
-}
-
-type TegoObjectMap = ObjectMap<TegoObject>;
-
-static OBJECT_MAP: std::sync::Mutex<TegoObjectMap> = std::sync::Mutex::new(TegoObjectMap::new());
-
-pub(crate) fn get_object_map<'a>() -> std::sync::MutexGuard<'a, TegoObjectMap> {
-    OBJECT_MAP
-        .lock()
-        .expect("another thread panicked while holding OBJECT_MAP's mutex")
-}
 
 // tags for handles representing each of our FFI types
 impl_handle_tags!(
     TEGO_ERROR_TAG,
-    // TEGO_CONTEXT_TAG,
+    TEGO_CONTEXT_TAG,
     TEGO_SETTINGS_TAG,
     TEGO_ED25519_PRIVATE_KEY_TAG,
     TEGO_V3_ONION_SERVICE_ID_TAG,
@@ -61,6 +45,7 @@ impl_handle_tags!(
 pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usize + 1usize;
 
 impl_object_map!(tego_error, Error);
+impl_object_map!(tego_context, Context);
 impl_object_map!(tego_settings, SettingsFile);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
@@ -677,7 +662,7 @@ pub extern "C" fn tego_error_delete(value: *mut tego_error) {
 
 #[no_mangle]
 pub extern "C" fn tego_context_delete(value: *mut tego_context) {
-    impl_deleter!(TegoObject::Context(_), value);
+    impl_object_deleter!(tego_context, value);
 }
 
 #[no_mangle]
