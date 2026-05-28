@@ -5,7 +5,6 @@ use std::path::PathBuf;
 
 // extern
 use anyhow::{bail, Result};
-use tor_interface::legacy_tor_client::LegacyTorClientConfig;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 
 // internal
@@ -115,15 +114,8 @@ pub unsafe extern "C" fn tego_context_begin(
             bail_if_null!(user_type_buffer);
         }
 
-        let key = tor_config as TegoKey;
-        let tor_config: LegacyTorClientConfig = match get_object_map().get(&key) {
-            Some(TegoObject::TorDaemonConfig(config)) => config.clone(),
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let handle = Handle::try_from(tor_config)?;
+        let tor_config = tego_tor_daemon_config_map().get(&handle)?.clone();
 
         let key = host_private_key as TegoKey;
         let host_private_key: Ed25519PrivateKey = match get_object_map().get(&key) {
@@ -164,7 +156,7 @@ pub unsafe extern "C" fn tego_context_begin(
         let key = context as TegoKey;
         match get_object_map().get_mut(&key) {
             Some(TegoObject::Context(context)) => {
-                context.begin(tor_config.clone(), host_private_key.clone(), users)
+                context.begin(tor_config, host_private_key.clone(), users)
             }
             Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
             None => bail!("not a valid pointer: {:?}", key as *const c_void),

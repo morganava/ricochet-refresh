@@ -53,10 +53,9 @@ pub unsafe extern "C" fn tego_tor_daemon_config_initialize(
             bridge_lines: None,
         };
 
-        let object = TegoObject::TorDaemonConfig(bundled_tor_config);
-        let key = get_object_map().insert(object);
+        let handle = tego_tor_daemon_config_map().insert(bundled_tor_config);
         unsafe {
-            *out_config = key as *mut tego_tor_daemon_config;
+            *out_config = handle.into();
         }
         Ok(())
     })
@@ -107,20 +106,13 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks4(
         let proxy_config = ProxyConfig::Socks4(Socks4ProxyConfig::new(proxy_address)?);
 
         // update the config
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 proxy_settings,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *proxy_settings = Some(proxy_config);
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
 
         Ok(())
     })
@@ -200,20 +192,13 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks5(
             ProxyConfig::Socks5(Socks5ProxyConfig::new(proxy_address, username, password)?);
 
         // update the config
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 proxy_settings,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *proxy_settings = Some(proxy_config);
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
 
         Ok(())
     })
@@ -293,20 +278,13 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_https(
             ProxyConfig::Https(HttpsProxyConfig::new(proxy_address, username, password)?);
 
         // update the config
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 proxy_settings,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *proxy_settings = Some(proxy_config);
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
 
         Ok(())
     })
@@ -340,20 +318,13 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_allowed_ports(
         };
 
         // update the config
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 allowed_ports,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *allowed_ports = ports;
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
 
         Ok(())
     })
@@ -412,20 +383,15 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_pluggable_transport_configs(
             Some(pluggable_transport_config_vec)
         };
 
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        // update the config
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 pluggable_transports,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *pluggable_transports = pluggable_transport_configs;
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+
         Ok(())
     })
 }
@@ -475,20 +441,13 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_bridges(
         };
 
         // update the config
-        let key = config as TegoKey;
-        match get_object_map().get_mut(&key) {
-            Some(TegoObject::TorDaemonConfig(LegacyTorClientConfig::BundledTor {
+        let handle = Handle::try_from(config)?;
+        if let Ok(LegacyTorClientConfig::BundledTor {
                 bridge_lines,
                 ..
-            })) => {
+            }) = tego_tor_daemon_config_map().get_mut(&handle) {
                 *bridge_lines = bridge_lines_vec;
             }
-            Some(_) => bail!(
-                "not a tego_tor_daemon_config pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
 
         Ok(())
     })

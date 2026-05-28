@@ -37,7 +37,6 @@ pub(crate) enum TegoObject {
     V3OnionServiceId(V3OnionServiceId),
     UserId(V3OnionServiceId),
     PluggableTransportConfig(PluggableTransportConfig),
-    TorDaemonConfig(LegacyTorClientConfig),
 }
 
 type TegoObjectMap = ObjectMap<TegoObject>;
@@ -59,7 +58,7 @@ impl_handle_tags!(
     // TEGO_V3_ONION_SERVICE_ID_TAG,
     // TEGO_USER_ID_TAG,
     // TEGO_PLUGGABLE_TRANSPORT_CONFIG_TAG,
-    // TEGO_TOR_DAEMON_CONFIG_TAG,
+    TEGO_TOR_DAEMON_CONFIG_TAG,
     _TEGO_MAX_TAG,
 );
 // the number of bits requird to store the various TEGO_.*_TAG constants
@@ -67,6 +66,7 @@ pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usiz
 
 impl_object_map!(tego_error, Error);
 impl_object_map!(tego_settings, SettingsFile);
+impl_object_map!(tego_tor_daemon_config, LegacyTorClientConfig);
 
 pub const TEGO_TRUE: i32 = 1;
 pub const TEGO_FALSE: i32 = 0;
@@ -709,5 +709,5 @@ pub extern "C" fn tego_pluggable_transport_config_delete(
 
 #[no_mangle]
 pub extern "C" fn tego_tor_daemon_config_delete(value: *mut tego_tor_daemon_config) {
-    impl_deleter!(TegoObject::TorDaemonConfig(_), value);
+    impl_object_deleter!(tego_tor_daemon_config, value);
 }
