@@ -1,8 +1,8 @@
 // standard
-use std::ffi::{c_char, c_void};
+use std::ffi::c_char;
 
 // extern
-use anyhow::{bail, Result};
+use anyhow::Result;
 use tor_interface::tor_crypto::Ed25519PrivateKey;
 
 // internal
@@ -27,10 +27,9 @@ pub unsafe extern "C" fn tego_ed25519_private_key_generate(
         bail_if_null!(out_private_key);
 
         let private_key = Ed25519PrivateKey::generate();
-        let object = TegoObject::Ed25519PrivateKey(private_key);
-        let key = get_object_map().insert(object);
+        let private_key = tego_ed25519_private_key_map().insert(private_key);
         unsafe {
-            *out_private_key = key as *mut tego_ed25519_private_key;
+            *out_private_key = private_key.into();
         }
         Ok(())
     })
@@ -69,10 +68,9 @@ pub unsafe extern "C" fn tego_ed25519_private_key_from_ed25519_keyblob(
             Ed25519PrivateKey::from_key_blob_legacy(keyblob)?
         };
 
-        let object = TegoObject::Ed25519PrivateKey(private_key);
-        let key = get_object_map().insert(object);
+        let private_key = tego_ed25519_private_key_map().insert(private_key);
         unsafe {
-            *out_private_key = key as *mut tego_ed25519_private_key;
+            *out_private_key = private_key.into();
         }
         Ok(())
     })
@@ -106,26 +104,18 @@ pub unsafe extern "C" fn tego_ed25519_keyblob_from_ed25519_private_key(
         bail_if!(keyblob_size < TEGO_ED25519_KEYBLOB_SIZE);
         bail_if_null!(private_key);
 
-        let key = private_key as TegoKey;
-        match get_object_map().get(&key) {
-            Some(TegoObject::Ed25519PrivateKey(private_key)) => {
-                let keyblob = private_key.to_key_blob();
-                let keyblob = keyblob.as_str();
-                assert!(keyblob.len() == TEGO_ED25519_KEYBLOB_LENGTH);
+        let private_key = Handle::try_from(private_key)?;
+        let keyblob = tego_ed25519_private_key_map()
+            .get(&private_key)?
+            .to_key_blob();
+        let keyblob = keyblob.as_str();
+        assert!(keyblob.len() == TEGO_ED25519_KEYBLOB_LENGTH);
 
-                unsafe {
-                    let out_keyblob =
-                        std::slice::from_raw_parts_mut(out_keyblob as *mut u8, keyblob_size);
-                    std::ptr::copy(keyblob.as_ptr(), out_keyblob.as_mut_ptr(), keyblob.len());
-                    out_keyblob[TEGO_ED25519_KEYBLOB_LENGTH] = 0u8;
-                }
-                Ok(TEGO_ED25519_KEYBLOB_SIZE)
-            }
-            Some(_) => bail!(
-                "not a tego_ed25519_private_key pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
+        unsafe {
+            let out_keyblob = std::slice::from_raw_parts_mut(out_keyblob as *mut u8, keyblob_size);
+            std::ptr::copy(keyblob.as_ptr(), out_keyblob.as_mut_ptr(), keyblob.len());
+            out_keyblob[TEGO_ED25519_KEYBLOB_LENGTH] = 0u8;
         }
+        Ok(TEGO_ED25519_KEYBLOB_SIZE)
     })
 }

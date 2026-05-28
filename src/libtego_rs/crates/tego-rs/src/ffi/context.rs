@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 // extern
 use anyhow::{bail, Result};
-use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
+use tor_interface::tor_crypto::V3OnionServiceId;
 
 // internal
 use crate::error::translate_failures;
@@ -117,15 +117,9 @@ pub unsafe extern "C" fn tego_context_begin(
         let handle = Handle::try_from(tor_config)?;
         let tor_config = tego_tor_daemon_config_map().get(&handle)?.clone();
 
-        let key = host_private_key as TegoKey;
-        let host_private_key: Ed25519PrivateKey = match get_object_map().get(&key) {
-            Some(TegoObject::Ed25519PrivateKey(private_key)) => private_key.clone(),
-            Some(_) => bail!(
-                "not a tego_ed25519_private_key pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let host_private_key = Handle::try_from(host_private_key)?;
+        let host_private_key = tego_ed25519_private_key_map().get(&host_private_key)?.clone();
+
         let host_service_id = V3OnionServiceId::from_private_key(&host_private_key);
 
         let user_buffer = std::slice::from_raw_parts(user_buffer, user_count);

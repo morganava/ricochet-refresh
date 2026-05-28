@@ -33,7 +33,6 @@ use crate::settings::SettingsFile;
 pub(crate) type TegoKey = usize;
 pub(crate) enum TegoObject {
     Context(Box<Context>),
-    Ed25519PrivateKey(Ed25519PrivateKey),
 }
 
 type TegoObjectMap = ObjectMap<TegoObject>;
@@ -51,7 +50,7 @@ impl_handle_tags!(
     TEGO_ERROR_TAG,
     // TEGO_CONTEXT_TAG,
     TEGO_SETTINGS_TAG,
-    // TEGO_ED25519_PRIVATE_KEY_TAG,
+    TEGO_ED25519_PRIVATE_KEY_TAG,
     TEGO_V3_ONION_SERVICE_ID_TAG,
     TEGO_USER_ID_TAG,
     TEGO_PLUGGABLE_TRANSPORT_CONFIG_TAG,
@@ -63,6 +62,7 @@ pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usiz
 
 impl_object_map!(tego_error, Error);
 impl_object_map!(tego_settings, SettingsFile);
+impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
 impl_object_map!(tego_user_id, V3OnionServiceId);
 impl_object_map!(tego_pluggable_transport_config, PluggableTransportConfig);
@@ -687,7 +687,7 @@ pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
 
 #[no_mangle]
 pub extern "C" fn tego_ed25519_private_key_delete(value: *mut tego_ed25519_private_key) {
-    impl_deleter!(TegoObject::Ed25519PrivateKey(_), value);
+    impl_object_deleter!(tego_ed25519_private_key, value);
 }
 
 #[no_mangle]
