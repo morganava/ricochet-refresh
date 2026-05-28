@@ -74,9 +74,9 @@ pub unsafe extern "C" fn tego_context_get_host_user_id(
             None => bail!("not a valid pointer: {:?}", key as *const c_void),
         };
 
-        let host_user = get_object_map().insert(TegoObject::UserId(service_id));
+        let host_user = tego_user_id_map().insert(service_id);
 
-        unsafe { *out_host_user = host_user as *mut tego_user_id };
+        unsafe { *out_host_user = host_user.into() };
         Ok(())
     })
 }
@@ -134,12 +134,8 @@ pub unsafe extern "C" fn tego_context_begin(
         let mut users: BTreeMap<V3OnionServiceId, tego_user_type> = Default::default();
 
         for (user_id, user_type) in user_buffer.iter().zip(user_type_buffer.iter()) {
-            let key = *user_id as TegoKey;
-            let user_id = match get_object_map().get(&key) {
-                Some(TegoObject::UserId(service_id)) => service_id.clone(),
-                Some(_) => bail!("not a tego_user_id pointer: {:?}", key as *const c_void),
-                None => bail!("not a valid pointer: {:?}", key as *const c_void),
-            };
+            let handle = Handle::try_from(*user_id)?;
+            let user_id = tego_user_id_map().get(&handle)?.clone();
 
             // ensure we have no dupes
             bail_if!(users.contains_key(&user_id));
@@ -367,12 +363,8 @@ pub unsafe extern "C" fn tego_context_send_message(
         bail_if_equal!(message_length, 0usize);
         bail_if_null!(out_id);
 
-        let user = user as TegoKey;
-        let user = match get_object_map().get(&user) {
-            Some(TegoObject::UserId(user)) => user.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", user as *const c_void),
-            None => bail!("not a valid pointer: {:?}", user as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         let message = raw_to_str!(message, message_length)?;
         let message = message.to_string();
@@ -431,12 +423,8 @@ pub unsafe extern "C" fn tego_context_send_file_transfer_request(
             None => bail!("not a valid pointer: {:?}", context as *const c_void),
         };
 
-        let user = user as TegoKey;
-        let user = match object_map.get(&user) {
-            Some(TegoObject::UserId(user)) => user.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", user as *const c_void),
-            None => bail!("not a valid pointer: {:?}", user as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         let file_path = raw_to_str!(file_path, file_path_length)?;
         let file_path = PathBuf::from(file_path);
@@ -493,12 +481,8 @@ pub unsafe extern "C" fn tego_context_respond_file_transfer_request(
             None => bail!("not a valid pointer: {:?}", context as *const c_void),
         };
 
-        let user = user as TegoKey;
-        let user = match object_map.get(&user) {
-            Some(TegoObject::UserId(user)) => user.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", user as *const c_void),
-            None => bail!("not a valid pointer: {:?}", user as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         match response {
             tego_file_transfer_response::tego_file_transfer_response_accept => {
@@ -551,12 +535,8 @@ pub unsafe extern "C" fn tego_context_cancel_file_transfer(
             None => bail!("not a valid pointer: {:?}", context as *const c_void),
         };
 
-        let user = user as TegoKey;
-        let user = match object_map.get(&user) {
-            Some(TegoObject::UserId(user)) => user.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", user as *const c_void),
-            None => bail!("not a valid pointer: {:?}", user as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         context.cancel_file_transfer(user, id)?;
 
@@ -584,12 +564,8 @@ pub unsafe extern "C" fn tego_context_send_chat_request(
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let key = user as TegoKey;
-        let service_id = match get_object_map().get(&key) {
-            Some(TegoObject::UserId(user_id)) => user_id.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", key as *const c_void),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         let message = raw_to_str!(message, message_length)?;
         let message = message.to_string();
@@ -599,7 +575,7 @@ pub unsafe extern "C" fn tego_context_send_chat_request(
         let key = context as TegoKey;
         match get_object_map().get(&key) {
             Some(TegoObject::Context(context)) => {
-                context.send_contact_request(service_id, message);
+                context.send_contact_request(user, message);
             }
             Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
             None => bail!("not a valid pointer: {:?}", key as *const c_void),
@@ -628,17 +604,13 @@ pub unsafe extern "C" fn tego_context_acknowledge_chat_request(
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let key = user as TegoKey;
-        let service_id = match get_object_map().get(&key) {
-            Some(TegoObject::UserId(user_id)) => user_id.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", key as *const c_void),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         let key = context as TegoKey;
         match get_object_map().get(&key) {
             Some(TegoObject::Context(context)) => {
-                context.acknowledge_contact_request(service_id, response)
+                context.acknowledge_contact_request(user, response)
             }
             Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
             None => bail!("not a valid pointer: {:?}", key as *const c_void),
@@ -666,17 +638,13 @@ pub unsafe extern "C" fn tego_context_forget_user(
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let key = user as TegoKey;
-        let service_id = match get_object_map().get(&key) {
-            Some(TegoObject::UserId(user_id)) => user_id.clone(),
-            Some(_) => bail!("not a tego_user_id pointer: {:?}", key as *const c_void),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
+        let user = Handle::try_from(user)?;
+        let user = tego_user_id_map().get(&user)?.clone();
 
         let key = context as TegoKey;
         match get_object_map().get_mut(&key) {
             Some(TegoObject::Context(context)) => {
-                context.forget_user(service_id)?;
+                context.forget_user(user)?;
             }
             Some(_) => bail!("not a tego_context pointer: {:?}", key as *const c_void),
             None => bail!("not a valid pointer: {:?}", key as *const c_void),

@@ -146,19 +146,19 @@ impl Callbacks {
                     .context("missing on_chat_request_received callback")?;
                 log_trace!("invoke on_chat_request_received");
 
-                let sender = get_object_map().insert(TegoObject::UserId(service_id));
+                let sender = tego_user_id_map().insert(service_id);
                 let message = CString::new(message.replace("\0", ""))
                     .expect("chat request message contains null-byte");
                 let message_len = message.as_bytes().len();
 
                 on_chat_request_received(
                     context,
-                    sender as *const tego_user_id,
+                    sender.into(),
                     message.as_c_str().as_ptr(),
                     message_len,
                 );
 
-                get_object_map().remove(&sender);
+                tego_user_id_map().remove(&sender)?;
             }
             ChatRequestResponseReceived {
                 service_id,
@@ -169,20 +169,16 @@ impl Callbacks {
                     .context("missing on_chat_request_response_received callback")?;
                 log_trace!("invoke on_chat_request_response_received");
 
-                let sender = get_object_map().insert(TegoObject::UserId(service_id));
+                let sender = tego_user_id_map().insert(service_id);
                 let accepted_request = if accepted_request {
                     TEGO_TRUE
                 } else {
                     TEGO_FALSE
                 };
 
-                on_chat_request_response_received(
-                    context,
-                    sender as *const tego_user_id,
-                    accepted_request,
-                );
+                on_chat_request_response_received(context, sender.into(), accepted_request);
 
-                get_object_map().remove(&sender);
+                tego_user_id_map().remove(&sender)?;
             }
             MessageReceived {
                 service_id,
@@ -195,7 +191,7 @@ impl Callbacks {
                     .context("missing on_message_received callback")?;
                 log_trace!("invoke on_message_received");
 
-                let user = get_object_map().insert(TegoObject::UserId(service_id));
+                let user = tego_user_id_map().insert(service_id);
                 let timestamp = timestamp
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or(std::time::Duration::ZERO);
@@ -207,14 +203,14 @@ impl Callbacks {
 
                 on_message_received(
                     context,
-                    user as *const tego_user_id,
+                    user.into(),
                     timestamp,
                     message_id,
                     message.as_c_str().as_ptr(),
                     message_len,
                 );
 
-                get_object_map().remove(&user);
+                tego_user_id_map().remove(&user)?;
             }
             MessageAcknowledged {
                 service_id,
@@ -226,12 +222,12 @@ impl Callbacks {
                     .context("missing on_message_acknowledged callback")?;
                 log_trace!("invoke on_message_acknowledged");
 
-                let user = get_object_map().insert(TegoObject::UserId(service_id));
+                let user = tego_user_id_map().insert(service_id);
                 let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
-                on_message_acknowledged(context, user as *const tego_user_id, message_id, accepted);
+                on_message_acknowledged(context, user.into(), message_id, accepted);
 
-                get_object_map().remove(&user);
+                tego_user_id_map().remove(&user)?;
             }
             FileTransferRequestReceived {
                 sender,
@@ -244,7 +240,7 @@ impl Callbacks {
                     .context("missing on_file_transfer_request_received callback")?;
                 log_trace!("invoke on_file_transfer_request_received");
 
-                let sender = get_object_map().insert(TegoObject::UserId(sender));
+                let sender = tego_user_id_map().insert(sender);
                 let file_name = CString::new(file_name.replace("\0", ""))
                     .expect("file name contains null-byte");
                 let file_name_length = file_name.as_bytes().len();
@@ -252,14 +248,14 @@ impl Callbacks {
 
                 on_file_transfer_request_received(
                     context,
-                    sender as *const tego_user_id,
+                    sender.into(),
                     file_transfer_id,
                     file_name,
                     file_name_length,
                     file_size,
                 );
 
-                get_object_map().remove(&sender);
+                tego_user_id_map().remove(&sender)?;
             }
             FileTransferRequestAcknowledged {
                 service_id,
@@ -271,17 +267,17 @@ impl Callbacks {
                     .context("missing on_file_transfer_request_acknowledged callback")?;
                 log_trace!("invoke on_file_transfer_request_acknowledged");
 
-                let user = get_object_map().insert(TegoObject::UserId(service_id));
+                let user = tego_user_id_map().insert(service_id);
                 let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
                 on_file_transfer_request_acknowledged(
                     context,
-                    user as *const tego_user_id,
+                    user.into(),
                     file_transfer_id,
                     accepted,
                 );
 
-                get_object_map().remove(&user);
+                tego_user_id_map().remove(&user)?;
             }
             FileTransferRequestResponseReceived {
                 service_id,
@@ -293,15 +289,15 @@ impl Callbacks {
                     .context("missing on_file_transfer_request_response_received callback")?;
                 log_trace!("invoke on_file_transfer_request_response_received");
 
-                let user = get_object_map().insert(TegoObject::UserId(service_id));
+                let user = tego_user_id_map().insert(service_id);
 
                 on_file_transfer_request_response_received(
                     context,
-                    user as *const tego_user_id,
+                    user.into(),
                     file_transfer_id,
                     response,
                 );
-                get_object_map().remove(&user);
+                tego_user_id_map().remove(&user)?;
             }
             FileTransferProgress {
                 user_id,
@@ -315,18 +311,18 @@ impl Callbacks {
                     .context("missing on_file_transfer_progress callback")?;
                 log_trace!("invoke on_file_transfer_progress");
 
-                let user_id = get_object_map().insert(TegoObject::UserId(user_id));
+                let user_id = tego_user_id_map().insert(user_id);
 
                 on_file_transfer_progress(
                     context,
-                    user_id as *const tego_user_id,
+                    user_id.into(),
                     file_transfer_id,
                     direction,
                     bytes_complete,
                     bytes_total,
                 );
 
-                get_object_map().remove(&user_id);
+                tego_user_id_map().remove(&user_id)?;
             }
             FileTransferComplete {
                 user_id,
@@ -339,17 +335,17 @@ impl Callbacks {
                     .context("missing on_file_transfer_complete callback")?;
                 log_trace!("invoke on_file_transfer_complete");
 
-                let user_id = get_object_map().insert(TegoObject::UserId(user_id));
+                let user_id = tego_user_id_map().insert(user_id);
 
                 on_file_transfer_complete(
                     context,
-                    user_id as *const tego_user_id,
+                    user_id.into(),
                     file_transfer_id,
                     direction,
                     result,
                 );
 
-                get_object_map().remove(&user_id);
+                tego_user_id_map().remove(&user_id)?;
             }
             UserStatusChanged { service_id, status } => {
                 let on_user_status_changed = self
@@ -357,11 +353,11 @@ impl Callbacks {
                     .context("missing on_user_status_changed callback")?;
                 log_trace!("invoke on_user_status_changed");
 
-                let user = get_object_map().insert(TegoObject::UserId(service_id));
+                let user = tego_user_id_map().insert(service_id);
 
-                on_user_status_changed(context, user as *const tego_user_id, status);
+                on_user_status_changed(context, user.into(), status);
 
-                get_object_map().remove(&user);
+                tego_user_id_map().remove(&user)?;
             }
         }
         Ok(())

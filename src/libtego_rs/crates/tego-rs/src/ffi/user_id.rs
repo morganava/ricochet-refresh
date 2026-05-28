@@ -38,9 +38,8 @@ pub unsafe extern "C" fn tego_user_id_from_v3_onion_service_id(
             None => bail!("not a valid pointer: {:?}", key as *const c_void),
         };
 
-        let user_id = get_object_map().insert(TegoObject::UserId(service_id));
-
-        unsafe { *out_user_id = user_id as *mut tego_user_id };
+        let handle = tego_user_id_map().insert(service_id);
+        unsafe { *out_user_id = handle.into() };
 
         Ok(())
     })
@@ -65,16 +64,8 @@ pub unsafe extern "C" fn tego_user_id_get_v3_onion_service_id(
         bail_if_null!(user_id);
         bail_if_null!(out_service_id);
 
-        let key = user_id as TegoKey;
-        let service_id = match get_object_map().get(&key) {
-            Some(TegoObject::UserId(user_id)) => user_id.clone(),
-            Some(_) => bail!(
-                "not a tego_v3_onion_service_id pointer: {:?}",
-                key as *const c_void
-            ),
-            None => bail!("not a valid pointer: {:?}", key as *const c_void),
-        };
-
+        let user_id = Handle::try_from(user_id)?;
+        let service_id = tego_user_id_map().get(&user_id)?.clone();
         let service_id = get_object_map().insert(TegoObject::V3OnionServiceId(service_id));
 
         unsafe { *out_service_id = service_id as *mut tego_v3_onion_service_id };

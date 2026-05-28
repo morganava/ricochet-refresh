@@ -107,12 +107,11 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks4(
 
         // update the config
         let handle = Handle::try_from(config)?;
-        if let Ok(LegacyTorClientConfig::BundledTor {
-                proxy_settings,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *proxy_settings = Some(proxy_config);
-            }
+        if let Ok(LegacyTorClientConfig::BundledTor { proxy_settings, .. }) =
+            tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *proxy_settings = Some(proxy_config);
+        }
 
         Ok(())
     })
@@ -193,12 +192,11 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_socks5(
 
         // update the config
         let handle = Handle::try_from(config)?;
-        if let Ok(LegacyTorClientConfig::BundledTor {
-                proxy_settings,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *proxy_settings = Some(proxy_config);
-            }
+        if let Ok(LegacyTorClientConfig::BundledTor { proxy_settings, .. }) =
+            tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *proxy_settings = Some(proxy_config);
+        }
 
         Ok(())
     })
@@ -279,12 +277,11 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_proxy_https(
 
         // update the config
         let handle = Handle::try_from(config)?;
-        if let Ok(LegacyTorClientConfig::BundledTor {
-                proxy_settings,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *proxy_settings = Some(proxy_config);
-            }
+        if let Ok(LegacyTorClientConfig::BundledTor { proxy_settings, .. }) =
+            tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *proxy_settings = Some(proxy_config);
+        }
 
         Ok(())
     })
@@ -319,12 +316,11 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_allowed_ports(
 
         // update the config
         let handle = Handle::try_from(config)?;
-        if let Ok(LegacyTorClientConfig::BundledTor {
-                allowed_ports,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *allowed_ports = ports;
-            }
+        if let Ok(LegacyTorClientConfig::BundledTor { allowed_ports, .. }) =
+            tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *allowed_ports = ports;
+        }
 
         Ok(())
     })
@@ -369,7 +365,8 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_pluggable_transport_configs(
                 Vec::with_capacity(pluggable_transport_config_count);
             for pluggable_transport_config in pluggable_transport_configs {
                 let handle = Handle::try_from(*pluggable_transport_config)?;
-                let pluggable_transport_config = tego_pluggable_transport_config_map().get(&handle)?.clone();
+                let pluggable_transport_config =
+                    tego_pluggable_transport_config_map().get(&handle)?.clone();
                 pluggable_transport_config_vec.push(pluggable_transport_config);
             }
             Some(pluggable_transport_config_vec)
@@ -378,11 +375,12 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_pluggable_transport_configs(
         // update the config
         let handle = Handle::try_from(config)?;
         if let Ok(LegacyTorClientConfig::BundledTor {
-                pluggable_transports,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *pluggable_transports = pluggable_transport_configs;
-            }
+            pluggable_transports,
+            ..
+        }) = tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *pluggable_transports = pluggable_transport_configs;
+        }
 
         Ok(())
     })
@@ -434,12 +432,11 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_bridges(
 
         // update the config
         let handle = Handle::try_from(config)?;
-        if let Ok(LegacyTorClientConfig::BundledTor {
-                bridge_lines,
-                ..
-            }) = tego_tor_daemon_config_map().get_mut(&handle) {
-                *bridge_lines = bridge_lines_vec;
-            }
+        if let Ok(LegacyTorClientConfig::BundledTor { bridge_lines, .. }) =
+            tego_tor_daemon_config_map().get_mut(&handle)
+        {
+            *bridge_lines = bridge_lines_vec;
+        }
 
         Ok(())
     })
