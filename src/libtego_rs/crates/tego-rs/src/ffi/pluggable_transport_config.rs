@@ -81,9 +81,10 @@ pub unsafe extern "C" fn tego_pluggable_transport_config_initialize(
             pluggable_transport_config.add_option(option.to_string());
         }
 
-        let object = TegoObject::PluggableTransportConfig(pluggable_transport_config);
-        let key = get_object_map().insert(object);
-        *out_config = key as *mut tego_pluggable_transport_config;
+        let handle = tego_pluggable_transport_config_map().insert(pluggable_transport_config);
+        unsafe {
+            *out_config = handle.into();
+        }
         Ok(())
     })
 }

@@ -1,5 +1,5 @@
 // standard
-use std::ffi::{c_char, c_void};
+use std::ffi::c_char;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -368,17 +368,9 @@ pub unsafe extern "C" fn tego_tor_daemon_config_set_pluggable_transport_configs(
             let mut pluggable_transport_config_vec: Vec<PluggableTransportConfig> =
                 Vec::with_capacity(pluggable_transport_config_count);
             for pluggable_transport_config in pluggable_transport_configs {
-                let key = *pluggable_transport_config as TegoKey;
-                match get_object_map().get(&key) {
-                    Some(TegoObject::PluggableTransportConfig(pluggable_transport_config)) => {
-                        pluggable_transport_config_vec.push(pluggable_transport_config.clone());
-                    }
-                    Some(_) => bail!(
-                        "not a tego_pluggable_trasnport_config pointer: {:?}",
-                        key as *const c_void
-                    ),
-                    None => bail!("not a valid pointer: {:?}", key as *const c_void),
-                }
+                let handle = Handle::try_from(*pluggable_transport_config)?;
+                let pluggable_transport_config = tego_pluggable_transport_config_map().get(&handle)?.clone();
+                pluggable_transport_config_vec.push(pluggable_transport_config);
             }
             Some(pluggable_transport_config_vec)
         };
