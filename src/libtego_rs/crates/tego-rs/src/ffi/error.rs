@@ -26,3 +26,21 @@ pub unsafe extern "C" fn tego_error_get_message(error: *const tego_error) -> *co
         std::ptr::null()
     }
 }
+
+/// Invoke Rust's panic! macro with given message
+///
+/// @param message : utf8 encoded panic! message
+/// @param message_length : length of message not including null-terminator
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_panic(message: *const c_char, message_length: usize) {
+    if message.is_null() || message_length == 0usize {
+        panic!();
+    } else {
+        let message = raw_to_str!(message, message_length).unwrap();
+        panic!("{message}");
+    }
+}
