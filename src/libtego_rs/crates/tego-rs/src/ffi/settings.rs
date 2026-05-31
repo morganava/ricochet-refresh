@@ -93,6 +93,294 @@ pub unsafe extern "C" fn tego_settings_flush(
 // Getters
 //
 
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_language(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_language,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_show_toolbar(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_connect_automatically(
+    _settings: *const tego_settings,
+    _out_value: *mut tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_get_tor_config(
+    _settings: *const tego_settings,
+    _out_value: *mut *mut tego_tor_config,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        log_trace!();
+        Ok(())
+    });
+}
+
 //
 // Setters
 //
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_start_only_single_instance(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_language(
+    _settings: *mut tego_settings,
+    _value: tego_language,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_show_toolbar(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_connect_automatically(
+    _settings: *mut tego_settings,
+    _value: tego_bool,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_set_tor_config(
+    _settings: *mut tego_settings,
+    _value: *const tego_tor_config,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        Ok(())
+    });
+}

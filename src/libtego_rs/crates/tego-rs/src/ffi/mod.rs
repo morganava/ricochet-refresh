@@ -71,6 +71,17 @@ pub type tego_bool = i32;
 pub struct tego_error;
 pub struct tego_context;
 pub struct tego_settings;
+#[repr(C)]
+pub enum tego_language {
+    tego_language_system,
+    tego_language_ar,
+    tego_language_de,
+    tego_language_en,
+    tego_language_es,
+    tego_language_nl,
+}
+
+pub struct tego_tor_config;
 pub struct tego_ed25519_private_key;
 pub struct tego_v3_onion_service_id;
 pub struct tego_user_id;
