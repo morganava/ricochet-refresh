@@ -25,6 +25,7 @@ pub struct SettingsRaw {
     // interface settings
     language: Language,
     show_toolbar: bool,
+    button_style: ButtonStyle,
     show_desktop_notifications: bool,
     blink_taskbar_icon: bool,
     play_audio_notifications: bool,
@@ -43,6 +44,7 @@ impl From<&Settings> for SettingsRaw {
         let check_for_updates_automatically = value.check_for_updates_automatically;
         let language = value.language;
         let show_toolbar = value.show_toolbar;
+        let button_style = value.button_style;
         let show_desktop_notifications = value.show_desktop_notifications;
         let blink_taskbar_icon = value.blink_taskbar_icon;
         let play_audio_notifications = value.play_audio_notifications;
@@ -58,6 +60,7 @@ impl From<&Settings> for SettingsRaw {
             check_for_updates_automatically,
             language,
             show_toolbar,
+            button_style,
             show_desktop_notifications,
             blink_taskbar_icon,
             play_audio_notifications,
@@ -81,6 +84,7 @@ pub struct Settings {
     // interface settings
     pub language: Language,
     pub show_toolbar: bool,
+    pub button_style: ButtonStyle,
     pub show_desktop_notifications: bool,
     pub blink_taskbar_icon: bool,
     pub play_audio_notifications: bool,
@@ -99,6 +103,7 @@ impl Settings {
             check_for_updates_automatically: true,
             language: Language::System,
             show_toolbar: true,
+            button_style: ButtonStyle::Icons,
             show_desktop_notifications: false,
             blink_taskbar_icon: false,
             play_audio_notifications: false,
@@ -150,6 +155,7 @@ impl TryFrom<SettingsRaw> for Settings {
         let check_for_updates_automatically = value.check_for_updates_automatically;
         let language = value.language;
         let show_toolbar = value.show_toolbar;
+        let button_style = value.button_style;
         let show_desktop_notifications = value.show_desktop_notifications;
         let blink_taskbar_icon = value.blink_taskbar_icon;
         let play_audio_notifications = value.play_audio_notifications;
@@ -164,6 +170,7 @@ impl TryFrom<SettingsRaw> for Settings {
             check_for_updates_automatically,
             language,
             show_toolbar,
+            button_style,
             show_desktop_notifications,
             blink_taskbar_icon,
             play_audio_notifications,
@@ -243,6 +250,19 @@ pub enum Language {
     Spanish,
     #[serde(rename = "nl")]
     Dutch,
+}
+
+#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub enum ButtonStyle {
+    #[default]
+    #[serde(rename = "icons")]
+    Icons,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "icons_and_text")]
+    IconsAndText,
+    #[serde(rename = "icons_beside_text")]
+    IconsBesideText,
 }
 
 #[derive(Deserialize, Serialize)]
