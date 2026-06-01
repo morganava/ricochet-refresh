@@ -1,5 +1,6 @@
 // standard
 use std::env;
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -101,5 +102,18 @@ impl SettingsFile {
     pub fn flush(&self) -> Result<()> {
         std::fs::write(&self.settings_location, self.settings.to_string())?;
         Ok(())
+    }
+}
+
+impl Deref for SettingsFile {
+    type Target = SettingsV4;
+    fn deref(&self) -> &Self::Target {
+        &self.settings
+    }
+}
+
+impl DerefMut for SettingsFile {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.settings
     }
 }
