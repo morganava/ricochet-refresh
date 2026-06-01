@@ -10,6 +10,14 @@ public:
         return *this->main_frame;
     }
 
+    const tego_settings& get_settings() const {
+        return *this->settings.get();
+    }
+
+    tego_settings& get_settings_mut() {
+        return *this->settings.get();
+    }
+
 private:
     void init_settings();
 

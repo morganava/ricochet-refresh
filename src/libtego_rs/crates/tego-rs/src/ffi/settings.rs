@@ -80,6 +80,7 @@ pub unsafe extern "C" fn tego_settings_flush(
     settings: *mut tego_settings,
     error: *mut *mut tego_error,
 ) {
+    log_trace!();
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(settings);
 
@@ -95,26 +96,55 @@ pub unsafe extern "C" fn tego_settings_flush(
 
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
-    _settings: *const tego_settings,
-    _out_value: *mut tego_bool,
+    settings: *const tego_settings,
+    out_value: *mut tego_bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
     translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+        bail_if_null!(out_value);
+
+        let handle = Handle::try_from(settings)?;
+        let value = if tego_settings_map().get(&handle)?.start_only_single_instance {
+            TEGO_TRUE
+        } else {
+            TEGO_FALSE
+        };
+
+        unsafe {
+            *out_value = value;
+        }
+
         Ok(())
     });
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
-    _settings: *const tego_settings,
-    _out_value: *mut tego_bool,
+    settings: *const tego_settings,
+    out_value: *mut tego_bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
     translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+        bail_if_null!(out_value);
+
+        let handle = Handle::try_from(settings)?;
+        let value = if tego_settings_map().get(&handle)?.check_for_updates_automatically {
+            TEGO_TRUE
+        } else {
+            TEGO_FALSE
+        };
+
+        unsafe {
+            *out_value = value;
+        }
+
         Ok(())
     });
+
 }
 
 #[no_mangle]
@@ -242,25 +272,45 @@ pub unsafe extern "C" fn tego_settings_get_tor_config(
 //
 
 #[no_mangle]
-pub unsafe extern "C" fn tego_settings_set_start_only_single_instance(
-    _settings: *mut tego_settings,
-    _value: tego_bool,
+pub extern "C" fn tego_settings_set_start_only_single_instance(
+    settings: *mut tego_settings,
+    value: tego_bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
     translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+        bail_if!(value != TEGO_TRUE && value != TEGO_FALSE);
+
+        let handle = Handle::try_from(settings)?;
+        let value = match value {
+            TEGO_TRUE => true,
+            TEGO_FALSE => false,
+            val => bail!("value must be either TEGO_TRUE(1) or TEGO_FALSE(0); found {val}"),
+        };
+        tego_settings_map().get_mut(&handle)?.start_only_single_instance = value;
         Ok(())
     });
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
-    _settings: *mut tego_settings,
-    _value: tego_bool,
+    settings: *mut tego_settings,
+    value: tego_bool,
     error: *mut *mut tego_error,
 ) {
-    log_trace!();
+log_trace!();
     translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+        bail_if!(value != TEGO_TRUE && value != TEGO_FALSE);
+
+        let handle = Handle::try_from(settings)?;
+        let value = match value {
+            TEGO_TRUE => true,
+            TEGO_FALSE => false,
+            val => bail!("value must be either TEGO_TRUE(1) or TEGO_FALSE(0); found {val}"),
+        };
+        tego_settings_map().get_mut(&handle)?.check_for_updates_automatically = value;
         Ok(())
     });
 }

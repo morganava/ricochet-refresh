@@ -105,14 +105,25 @@ void SettingsPanel::show_connection_settings() {
 
 void SettingsPanel::apply() {
     LOG_INFO("Apply Pressed");
+    this->general_settings_panel->save_to_settings();
+
+    auto& settings = wxGetApp().get_settings_mut();
+    tego_settings_flush(&settings, tego::panic_on_error());
 }
 
 void SettingsPanel::cancel() {
     LOG_INFO("Cancel Pressed");
+    this->general_settings_panel->load_from_settings();
+
     wxGetApp().get_main_frame().hide_overlay_panel();
 }
 
 void SettingsPanel::ok() {
     LOG_INFO("Ok Pressed");
+    this->general_settings_panel->save_to_settings();
+
+    auto& settings = wxGetApp().get_settings_mut();
+    tego_settings_flush(&settings, tego::panic_on_error());
+
     wxGetApp().get_main_frame().hide_overlay_panel();
 }
