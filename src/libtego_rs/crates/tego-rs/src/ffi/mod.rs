@@ -16,6 +16,7 @@ use std::ffi::{c_char, c_int};
 
 // extern
 use anyhow::{bail, Result};
+use rico_settings::v4::settings::{ButtonStyle, Language};
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
 use tor_interface::censorship_circumvention::*;
 use tor_interface::legacy_tor_client::LegacyTorClientConfig;
@@ -79,6 +80,62 @@ pub enum tego_language {
     tego_language_en,
     tego_language_es,
     tego_language_nl,
+}
+
+impl From<tego_language> for Language {
+    fn from(value: tego_language) -> Self {
+        match value {
+            tego_language::tego_language_system => Language::System,
+            tego_language::tego_language_ar => Language::Arabic,
+            tego_language::tego_language_de => Language::German,
+            tego_language::tego_language_en => Language::English,
+            tego_language::tego_language_es => Language::Spanish,
+            tego_language::tego_language_nl => Language::Dutch,
+        }
+    }
+}
+
+impl From<Language> for tego_language {
+    fn from(value: Language) -> Self {
+        match value {
+            Language::System => tego_language::tego_language_system,
+            Language::Arabic => tego_language::tego_language_ar,
+            Language::German => tego_language::tego_language_de,
+            Language::English => tego_language::tego_language_en,
+            Language::Spanish => tego_language::tego_language_es,
+            Language::Dutch => tego_language::tego_language_nl,
+        }
+    }
+}
+
+#[repr(C)]
+pub enum tego_button_style {
+    tego_button_style_icons,
+    tego_button_style_text,
+    tego_button_style_icons_and_text,
+    tego_button_style_icons_beside_text,
+}
+
+impl From<tego_button_style> for ButtonStyle {
+    fn from(value: tego_button_style) -> Self {
+        match value {
+            tego_button_style::tego_button_style_icons => ButtonStyle::Icons,
+            tego_button_style::tego_button_style_text => ButtonStyle::Text,
+            tego_button_style::tego_button_style_icons_and_text => ButtonStyle::IconsAndText,
+            tego_button_style::tego_button_style_icons_beside_text => ButtonStyle::IconsBesideText,
+        }
+    }
+}
+
+impl From<ButtonStyle> for tego_button_style {
+    fn from(value: ButtonStyle) -> Self {
+        match value {
+            ButtonStyle::Icons => tego_button_style::tego_button_style_icons,
+            ButtonStyle::Text => tego_button_style::tego_button_style_text,
+            ButtonStyle::IconsAndText => tego_button_style::tego_button_style_icons_and_text,
+            ButtonStyle::IconsBesideText => tego_button_style::tego_button_style_icons_beside_text,
+        }
+    }
 }
 
 pub struct tego_tor_config;
