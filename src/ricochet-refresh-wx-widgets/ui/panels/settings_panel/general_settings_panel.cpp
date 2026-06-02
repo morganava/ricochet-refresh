@@ -60,6 +60,7 @@ GeneralSettingsPanel::GeneralSettingsPanel(wxWindow* parent) :
 void GeneralSettingsPanel::load_from_settings() {
     const auto& settings = wxGetApp().get_settings();
 
+    // start only single instance
     tego_bool start_only_single_instance = TEGO_FALSE;
     tego_settings_get_start_only_single_instance(
         &settings,
@@ -68,6 +69,7 @@ void GeneralSettingsPanel::load_from_settings() {
     );
     this->start_only_single_instance_toggle->SetValue(start_only_single_instance);
 
+    // check for updates automatically
     tego_bool check_for_updates_automatically = TEGO_FALSE;
     tego_settings_get_check_for_updates_automatically(
         &settings,

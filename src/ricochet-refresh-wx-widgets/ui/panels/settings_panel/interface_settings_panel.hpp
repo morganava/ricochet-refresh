@@ -7,6 +7,11 @@ class InterfaceSettingsPanel: public wxScrolled<wxPanel> {
 public:
     explicit InterfaceSettingsPanel(wxWindow* parent);
 
+    // load settings from disk and populate the ui
+    void load_from_settings();
+    // save settings from ui to disk
+    void save_to_settings();
+
 private:
     // setters
     void set_interface_language(Language);
@@ -26,7 +31,14 @@ private:
     void disable_system_tray_icon_controls();
 
     // widgets
+    wxComboBox* language_combobox = nullptr;
+    wxCheckBox* show_toolbar_toggle = nullptr;
     wxStaticText* button_style_label = nullptr;
     wxComboBox* button_style_combobox = nullptr;
+    wxCheckBox* show_desktop_notifications_toggle = nullptr;
+    wxCheckBox* blink_taskbar_icon_toggle = nullptr;
+    wxCheckBox* enable_audio_notifications_toggle = nullptr;
+    wxCheckBox* minimize_instead_of_exit_toggle = nullptr;
+    wxCheckBox* show_system_tray_icon_toggle = nullptr;
     wxCheckBox* minimize_to_system_tray_toggle = nullptr;
 };
