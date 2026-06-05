@@ -19,6 +19,7 @@ set(tego_rs_sources
     src/ffi/object_map.rs
     src/ffi/pluggable_transport_config.rs
     src/ffi/settings.rs
+    src/ffi/string.rs
     src/ffi/tor_daemon_config.rs
     src/ffi/user_id.rs
     src/ffi/v3_onion_service_id.rs

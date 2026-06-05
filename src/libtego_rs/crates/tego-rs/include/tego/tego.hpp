@@ -97,6 +97,7 @@ namespace std {\
 }
 
 TEGO_DEFAULT_DELETE_IMPL(tego_error)
+TEGO_DEFAULT_DELETE_IMPL(tego_string)
 TEGO_DEFAULT_DELETE_IMPL(tego_context)
 TEGO_DEFAULT_DELETE_IMPL(tego_settings)
 TEGO_DEFAULT_DELETE_IMPL(tego_ed25519_private_key)

@@ -30,6 +30,8 @@ set_target_properties(ricochet-refresh-wx-widgets PROPERTIES OUTPUT_NAME "ricoch
 
 set(RICOCHET_REFRESH_SOURCE
     enums.hpp
+    ffi.cpp
+    ffi.hpp
     locale.cpp
     locale.hpp
     main.cpp

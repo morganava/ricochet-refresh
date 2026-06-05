@@ -7,12 +7,13 @@ pub mod logger;
 pub mod object_map;
 pub mod pluggable_transport_config;
 pub mod settings;
+pub mod string;
 pub mod tor_daemon_config;
 pub mod user_id;
 pub mod v3_onion_service_id;
 
 // standard
-use std::ffi::{c_char, c_int};
+use std::ffi::{c_char, c_int, CString};
 
 // extern
 use anyhow::{bail, Result};
@@ -33,6 +34,7 @@ use crate::settings::SettingsStore;
 // tags for handles representing each of our FFI types
 impl_handle_tags!(
     TEGO_ERROR_TAG,
+    TEGO_STRING_TAG,
     TEGO_CONTEXT_TAG,
     TEGO_SETTINGS_TAG,
     TEGO_ED25519_PRIVATE_KEY_TAG,
@@ -46,6 +48,7 @@ impl_handle_tags!(
 pub(crate) const TEGO_TAG_BITS: usize = (_TEGO_MAX_TAG - 1usize).ilog2() as usize + 1usize;
 
 impl_object_map!(tego_error, Error);
+impl_object_map!(tego_string, CString);
 impl_object_map!(tego_context, Context);
 impl_object_map!(tego_settings, SettingsStore);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
@@ -70,6 +73,7 @@ pub const TEGO_ED25519_KEYBLOB_SIZE: usize = TEGO_ED25519_KEYBLOB_LENGTH + 1usiz
 
 pub type tego_bool = i32;
 pub struct tego_error;
+pub struct tego_string;
 pub struct tego_context;
 pub struct tego_settings;
 #[repr(C)]
@@ -726,6 +730,11 @@ pub extern "C" fn tego_context_set_user_status_changed_callback(
 #[no_mangle]
 pub extern "C" fn tego_error_delete(value: *mut tego_error) {
     impl_object_deleter!(tego_error, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_string_delete(value: *mut tego_string) {
+    impl_object_deleter!(tego_string, value);
 }
 
 #[no_mangle]
