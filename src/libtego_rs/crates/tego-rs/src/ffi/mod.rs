@@ -8,6 +8,7 @@ pub mod object_map;
 pub mod pluggable_transport_config;
 pub mod settings;
 pub mod string;
+pub mod tor_config;
 pub mod tor_daemon_config;
 pub mod user_id;
 pub mod v3_onion_service_id;
@@ -17,10 +18,12 @@ use std::ffi::{c_char, c_int, CString};
 
 // extern
 use anyhow::{bail, Result};
-use rico_settings::v4::settings::{ButtonStyle, Language};
+use rico_settings::common::{BridgeConfig, BuiltInBridge, FirewallConfig};
+use rico_settings::v4::settings::{ButtonStyle, Language, TorConfig};
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
 use tor_interface::censorship_circumvention::*;
 use tor_interface::legacy_tor_client::LegacyTorClientConfig;
+use tor_interface::proxy::ProxyConfig;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 
 // internal
@@ -42,6 +45,10 @@ impl_handle_tags!(
     TEGO_USER_ID_TAG,
     TEGO_PLUGGABLE_TRANSPORT_CONFIG_TAG,
     TEGO_TOR_DAEMON_CONFIG_TAG,
+    TEGO_TOR_CONFIG_TAG,
+    TEGO_BRIDGE_CONFIG_TAG,
+    TEGO_FIREWALL_CONFIG_TAG,
+    TEGO_PROXY_CONFIG_TAG,
     _TEGO_MAX_TAG,
 );
 // the number of bits requird to store the various TEGO_.*_TAG constants
@@ -56,6 +63,10 @@ impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
 impl_object_map!(tego_user_id, V3OnionServiceId);
 impl_object_map!(tego_pluggable_transport_config, PluggableTransportConfig);
 impl_object_map!(tego_tor_daemon_config, LegacyTorClientConfig);
+impl_object_map!(tego_tor_config, TorConfig);
+impl_object_map!(tego_bridge_config, BridgeConfig);
+impl_object_map!(tego_firewall_config, FirewallConfig);
+impl_object_map!(tego_proxy_config, ProxyConfig);
 
 pub const TEGO_TRUE: i32 = 1;
 pub const TEGO_FALSE: i32 = 0;
@@ -143,6 +154,58 @@ impl From<ButtonStyle> for tego_button_style {
 }
 
 pub struct tego_tor_config;
+#[repr(C)]
+pub enum tego_tor_config_type {
+    #[cfg(feature = "bundled-tor")]
+    tego_tor_config_type_bundled_tor,
+    #[cfg(feature = "external-tor")]
+    tego_tor_config_type_external_tor,
+    #[cfg(feature = "arti-client")]
+    tego_tor_config_type_arti_client,
+}
+
+pub struct tego_bridge_config;
+#[repr(C)]
+pub enum tego_bridge_config_type {
+    tego_bridge_config_type_builtin,
+    tego_bridge_config_type_custom,
+}
+
+#[repr(C)]
+pub enum tego_bridge_builtin {
+    tego_bridge_builtin_obfs4,
+    tego_bridge_builtin_meek,
+    tego_bridge_builtin_snowflake,
+}
+
+impl From<tego_bridge_builtin> for BuiltInBridge {
+    fn from(value: tego_bridge_builtin) -> Self {
+        match value {
+            tego_bridge_builtin::tego_bridge_builtin_obfs4 => BuiltInBridge::Obfs4,
+            tego_bridge_builtin::tego_bridge_builtin_meek => BuiltInBridge::Meek,
+            tego_bridge_builtin::tego_bridge_builtin_snowflake => BuiltInBridge::Snowflake,
+        }
+    }
+}
+
+impl From<BuiltInBridge> for tego_bridge_builtin {
+    fn from(value: BuiltInBridge) -> Self {
+        match value {
+            BuiltInBridge::Obfs4 => tego_bridge_builtin::tego_bridge_builtin_obfs4,
+            BuiltInBridge::Meek => tego_bridge_builtin::tego_bridge_builtin_meek,
+            BuiltInBridge::Snowflake => tego_bridge_builtin::tego_bridge_builtin_snowflake,
+        }
+    }
+}
+
+pub struct tego_firewall_config;
+pub struct tego_proxy_config;
+#[repr(C)]
+pub enum tego_proxy_type {
+    tego_proxy_type_socks4,
+    tego_proxy_type_socks5,
+    tego_proxy_type_https,
+}
 pub struct tego_ed25519_private_key;
 pub struct tego_v3_onion_service_id;
 pub struct tego_user_id;
@@ -772,4 +835,24 @@ pub extern "C" fn tego_pluggable_transport_config_delete(
 #[no_mangle]
 pub extern "C" fn tego_tor_daemon_config_delete(value: *mut tego_tor_daemon_config) {
     impl_object_deleter!(tego_tor_daemon_config, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_tor_config_delete(value: *mut tego_tor_config) {
+    impl_object_deleter!(tego_tor_config, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_bridge_config_delete(value: *mut tego_bridge_config) {
+    impl_object_deleter!(tego_bridge_config, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_proxy_config_delete(value: *mut tego_proxy_config) {
+    impl_object_deleter!(tego_proxy_config, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_firewall_config_delete(value: *mut tego_firewall_config) {
+    impl_object_deleter!(tego_firewall_config, value);
 }

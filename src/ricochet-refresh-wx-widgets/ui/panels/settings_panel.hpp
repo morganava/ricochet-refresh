@@ -18,6 +18,9 @@ private:
     void show_interface_settings();
     void show_connection_settings();
 
+    bool save_to_settings();
+    void load_from_settings();
+
     void apply();
     void cancel();
     void ok();

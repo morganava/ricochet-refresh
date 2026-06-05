@@ -14,7 +14,7 @@ pub enum BridgeConfig {
     Custom(BridgeLine, Vec<BridgeLine>),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BuiltInBridge {
     Obfs4,
     Meek,
@@ -74,6 +74,33 @@ impl TryFrom<Vec<u16>> for FirewallConfig {
                     "must not contain duplicate entries",
                 ));
             }
+        }
+        let allowed_ports = allowed_ports.into_iter().collect();
+        Ok(FirewallConfig { allowed_ports })
+    }
+}
+
+impl TryFrom<&str> for FirewallConfig {
+    type Error = crate::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let mut allowed_ports: BTreeSet<u16> = Default::default();
+        for value in value.split(',') {
+            match value.trim().parse::<u16>() {
+                Ok(0u16) => return Err(Self::Error::ConversionFailed("must not contain 0")),
+                Ok(port) => {
+                    if !allowed_ports.insert(port) {
+                        return Err(Self::Error::ConversionFailed(
+                            "must not contain duplicate entries",
+                        ));
+                    }
+                }
+                Err(_) => {
+                    return Err(Self::Error::ConversionFailed(
+                        "failed to parse value as u16",
+                    ))
+                }
+            };
         }
         let allowed_ports = allowed_ports.into_iter().collect();
         Ok(FirewallConfig { allowed_ports })

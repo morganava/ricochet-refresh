@@ -103,22 +103,40 @@ void SettingsPanel::show_connection_settings() {
     this->connection_settings_panel->Show();
 }
 
+bool SettingsPanel::save_to_settings() {
+    auto& settings = wxGetApp().get_settings_mut();
+
+    // write to backend
+    try {
+        this->general_settings_panel->save_to_settings();
+        this->interface_settings_panel->save_to_settings();
+        this->connection_settings_panel->save_to_settings();
+        // save to disk
+        tego_settings_flush(&settings, tego::panic_on_error());
+        return true;
+    } catch (const std::exception& ex) {
+        LOG_ERROR(ex.what());
+        // reresh the settings from disk
+        tego_settings_revert(&settings, tego::panic_on_error());
+        return false;
+    }
+}
+
+void SettingsPanel::load_from_settings() {
+    // reload from backend
+    this->general_settings_panel->load_from_settings();
+    this->interface_settings_panel->load_from_settings();
+    this->connection_settings_panel->load_from_settings();
+}
+
 void SettingsPanel::apply() {
     LOG_INFO("Apply Pressed");
-    // write to backend
-    this->general_settings_panel->save_to_settings();
-    this->interface_settings_panel->save_to_settings();
-
-    // save to disk
-    auto& settings = wxGetApp().get_settings_mut();
-    tego_settings_flush(&settings, tego::panic_on_error());
+    this->save_to_settings();
 }
 
 void SettingsPanel::cancel() {
     LOG_INFO("Cancel Pressed");
-    // reload from backend
-    this->general_settings_panel->load_from_settings();
-    this->interface_settings_panel->load_from_settings();
+    this->load_from_settings();
 
     // return to main screen
     wxGetApp().get_main_frame().hide_overlay_panel();
@@ -126,14 +144,8 @@ void SettingsPanel::cancel() {
 
 void SettingsPanel::ok() {
     LOG_INFO("Ok Pressed");
-    // write to backend
-    this->general_settings_panel->save_to_settings();
-    this->interface_settings_panel->save_to_settings();
-
-    // save to disk
-    auto& settings = wxGetApp().get_settings_mut();
-    tego_settings_flush(&settings, tego::panic_on_error());
-
-    // return to main screen
-    wxGetApp().get_main_frame().hide_overlay_panel();
+    if (this->save_to_settings()) {
+        // return to main screen
+        wxGetApp().get_main_frame().hide_overlay_panel();
+    }
 }

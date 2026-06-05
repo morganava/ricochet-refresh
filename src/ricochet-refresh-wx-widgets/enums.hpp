@@ -43,8 +43,8 @@ enum class BridgeType {
 
 enum class BuiltinBridge {
     Obfs4,
+    Meek,
     Snowflake,
-    Meek
 };
 
 enum class ProxyType {

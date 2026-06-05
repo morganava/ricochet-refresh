@@ -375,12 +375,23 @@ pub unsafe extern "C" fn tego_settings_get_connect_automatically(
 
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_tor_config(
-    _settings: *const tego_settings,
-    _out_value: *mut *mut tego_tor_config,
+    settings: *const tego_settings,
+    out_value: *mut *mut tego_tor_config,
     error: *mut *mut tego_error,
 ) {
+    log_trace!();
     translate_failures((), error, || -> Result<()> {
-        log_trace!();
+        bail_if_null!(settings);
+        bail_if_null!(out_value);
+
+        let settings = Handle::try_from(settings)?;
+        let value = tego_settings_map().get(&settings)?.tor_config.clone();
+        let value = tego_tor_config_map().insert(value);
+
+        unsafe {
+            *out_value = value.into();
+        }
+
         Ok(())
     });
 }
@@ -608,10 +619,20 @@ pub unsafe extern "C" fn tego_settings_set_connect_automatically(
 
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_tor_config(
-    _settings: *mut tego_settings,
-    _value: *const tego_tor_config,
+    settings: *mut tego_settings,
+    value: *const tego_tor_config,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
-    translate_failures((), error, || -> Result<()> { Ok(()) });
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+        bail_if_null!(value);
+
+        let value = Handle::try_from(value)?;
+        let value = tego_tor_config_map().get(&value)?.clone();
+
+        let settings = Handle::try_from(settings)?;
+        tego_settings_map().get_mut(&settings)?.tor_config = value;
+        Ok(())
+    });
 }
