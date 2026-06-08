@@ -88,6 +88,29 @@ pub unsafe extern "C" fn tego_settings_flush(
     });
 }
 
+/// Revert in-memory settings to values stored on disk
+///
+/// @param settings : the settings object to reload from disk
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_settings_revert(
+    settings: *mut tego_settings,
+    error: *mut *mut tego_error,
+) {
+    log_trace!();
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(settings);
+
+        let handle = Handle::try_from(settings)?;
+        tego_settings_map().get_mut(&handle)?.revert()?;
+        Ok(())
+    });
+}
+
 //
 // Getters
 //

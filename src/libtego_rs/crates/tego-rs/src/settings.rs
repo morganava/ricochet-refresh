@@ -103,6 +103,12 @@ impl SettingsStore {
         std::fs::write(&self.settings_location, self.settings.to_string())?;
         Ok(())
     }
+
+    pub fn revert(&mut self) -> Result<()> {
+        let settings_json = std::fs::read_to_string(&self.settings_location)?;
+        self.settings = SettingsV4::from_str(settings_json.as_str())?;
+        Ok(())
+    }
 }
 
 impl Deref for SettingsStore {
