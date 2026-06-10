@@ -80,7 +80,6 @@ endif()
 add_custom_command(
     DEPENDS ${tego_rs_sources}
     OUTPUT ${tego_rs_outputs}
-    COMMAND ${CMAKE_COMMAND} -E touch build.rs
     COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo build ${CARGO_FLAGS} ${TEGO_RS_FEATURES}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

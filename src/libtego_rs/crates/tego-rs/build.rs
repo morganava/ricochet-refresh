@@ -3,6 +3,7 @@ extern crate cbindgen;
 use std::path::PathBuf;
 
 fn main() {
+    println!("cargo:rerun-if-changed=src/ffi/");
     // set by cargo
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     // set by cargo
@@ -28,7 +29,6 @@ fn main() {
     std::fs::create_dir_all(header_file_dir.clone()).unwrap();
 
     let header_file_path = header_file_dir.join("tego.h");
-    println!("cargo:rerun-if-changed={}", header_file_path.display());
     let temp_file_path = std::env::temp_dir().join("tego.h");
 
     // generate libgosling.h C header
