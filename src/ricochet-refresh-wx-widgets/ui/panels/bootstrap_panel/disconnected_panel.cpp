@@ -15,11 +15,6 @@ DisconnectedPanel::DisconnectedPanel(wxWindow* parent) : wxPanel(parent) {
 
     auto explainer_text =
         new WrappedStaticText(this, wxID_ANY, Strings::DisconnectedPanel::explainer_text());
-    auto connect_automatically_toggle =
-        new wxCheckBox(this, wxID_ANY, Strings::DisconnectedPanel::connect_automatically_toggle());
-    connect_automatically_toggle->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent& evt) {
-        this->set_quickstart(evt.IsChecked());
-    });
 
     auto button_panel = new wxPanel(this, wxID_ANY);
     auto h_button_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -44,15 +39,10 @@ DisconnectedPanel::DisconnectedPanel(wxWindow* parent) : wxPanel(parent) {
         wxEXPAND | wxALIGN_LEFT | wxBOTTOM,
         Metrics::VERTICAL_PADDING_MEDIUM
     );
-    v_sizer->Add(connect_automatically_toggle, 0, wxALIGN_LEFT);
     v_sizer->AddStretchSpacer(1);
     v_sizer->Add(button_panel, 0, wxALIGN_RIGHT);
 
     this->SetSizerAndFit(v_sizer);
-}
-
-void DisconnectedPanel::set_quickstart(bool enabled) {
-    LOG_INFO(fmt::format("Quickstart: {}", enabled));
 }
 
 void DisconnectedPanel::configure() {
