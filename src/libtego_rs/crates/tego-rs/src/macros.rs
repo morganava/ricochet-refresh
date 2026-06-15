@@ -91,7 +91,8 @@ macro_rules! impl_object_map {
                 TEGO_TAG_BITS,
                 [<$ffi_type:upper _TAG>],
                 [<$ffi_type:upper _MAP>],
-                [<$ffi_type _map>]
+                [<$ffi_type _map>],
+                [<$ffi_type:camel Handle>]
             );
         }
     };
@@ -101,7 +102,8 @@ macro_rules! impl_object_map {
         $tag_bits:expr,
         $tag:expr,
         $static_name:ident,
-        $getter_fn:ident
+        $getter_fn:ident,
+        $handle_type:ident
     ) => {
         static $static_name: std::sync::Mutex<
             ffi::object_map::ObjectMap<$obj_type, $ffi_type, $tag_bits, $tag>,
@@ -115,6 +117,8 @@ macro_rules! impl_object_map {
                 .lock()
                 .expect("another thread panicked while holding object map's mutex")
         }
+        #[allow(unused)]
+        pub(crate) type $handle_type = ffi::handle::Handle<$ffi_type, $tag_bits, $tag>;
     };
 }
 pub(crate) use impl_object_map;

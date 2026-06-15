@@ -24,12 +24,10 @@ use crate::promise::Promise;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
-type ContextHandle = handle::Handle<tego_context, TEGO_TAG_BITS, TEGO_CONTEXT_TAG>;
-
 #[derive(Default)]
 pub(crate) struct Context {
     // todo: this can just be an argument to begin
-    context_handle: Option<ContextHandle>,
+    context_handle: Option<TegoContextHandle>,
     // callback struct
     pub callbacks: Arc<Mutex<Callbacks>>,
     // tor runtime data
@@ -51,7 +49,7 @@ pub(crate) struct Context {
 }
 
 impl Context {
-    pub fn set_tego_key(&mut self, context_handle: ContextHandle) {
+    pub fn set_tego_key(&mut self, context_handle: TegoContextHandle) {
         log_trace!();
 
         self.context_handle = Some(context_handle);
