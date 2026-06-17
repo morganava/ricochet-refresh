@@ -32,7 +32,7 @@ pub unsafe extern "C" fn tego_context_initialize(
         unsafe {
             *out_context = context.into();
         }
-        tego_context_map().get_mut(&context)?.set_tego_key(context);
+        tego_context_map().get_mut(&context)?.start_event_loop(context);
         Ok(())
     })
 }
@@ -136,24 +136,6 @@ pub unsafe extern "C" fn tego_context_begin(
         tego_context_map()
             .get_mut(&context)?
             .begin(tor_config, host_private_key.clone(), users)?;
-        Ok(())
-    })
-}
-
-/// Tear down a running context; cancels bootstrap and ends event+network threads
-///
-/// @param context : the current tego context
-/// @param error : filled on error
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_context_end(context: *mut tego_context, error: *mut *mut tego_error) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        let context = Handle::try_from(context)?;
-        tego_context_map().get_mut(&context)?.end();
         Ok(())
     })
 }

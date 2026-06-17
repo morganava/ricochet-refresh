@@ -24,89 +24,87 @@ use crate::promise::Promise;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
+#[derive(Default)]
 pub(crate) struct Context {
-    // todo: this can just be an argument to begin
-    context_handle: Option<TegoContextHandle>,
     // callback struct
     pub callbacks: Arc<Mutex<Callbacks>>,
-    // tor runtime data
-    tor_version_cstring: Option<CString>,
-    // todo: arguably these should be accessed by a Command
-    // as well though there would be more latency than acquire
-    // lock
-    tor_version: Arc<Mutex<Option<LegacyTorVersion>>>,
-    tor_logs: Arc<Mutex<String>>,
     // flags
     connect_complete: Arc<AtomicBool>,
     // command queue
     command_queue: CommandQueue,
     // event loop thread handle
     event_loop_thread_handle: Option<std::thread::JoinHandle<()>>,
-    // ricochet-refresh data
-    private_key: Option<Ed25519PrivateKey>,
-    users: BTreeMap<V3OnionServiceId, tego_user_type>,
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        Self {
-            context_handle: None,
-            callbacks: Arc::new(Mutex::new(Callbacks::default())),
-            tor_version_cstring: None,
-            tor_version: Arc::new(Mutex::new(None)),
-            tor_logs: Arc::new(Mutex::new(String::new())),
-            connect_complete: Arc::new(AtomicBool::new(false)),
-            command_queue: CommandQueue::default(),
-            event_loop_thread_handle: None,
-            private_key: None,
-            users: BTreeMap::new(),
-        }
-    }
 }
 
 impl Context {
-    pub fn set_tego_key(&mut self, context_handle: TegoContextHandle) {
-        log_trace!();
+    pub fn start_event_loop(&mut self, context_handle: TegoContextHandle) {
+        let callbacks = Arc::downgrade(&self.callbacks);
+        let connect_complete = Arc::downgrade(&self.connect_complete);
+        let command_queue = self.command_queue.downgrade();
 
-        self.context_handle = Some(context_handle);
+        let task = EventLoopTask::new(
+            context_handle,
+            callbacks,
+            connect_complete,
+            command_queue,
+        );
+
+        self.event_loop_thread_handle = Some(
+            std::thread::Builder::new()
+                .name("event-loop".to_string())
+                .spawn(move || {
+                    // start event loop
+                    log_trace!();
+                    if let Err(_err) = task.run() {
+                        log_error!("{_err:?}");
+                        log_flush!();
+                        panic!();
+                    }
+                }).expect("failed to start event-loop thread"),
+        );
     }
 
     pub fn tor_version_string(&mut self) -> Option<&CString> {
         log_trace!();
 
-        if self.tor_version_cstring.is_none() {
-            let tor_version = self.tor_version.lock().expect("tor_version mutex poisoned");
-            if let Some(tor_version) = &*tor_version {
-                let tor_version = tor_version.to_string();
-                self.tor_version_cstring = Some(
-                    CString::new(tor_version.replace("\0", ""))
-                        .expect("tor_version conntains null-byte"),
-                );
-            }
-        }
-        self.tor_version_cstring.as_ref()
+        // if self.tor_version_cstring.is_none() {
+        //     let tor_version = self.tor_version.lock().expect("tor_version mutex poisoned");
+        //     if let Some(tor_version) = &*tor_version {
+        //         let tor_version = tor_version.to_string();
+        //         self.tor_version_cstring = Some(
+        //             CString::new(tor_version.replace("\0", ""))
+        //                 .expect("tor_version conntains null-byte"),
+        //         );
+        //     }
+        // }
+        // self.tor_version_cstring.as_ref()
+
+        None
     }
 
     pub fn tor_logs_size(&self) -> usize {
         log_trace!();
 
-        let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
-        tor_logs.len() + 1usize
+        // let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
+        // tor_logs.len() + 1usize
+        1usize
     }
 
     pub fn tor_logs(&self) -> String {
         log_trace!();
 
-        let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
-        tor_logs.clone()
+        // let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
+        // tor_logs.clone()
+        Default::default()
     }
 
     pub fn host_service_id(&self) -> Option<V3OnionServiceId> {
         log_trace!();
 
-        self.private_key
-            .as_ref()
-            .map(V3OnionServiceId::from_private_key)
+        // self.private_key
+        //     .as_ref()
+        //     .map(V3OnionServiceId::from_private_key)
+        None
     }
 
     pub fn begin(
@@ -116,7 +114,7 @@ impl Context {
         users: BTreeMap<V3OnionServiceId, tego_user_type>,
     ) -> Result<()> {
         log_trace!();
-
+/*
         self.private_key = Some(private_key.clone());
         let context_handle = self
             .context_handle
@@ -152,7 +150,7 @@ impl Context {
                     }
                 })?,
         );
-
+*/
         Ok(())
     }
 
@@ -163,15 +161,6 @@ impl Context {
             self.push_command(CommandData::EndEventLoop);
             let _ = join_handle.join();
         }
-
-        self.tor_version_cstring = Default::default();
-        self.tor_version = Default::default();
-        self.tor_logs = Default::default();
-        self.connect_complete = Default::default();
-        self.command_queue = Default::default();
-        self.event_loop_thread_handle = Default::default();
-        self.private_key = Default::default();
-        self.users = Default::default();
     }
 
     // todo: remove need for this
@@ -192,12 +181,14 @@ impl Context {
     pub fn forget_user(&mut self, service_id: V3OnionServiceId) -> Result<()> {
         log_trace!();
 
-        self.users.remove(&service_id);
-        let result: Promise<Result<()>> = Default::default();
-        let result_future = result.get_future();
-        self.push_command(CommandData::ForgetUser { service_id, result });
+        // self.users.remove(&service_id);
+        // let result: Promise<Result<()>> = Default::default();
+        // let result_future = result.get_future();
+        // self.push_command(CommandData::ForgetUser { service_id, result });
 
-        result_future.wait()
+        // result_future.wait()
+
+        Ok(())
     }
 
     pub fn send_contact_request(
