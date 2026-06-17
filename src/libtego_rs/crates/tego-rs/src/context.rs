@@ -24,7 +24,6 @@ use crate::promise::Promise;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
-#[derive(Default)]
 pub(crate) struct Context {
     // todo: this can just be an argument to begin
     context_handle: Option<TegoContextHandle>,
@@ -46,6 +45,23 @@ pub(crate) struct Context {
     // ricochet-refresh data
     private_key: Option<Ed25519PrivateKey>,
     users: BTreeMap<V3OnionServiceId, tego_user_type>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self {
+            context_handle: None,
+            callbacks: Arc::new(Mutex::new(Callbacks::default())),
+            tor_version_cstring: None,
+            tor_version: Arc::new(Mutex::new(None)),
+            tor_logs: Arc::new(Mutex::new(String::new())),
+            connect_complete: Arc::new(AtomicBool::new(false)),
+            command_queue: CommandQueue::default(),
+            event_loop_thread_handle: None,
+            private_key: None,
+            users: BTreeMap::new(),
+        }
+    }
 }
 
 impl Context {
