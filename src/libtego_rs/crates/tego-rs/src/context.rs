@@ -64,105 +64,6 @@ impl Context {
         );
     }
 
-    pub fn tor_version_string(&mut self) -> Option<&CString> {
-        log_trace!();
-
-        // if self.tor_version_cstring.is_none() {
-        //     let tor_version = self.tor_version.lock().expect("tor_version mutex poisoned");
-        //     if let Some(tor_version) = &*tor_version {
-        //         let tor_version = tor_version.to_string();
-        //         self.tor_version_cstring = Some(
-        //             CString::new(tor_version.replace("\0", ""))
-        //                 .expect("tor_version conntains null-byte"),
-        //         );
-        //     }
-        // }
-        // self.tor_version_cstring.as_ref()
-
-        None
-    }
-
-    pub fn tor_logs_size(&self) -> usize {
-        log_trace!();
-
-        // let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
-        // tor_logs.len() + 1usize
-        1usize
-    }
-
-    pub fn tor_logs(&self) -> String {
-        log_trace!();
-
-        // let tor_logs = self.tor_logs.lock().expect("tor_logs mutex poisoned");
-        // tor_logs.clone()
-        Default::default()
-    }
-
-    pub fn host_service_id(&self) -> Option<V3OnionServiceId> {
-        log_trace!();
-
-        // self.private_key
-        //     .as_ref()
-        //     .map(V3OnionServiceId::from_private_key)
-        None
-    }
-
-    pub fn begin(
-        &mut self,
-        tor_config: LegacyTorClientConfig,
-        private_key: Ed25519PrivateKey,
-        users: BTreeMap<V3OnionServiceId, tego_user_type>,
-    ) -> Result<()> {
-        log_trace!();
-/*
-        self.private_key = Some(private_key.clone());
-        let context_handle = self
-            .context_handle
-            .context("missing call to set_tego_key()")?;
-        let callbacks = Arc::downgrade(&self.callbacks);
-        let tor_version = Arc::downgrade(&self.tor_version);
-        let tor_logs = Arc::downgrade(&self.tor_logs);
-
-        let connect_complete = Arc::downgrade(&self.connect_complete);
-
-        let command_queue = self.command_queue.downgrade();
-
-        let task = EventLoopTask::new(
-            context_handle,
-            callbacks,
-            tor_version,
-            tor_logs,
-            connect_complete,
-            private_key,
-            users,
-            command_queue,
-        );
-
-        self.event_loop_thread_handle = Some(
-            std::thread::Builder::new()
-                .name("event-loop".to_string())
-                .spawn(move || {
-                    // start event loop
-                    if let Err(_err) = task.run(tor_config) {
-                        log_error!("{_err:?}");
-                        log_flush!();
-                        panic!();
-                    }
-                })?,
-        );
-*/
-        Ok(())
-    }
-
-    pub fn end(&mut self) {
-        log_trace!();
-
-        if let Some(join_handle) = std::mem::take(&mut self.event_loop_thread_handle) {
-            self.push_command(CommandData::EndEventLoop);
-            let _ = join_handle.join();
-        }
-    }
-
     // todo: remove need for this
     pub fn connect_complete(&self) -> bool {
         log_trace!();
@@ -350,6 +251,9 @@ impl Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
-        self.end();
+        if let Some(join_handle) = std::mem::take(&mut self.event_loop_thread_handle) {
+            self.push_command(CommandData::EndEventLoop);
+            let _ = join_handle.join();
+        }
     }
 }
