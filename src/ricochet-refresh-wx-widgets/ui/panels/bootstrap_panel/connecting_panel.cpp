@@ -2,7 +2,9 @@
 
 #include "strings.hpp"
 #include "ui/fonts.hpp"
+#include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
+#include "ui/panels/bootstrap_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
 ConnectingPanel::ConnectingPanel(wxWindow* parent) : wxPanel(parent) {
@@ -37,14 +39,11 @@ ConnectingPanel::ConnectingPanel(wxWindow* parent) : wxPanel(parent) {
         wxEXPAND | wxALIGN_LEFT | wxBOTTOM,
         Metrics::VERTICAL_PADDING_MEDIUM
     );
-    v_sizer->Add(progress_bar, 0, wxEXPAND);
+    v_sizer->Add(this->progress_bar, 0, wxEXPAND);
     v_sizer->AddStretchSpacer(1);
     v_sizer->Add(button_panel, 0, wxALIGN_RIGHT);
 
     this->SetSizerAndFit(v_sizer);
-
-    // todo: update based on boostrap progress callbacks
-    this->update_progress_bar(27u);
 }
 
 void ConnectingPanel::update_progress_bar(unsigned n) {
@@ -58,6 +57,10 @@ void ConnectingPanel::view_logs() {
 }
 
 void ConnectingPanel::cancel() {
-    // todo: cancel bootstrap and send us back to disconnected pane
     LOG_INFO("Cancel");
+
+    auto& context = wxGetApp().get_context_mut();
+    tego_context_cancel_bootstrap(&context, tego::panic_on_error());
+
+    wxGetApp().get_main_frame().get_bootstrap_panel_mut().show_disconnected();
 }

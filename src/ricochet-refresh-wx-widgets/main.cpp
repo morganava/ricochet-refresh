@@ -3,6 +3,8 @@
 #include "locale.hpp"
 #include "strings.hpp"
 #include "ui/main_frame.hpp"
+#include "ui/panels/bootstrap_panel.hpp"
+#include "ui/panels/bootstrap_panel/connecting_panel.hpp"
 
 wxIMPLEMENT_APP(RicochetRefresh);
 
@@ -20,6 +22,8 @@ bool RicochetRefresh::OnInit() try {
     this->main_frame = main_frame;
 
     tego_context_initialize(tego::out(this->context), tego::throw_on_error());
+
+    this->init_callbacks();
 
     return true;
 
@@ -104,4 +108,32 @@ void RicochetRefresh::init_settings() {
     } else {
         tego_settings_load_default(tego::out(this->settings), tego::throw_on_error());
     }
+}
+
+void RicochetRefresh::init_callbacks() {
+    auto context = this->context.get();
+    // bootstrap status callback
+    tego_context_set_tor_bootstrap_status_changed_callback(
+        context,
+        [](tego_context*, int32_t progress, enum tego_tor_bootstrap_tag) {
+            wxGetApp().CallAfter([=]() {
+                wxGetApp()
+                    .get_main_frame()
+                    .get_bootstrap_panel_mut()
+                    .get_connecting_panel_mut()
+                    .update_progress_bar(static_cast<unsigned>(progress));
+            });
+        },
+        tego::panic_on_error()
+    );
+    // bootstrap complete callback
+    tego_context_set_tor_bootstrap_complete_callback(
+        context,
+        [](tego_context*) {
+            wxGetApp().CallAfter([=]() {
+                wxGetApp().get_main_frame().get_bootstrap_panel_mut().show_connected();
+            });
+        },
+        tego::panic_on_error()
+    );
 }

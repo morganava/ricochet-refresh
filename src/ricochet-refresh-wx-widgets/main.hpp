@@ -10,6 +10,14 @@ public:
         return *this->main_frame;
     }
 
+    const tego_context& get_context() const {
+        return *this->context.get();
+    }
+
+    tego_context& get_context_mut() {
+        return *this->context.get();
+    }
+
     const tego_settings& get_settings() const {
         return *this->settings.get();
     }
@@ -20,6 +28,7 @@ public:
 
 private:
     void init_settings();
+    void init_callbacks();
 
     class MainFrame* main_frame = nullptr;
 

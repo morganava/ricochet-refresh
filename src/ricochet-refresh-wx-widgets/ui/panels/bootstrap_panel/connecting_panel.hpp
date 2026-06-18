@@ -4,8 +4,9 @@ class ConnectingPanel: public wxPanel {
 public:
     explicit ConnectingPanel(wxWindow* parent);
 
-private:
     void update_progress_bar(unsigned n);
+
+private:
     void view_logs();
     void cancel();
 

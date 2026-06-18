@@ -3,9 +3,13 @@
 class BootstrapPanel: public wxPanel {
 public:
     explicit BootstrapPanel(wxWindow* parent);
-    void ShowDisconnected();
-    void ShowConnecting();
-    void ShowConnected();
+    void show_disconnected();
+    void show_connecting();
+    void show_connected();
+
+    class ConnectingPanel& get_connecting_panel_mut() {
+        return *this->connecting_panel;
+    }
 
 private:
     class DisconnectedPanel* disconnected_panel = nullptr;

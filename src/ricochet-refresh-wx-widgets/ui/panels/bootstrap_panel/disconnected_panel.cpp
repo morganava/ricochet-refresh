@@ -5,6 +5,8 @@
 #include "ui/fonts.hpp"
 #include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
+#include "ui/panels/bootstrap_panel.hpp"
+#include "ui/panels/bootstrap_panel/connecting_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
 DisconnectedPanel::DisconnectedPanel(wxWindow* parent) : wxPanel(parent) {
@@ -53,4 +55,20 @@ void DisconnectedPanel::configure() {
 
 void DisconnectedPanel::connect() {
     LOG_INFO("Connect");
+
+    wxGetApp()
+        .get_main_frame()
+        .get_bootstrap_panel_mut()
+        .get_connecting_panel_mut()
+        .update_progress_bar(0);
+
+    const auto& settings = wxGetApp().get_settings();
+
+    std::unique_ptr<tego_tor_config> tor_config;
+    tego_settings_get_tor_config(&settings, tego::out(tor_config), tego::panic_on_error());
+
+    auto& context = wxGetApp().get_context_mut();
+    tego_context_begin_bootstrap(&context, tor_config.get(), tego::panic_on_error());
+
+    wxGetApp().get_main_frame().get_bootstrap_panel_mut().show_connecting();
 }

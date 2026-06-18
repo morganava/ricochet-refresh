@@ -10,7 +10,10 @@ use std::time::Duration;
 
 // extern
 use anyhow::{Context as AnyhowContext, Result};
-use tor_interface::legacy_tor_client::LegacyTorClientConfig;
+use rico_settings::common::BridgeConfig;
+use rico_settings::v4::settings::TorConfig;
+use tor_interface::censorship_circumvention::PluggableTransportConfig;
+use tor_interface::legacy_tor_client::{LegacyTorClientConfig, LegacyTorClient};
 use tor_interface::legacy_tor_version::LegacyTorVersion;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 
@@ -62,6 +65,49 @@ impl Context {
                     }
                 }).expect("failed to start event-loop thread"),
         );
+    }
+
+    pub fn begin_bootstrap(&mut self, tor_config: TorConfig) -> Result<()> {
+        match tor_config {
+            #[cfg(feature = "bundled-tor")]
+            TorConfig::BundledTor { bridge_config, proxy_config, firewall_config } => {
+                let tor_bin_path = Self::tor_bin_path()?;
+                let data_directory = Self::data_directory();
+
+                let proxy_settings = proxy_config;
+                let allowed_ports = if let Some(firewall_config) = firewall_config {
+                    Some(firewall_config.allowed_ports().clone())
+                } else {
+                    None
+                };
+                let pluggable_transports = Self::pluggable_transports();
+                let bridge_lines = match bridge_config {
+                    Some(BridgeConfig::BuiltIn(builtin)) => None,
+                    Some(BridgeConfig::Custom(first, bridge_lines)) => {
+                        let mut bridge_lines = bridge_lines;
+                        bridge_lines.insert(0, first);
+                        Some(bridge_lines)
+                    }
+                    None => None,
+                };
+                let legacy_tor_client_config = LegacyTorClientConfig::BundledTor {
+                    tor_bin_path,
+                    data_directory,
+                    proxy_settings,
+                    allowed_ports,
+                    pluggable_transports,
+                    bridge_lines,
+                };
+                self.push_command(CommandData::BeginLegacyTorBootstrap{legacy_tor_client_config});
+            },
+        }
+
+        Ok(())
+    }
+
+    pub fn cancel_bootstrap(&mut self) -> Result<()> {
+        self.push_command(CommandData::CancelTorBootstrap);
+        Ok(())
     }
 
     // todo: remove need for this
@@ -229,6 +275,7 @@ impl Context {
         result_future.wait()
     }
 
+    #[cfg(feature = "bundled-tor")]
     pub fn tor_bin_path() -> Result<PathBuf> {
         log_trace!();
 
@@ -246,6 +293,22 @@ impl Context {
             path = which::which(bin_name)?;
             Ok(path)
         }
+    }
+
+    #[cfg(feature = "bundled-tor")]
+    pub fn data_directory() -> PathBuf {
+        // TODO: implement a smarter way of doing this
+        let mut path = std::env::temp_dir();
+        let subdirectory = format!("ricochet-refresh.{}", std::process::id());
+        path.push(subdirectory.as_str());
+        path.push("tor");
+
+        path
+    }
+
+    #[cfg(feature = "bundled-tor")]
+    pub fn pluggable_transports() -> Option<Vec<PluggableTransportConfig>> {
+        None
     }
 }
 

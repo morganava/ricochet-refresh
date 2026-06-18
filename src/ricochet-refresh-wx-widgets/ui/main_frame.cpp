@@ -210,7 +210,7 @@ void MainFrame::setup_main_panels(wxBoxSizer* sizer) {
     auto& main_panels = this->main_panels;
 
     auto bootstrap_panel = new BootstrapPanel(this);
-    bootstrap_panel->ShowDisconnected();
+    bootstrap_panel->show_disconnected();
     sizer->Add(bootstrap_panel, 1, wxEXPAND);
     bootstrap_panel->Hide();
     main_panels.bootstrap_panel = bootstrap_panel;

@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 // extern
 use anyhow::Result;
 use tor_interface::tor_crypto::V3OnionServiceId;
-use tor_interface::tor_provider::OnionStream;
+use tor_interface::tor_provider::{OnionStream, TorProvider};
 
 // internal
 use crate::ffi::*;
@@ -58,6 +58,12 @@ impl Eq for Command {}
 pub(crate) enum CommandData {
     // library is going away we need to cleanup
     EndEventLoop,
+    // begin bootstrapping a legacy tor client
+    BeginLegacyTorBootstrap {
+        legacy_tor_client_config: tor_interface::legacy_tor_client::LegacyTorClientConfig,
+    },
+    // cancel bootstrapping (if it is in progres)
+    CancelTorBootstrap,
     // remove a user from our internal lists
     ForgetUser {
         service_id: V3OnionServiceId,

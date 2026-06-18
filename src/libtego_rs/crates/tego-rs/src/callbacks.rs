@@ -17,6 +17,7 @@ pub(crate) enum CallbackData {
         progress: u32,
         tag: String,
     },
+    TorBootstrapComplete,
     TorLogReceived {
         line: String,
     },
@@ -81,6 +82,7 @@ pub(crate) enum CallbackData {
 pub(crate) struct Callbacks {
     pub on_tor_network_status_changed: tego_tor_network_status_changed_callback,
     pub on_tor_bootstrap_status_changed: tego_tor_bootstrap_status_changed_callback,
+    pub on_tor_bootstrap_complete: tego_tor_bootstrap_complete_callback,
     pub on_tor_log_received: tego_tor_log_received_callback,
     pub on_host_onion_service_state_changed: tego_host_onion_service_state_changed_callback,
     pub on_chat_request_received: tego_chat_request_received_callback,
@@ -100,14 +102,14 @@ impl Callbacks {
     pub fn invoke(&self, context: *mut tego_context, callback_data: CallbackData) -> Result<()> {
         use CallbackData::*;
         match callback_data {
-            TorNetworkStatusChanged { status } => {
-                let on_tor_network_status_changed = self
-                    .on_tor_network_status_changed
-                    .context("missing on_tor_network_status_changed callback")?;
-                log_trace!("invoke on_tor_network_status_changed");
+            // TorNetworkStatusChanged { status } => {
+            //     let on_tor_network_status_changed = self
+            //         .on_tor_network_status_changed
+            //         .context("missing on_tor_network_status_changed callback")?;
+            //     log_trace!("invoke on_tor_network_status_changed");
 
-                on_tor_network_status_changed(context, status);
-            }
+            //     on_tor_network_status_changed(context, status);
+            // }
             TorBootstrapStatusChanged { progress, tag } => {
                 let on_tor_bootstrap_status_changed = self
                     .on_tor_bootstrap_status_changed
@@ -116,248 +118,257 @@ impl Callbacks {
 
                 on_tor_bootstrap_status_changed(context, progress as i32, tag.as_str().into());
             }
-            TorLogReceived { line } => {
-                let on_tor_log_received = self
-                    .on_tor_log_received
-                    .context("missing on_tor_log_received callback")?;
-                log_trace!("invoke on_tor_log_received");
+            TorBootstrapComplete => {
+                let on_tor_bootstrap_complete = self.on_tor_bootstrap_complete.context("missing on_tor_bootstrap_complete callback")?;
+                log_trace!("invoke on_tor_bootstrap_complete");
 
-                let line =
-                    CString::new(line.replace("\0", "")).expect("tor log line contains null-byte");
-                let line_len = line.as_bytes().len();
-                let line = line.as_c_str().as_ptr();
-
-                on_tor_log_received(context, line, line_len);
+                on_tor_bootstrap_complete(context);
             }
-            HostOnionServiceStateChanged { state } => {
-                let on_host_onion_service_state_changed = self
-                    .on_host_onion_service_state_changed
-                    .context("missing on_host_onion_service_state_changed callback")?;
-                log_trace!("invoke on_host_onion_service_state_changed");
+            // TorLogReceived { line } => {
+            //     let on_tor_log_received = self
+            //         .on_tor_log_received
+            //         .context("missing on_tor_log_received callback")?;
+            //     log_trace!("invoke on_tor_log_received");
 
-                on_host_onion_service_state_changed(context, state);
-            }
-            ChatRequestReceived {
-                service_id,
-                message,
-            } => {
-                let on_chat_request_received = self
-                    .on_chat_request_received
-                    .context("missing on_chat_request_received callback")?;
-                log_trace!("invoke on_chat_request_received");
+            //     let line =
+            //         CString::new(line.replace("\0", "")).expect("tor log line contains null-byte");
+            //     let line_len = line.as_bytes().len();
+            //     let line = line.as_c_str().as_ptr();
 
-                let sender = tego_user_id_map().insert(service_id);
-                let message = CString::new(message.replace("\0", ""))
-                    .expect("chat request message contains null-byte");
-                let message_len = message.as_bytes().len();
+            //     on_tor_log_received(context, line, line_len);
+            // }
+            // HostOnionServiceStateChanged { state } => {
+            //     let on_host_onion_service_state_changed = self
+            //         .on_host_onion_service_state_changed
+            //         .context("missing on_host_onion_service_state_changed callback")?;
+            //     log_trace!("invoke on_host_onion_service_state_changed");
 
-                on_chat_request_received(
-                    context,
-                    sender.into(),
-                    message.as_c_str().as_ptr(),
-                    message_len,
-                );
+            //     on_host_onion_service_state_changed(context, state);
+            // }
+            // ChatRequestReceived {
+            //     service_id,
+            //     message,
+            // } => {
+            //     let on_chat_request_received = self
+            //         .on_chat_request_received
+            //         .context("missing on_chat_request_received callback")?;
+            //     log_trace!("invoke on_chat_request_received");
 
-                tego_user_id_map().remove(&sender)?;
-            }
-            ChatRequestResponseReceived {
-                service_id,
-                accepted_request,
-            } => {
-                let on_chat_request_response_received = self
-                    .on_chat_request_response_received
-                    .context("missing on_chat_request_response_received callback")?;
-                log_trace!("invoke on_chat_request_response_received");
+            //     let sender = tego_user_id_map().insert(service_id);
+            //     let message = CString::new(message.replace("\0", ""))
+            //         .expect("chat request message contains null-byte");
+            //     let message_len = message.as_bytes().len();
 
-                let sender = tego_user_id_map().insert(service_id);
-                let accepted_request = if accepted_request {
-                    TEGO_TRUE
-                } else {
-                    TEGO_FALSE
-                };
+            //     on_chat_request_received(
+            //         context,
+            //         sender.into(),
+            //         message.as_c_str().as_ptr(),
+            //         message_len,
+            //     );
 
-                on_chat_request_response_received(context, sender.into(), accepted_request);
+            //     tego_user_id_map().remove(&sender)?;
+            // }
+            // ChatRequestResponseReceived {
+            //     service_id,
+            //     accepted_request,
+            // } => {
+            //     let on_chat_request_response_received = self
+            //         .on_chat_request_response_received
+            //         .context("missing on_chat_request_response_received callback")?;
+            //     log_trace!("invoke on_chat_request_response_received");
 
-                tego_user_id_map().remove(&sender)?;
-            }
-            MessageReceived {
-                service_id,
-                timestamp,
-                message_id,
-                message,
-            } => {
-                let on_message_received = self
-                    .on_message_received
-                    .context("missing on_message_received callback")?;
-                log_trace!("invoke on_message_received");
+            //     let sender = tego_user_id_map().insert(service_id);
+            //     let accepted_request = if accepted_request {
+            //         TEGO_TRUE
+            //     } else {
+            //         TEGO_FALSE
+            //     };
 
-                let user = tego_user_id_map().insert(service_id);
-                let timestamp = timestamp
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or(std::time::Duration::ZERO);
-                let timestamp = timestamp.as_millis() as tego_time;
-                assert!(timestamp > 0);
-                let message = CString::new(message.replace("\0", ""))
-                    .expect("chat message contains null-byte");
-                let message_len = message.as_bytes().len();
+            //     on_chat_request_response_received(context, sender.into(), accepted_request);
 
-                on_message_received(
-                    context,
-                    user.into(),
-                    timestamp,
-                    message_id,
-                    message.as_c_str().as_ptr(),
-                    message_len,
-                );
+            //     tego_user_id_map().remove(&sender)?;
+            // }
+            // MessageReceived {
+            //     service_id,
+            //     timestamp,
+            //     message_id,
+            //     message,
+            // } => {
+            //     let on_message_received = self
+            //         .on_message_received
+            //         .context("missing on_message_received callback")?;
+            //     log_trace!("invoke on_message_received");
 
-                tego_user_id_map().remove(&user)?;
-            }
-            MessageAcknowledged {
-                service_id,
-                message_id,
-                accepted,
-            } => {
-                let on_message_acknowledged = self
-                    .on_message_acknowledged
-                    .context("missing on_message_acknowledged callback")?;
-                log_trace!("invoke on_message_acknowledged");
+            //     let user = tego_user_id_map().insert(service_id);
+            //     let timestamp = timestamp
+            //         .duration_since(std::time::UNIX_EPOCH)
+            //         .unwrap_or(std::time::Duration::ZERO);
+            //     let timestamp = timestamp.as_millis() as tego_time;
+            //     assert!(timestamp > 0);
+            //     let message = CString::new(message.replace("\0", ""))
+            //         .expect("chat message contains null-byte");
+            //     let message_len = message.as_bytes().len();
 
-                let user = tego_user_id_map().insert(service_id);
-                let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
+            //     on_message_received(
+            //         context,
+            //         user.into(),
+            //         timestamp,
+            //         message_id,
+            //         message.as_c_str().as_ptr(),
+            //         message_len,
+            //     );
 
-                on_message_acknowledged(context, user.into(), message_id, accepted);
+            //     tego_user_id_map().remove(&user)?;
+            // }
+            // MessageAcknowledged {
+            //     service_id,
+            //     message_id,
+            //     accepted,
+            // } => {
+            //     let on_message_acknowledged = self
+            //         .on_message_acknowledged
+            //         .context("missing on_message_acknowledged callback")?;
+            //     log_trace!("invoke on_message_acknowledged");
 
-                tego_user_id_map().remove(&user)?;
-            }
-            FileTransferRequestReceived {
-                sender,
-                file_transfer_id,
-                file_name,
-                file_size,
-            } => {
-                let on_file_transfer_request_received = self
-                    .on_file_transfer_request_received
-                    .context("missing on_file_transfer_request_received callback")?;
-                log_trace!("invoke on_file_transfer_request_received");
+            //     let user = tego_user_id_map().insert(service_id);
+            //     let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
-                let sender = tego_user_id_map().insert(sender);
-                let file_name = CString::new(file_name.replace("\0", ""))
-                    .expect("file name contains null-byte");
-                let file_name_length = file_name.as_bytes().len();
-                let file_name = file_name.as_c_str().as_ptr();
+            //     on_message_acknowledged(context, user.into(), message_id, accepted);
 
-                on_file_transfer_request_received(
-                    context,
-                    sender.into(),
-                    file_transfer_id,
-                    file_name,
-                    file_name_length,
-                    file_size,
-                );
+            //     tego_user_id_map().remove(&user)?;
+            // }
+            // FileTransferRequestReceived {
+            //     sender,
+            //     file_transfer_id,
+            //     file_name,
+            //     file_size,
+            // } => {
+            //     let on_file_transfer_request_received = self
+            //         .on_file_transfer_request_received
+            //         .context("missing on_file_transfer_request_received callback")?;
+            //     log_trace!("invoke on_file_transfer_request_received");
 
-                tego_user_id_map().remove(&sender)?;
-            }
-            FileTransferRequestAcknowledged {
-                service_id,
-                file_transfer_id,
-                accepted,
-            } => {
-                let on_file_transfer_request_acknowledged = self
-                    .on_file_transfer_request_acknowledged
-                    .context("missing on_file_transfer_request_acknowledged callback")?;
-                log_trace!("invoke on_file_transfer_request_acknowledged");
+            //     let sender = tego_user_id_map().insert(sender);
+            //     let file_name = CString::new(file_name.replace("\0", ""))
+            //         .expect("file name contains null-byte");
+            //     let file_name_length = file_name.as_bytes().len();
+            //     let file_name = file_name.as_c_str().as_ptr();
 
-                let user = tego_user_id_map().insert(service_id);
-                let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
+            //     on_file_transfer_request_received(
+            //         context,
+            //         sender.into(),
+            //         file_transfer_id,
+            //         file_name,
+            //         file_name_length,
+            //         file_size,
+            //     );
 
-                on_file_transfer_request_acknowledged(
-                    context,
-                    user.into(),
-                    file_transfer_id,
-                    accepted,
-                );
+            //     tego_user_id_map().remove(&sender)?;
+            // }
+            // FileTransferRequestAcknowledged {
+            //     service_id,
+            //     file_transfer_id,
+            //     accepted,
+            // } => {
+            //     let on_file_transfer_request_acknowledged = self
+            //         .on_file_transfer_request_acknowledged
+            //         .context("missing on_file_transfer_request_acknowledged callback")?;
+            //     log_trace!("invoke on_file_transfer_request_acknowledged");
 
-                tego_user_id_map().remove(&user)?;
-            }
-            FileTransferRequestResponseReceived {
-                service_id,
-                file_transfer_id,
-                response,
-            } => {
-                let on_file_transfer_request_response_received = self
-                    .on_file_transfer_request_response_received
-                    .context("missing on_file_transfer_request_response_received callback")?;
-                log_trace!("invoke on_file_transfer_request_response_received");
+            //     let user = tego_user_id_map().insert(service_id);
+            //     let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
-                let user = tego_user_id_map().insert(service_id);
+            //     on_file_transfer_request_acknowledged(
+            //         context,
+            //         user.into(),
+            //         file_transfer_id,
+            //         accepted,
+            //     );
 
-                on_file_transfer_request_response_received(
-                    context,
-                    user.into(),
-                    file_transfer_id,
-                    response,
-                );
-                tego_user_id_map().remove(&user)?;
-            }
-            FileTransferProgress {
-                user_id,
-                file_transfer_id,
-                direction,
-                bytes_complete,
-                bytes_total,
-            } => {
-                let on_file_transfer_progress = self
-                    .on_file_transfer_progress
-                    .context("missing on_file_transfer_progress callback")?;
-                log_trace!("invoke on_file_transfer_progress");
+            //     tego_user_id_map().remove(&user)?;
+            // }
+            // FileTransferRequestResponseReceived {
+            //     service_id,
+            //     file_transfer_id,
+            //     response,
+            // } => {
+            //     let on_file_transfer_request_response_received = self
+            //         .on_file_transfer_request_response_received
+            //         .context("missing on_file_transfer_request_response_received callback")?;
+            //     log_trace!("invoke on_file_transfer_request_response_received");
 
-                let user_id = tego_user_id_map().insert(user_id);
+            //     let user = tego_user_id_map().insert(service_id);
 
-                on_file_transfer_progress(
-                    context,
-                    user_id.into(),
-                    file_transfer_id,
-                    direction,
-                    bytes_complete,
-                    bytes_total,
-                );
+            //     on_file_transfer_request_response_received(
+            //         context,
+            //         user.into(),
+            //         file_transfer_id,
+            //         response,
+            //     );
+            //     tego_user_id_map().remove(&user)?;
+            // }
+            // FileTransferProgress {
+            //     user_id,
+            //     file_transfer_id,
+            //     direction,
+            //     bytes_complete,
+            //     bytes_total,
+            // } => {
+            //     let on_file_transfer_progress = self
+            //         .on_file_transfer_progress
+            //         .context("missing on_file_transfer_progress callback")?;
+            //     log_trace!("invoke on_file_transfer_progress");
 
-                tego_user_id_map().remove(&user_id)?;
-            }
-            FileTransferComplete {
-                user_id,
-                file_transfer_id,
-                direction,
-                result,
-            } => {
-                let on_file_transfer_complete = self
-                    .on_file_transfer_complete
-                    .context("missing on_file_transfer_complete callback")?;
-                log_trace!("invoke on_file_transfer_complete");
+            //     let user_id = tego_user_id_map().insert(user_id);
 
-                let user_id = tego_user_id_map().insert(user_id);
+            //     on_file_transfer_progress(
+            //         context,
+            //         user_id.into(),
+            //         file_transfer_id,
+            //         direction,
+            //         bytes_complete,
+            //         bytes_total,
+            //     );
 
-                on_file_transfer_complete(
-                    context,
-                    user_id.into(),
-                    file_transfer_id,
-                    direction,
-                    result,
-                );
+            //     tego_user_id_map().remove(&user_id)?;
+            // }
+            // FileTransferComplete {
+            //     user_id,
+            //     file_transfer_id,
+            //     direction,
+            //     result,
+            // } => {
+            //     let on_file_transfer_complete = self
+            //         .on_file_transfer_complete
+            //         .context("missing on_file_transfer_complete callback")?;
+            //     log_trace!("invoke on_file_transfer_complete");
 
-                tego_user_id_map().remove(&user_id)?;
-            }
-            UserStatusChanged { service_id, status } => {
-                let on_user_status_changed = self
-                    .on_user_status_changed
-                    .context("missing on_user_status_changed callback")?;
-                log_trace!("invoke on_user_status_changed");
+            //     let user_id = tego_user_id_map().insert(user_id);
 
-                let user = tego_user_id_map().insert(service_id);
+            //     on_file_transfer_complete(
+            //         context,
+            //         user_id.into(),
+            //         file_transfer_id,
+            //         direction,
+            //         result,
+            //     );
 
-                on_user_status_changed(context, user.into(), status);
+            //     tego_user_id_map().remove(&user_id)?;
+            // }
+            // UserStatusChanged { service_id, status } => {
+            //     let on_user_status_changed = self
+            //         .on_user_status_changed
+            //         .context("missing on_user_status_changed callback")?;
+            //     log_trace!("invoke on_user_status_changed");
 
-                tego_user_id_map().remove(&user)?;
+            //     let user = tego_user_id_map().insert(service_id);
+
+            //     on_user_status_changed(context, user.into(), status);
+
+            //     tego_user_id_map().remove(&user)?;
+            // }
+            _ => {
+                log_trace!("unhandled callback");
             }
         }
         Ok(())

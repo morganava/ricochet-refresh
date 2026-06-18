@@ -434,6 +434,13 @@ pub type tego_tor_bootstrap_status_changed_callback = Option<
     extern "C" fn(context: *mut tego_context, progress: i32, tag: tego_tor_bootstrap_tag) -> (),
 >;
 
+/// Callback fired when tor's bootstrap proces is completed
+///
+/// @param context : the current tego context
+pub type tego_tor_bootstrap_complete_callback = Option<
+    extern "C" fn(context: *mut tego_context) -> (),
+>;
+
 /// Callback fired when a log entry is received from the tor daemon
 ///
 /// @param context : the current tego context
@@ -661,6 +668,15 @@ pub extern "C" fn tego_context_set_tor_bootstrap_status_changed_callback(
     error: *mut *mut tego_error,
 ) {
     impl_callback_setter!(on_tor_bootstrap_status_changed, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_tor_bootstrap_complete_callback(
+    context: *mut tego_context,
+    callback: tego_tor_bootstrap_complete_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_tor_bootstrap_complete, context, callback, error);
 }
 
 #[no_mangle]

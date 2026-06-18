@@ -50,19 +50,19 @@ BootstrapPanel::BootstrapPanel(wxWindow* parent) : wxPanel(parent) {
     this->SetSizerAndFit(root_h_sizer);
 }
 
-void BootstrapPanel::ShowDisconnected() {
+void BootstrapPanel::show_disconnected() {
     this->disconnected_panel->Show();
     this->connecting_panel->Hide();
     this->connected_panel->Hide();
 }
 
-void BootstrapPanel::ShowConnecting() {
+void BootstrapPanel::show_connecting() {
     this->disconnected_panel->Hide();
     this->connecting_panel->Show();
     this->connected_panel->Hide();
 }
 
-void BootstrapPanel::ShowConnected() {
+void BootstrapPanel::show_connected() {
     this->disconnected_panel->Hide();
     this->connecting_panel->Hide();
     this->connected_panel->Show();

@@ -35,6 +35,8 @@ pub(crate) struct EventLoopTask {
     connect_complete: Weak<AtomicBool>,
     command_queue: CommandQueue,
 
+    tor_provider: Option<Box<dyn TorProvider>>,
+
     // read_buffer: [u8; Self::READ_BUFFER_SIZE],
     // packet_handler: PacketHandler,
     pending_connections: BTreeMap<tor_interface::tor_provider::ConnectHandle, PendingConnection>,
@@ -81,6 +83,7 @@ impl EventLoopTask {
             callbacks,
             connect_complete,
             command_queue,
+            tor_provider: None,
             // read_buffer: [0u8; Self::READ_BUFFER_SIZE],
             // packet_handler: PacketHandler::new(private_key, known_contacts, blocked_contacts),
             pending_connections: Default::default(),
@@ -96,7 +99,7 @@ impl EventLoopTask {
     pub fn run(mut self) -> Result<()> {
         while !self.task_complete {
             // handle tor provider events
-            // self.handle_tor_events(&mut tor_client)?;
+            self.handle_tor_events()?;
 
             // get and handle pending commands
             self.handle_commands()?;
@@ -126,144 +129,148 @@ impl EventLoopTask {
         Duration::from_secs(delay)
     }
 
-    fn handle_tor_events(&mut self, tor_client: &mut LegacyTorClient) -> Result<()> {
-        // handle tor events
-        for e in tor_client.update()? {
-            match e {
-                TorEvent::BootstrapStatus {
-                    progress,
-                    tag,
-                    summary: _,
-                } => {
-                    self.callback_queue
-                        .push(CallbackData::TorBootstrapStatusChanged { progress, tag });
-                }
-                TorEvent::BootstrapComplete => {
-                    if let Some(connect_complete) = self.connect_complete.upgrade() {
-                        connect_complete.store(true, Ordering::Relaxed);
+    fn handle_tor_events(&mut self) -> Result<()> {
+        if let Some(tor_client) = &mut self.tor_provider {
+            // handle tor events
+            for e in tor_client.update()? {
+
+                match e {
+                    TorEvent::BootstrapStatus {
+                        progress,
+                        tag,
+                        summary: _,
+                    } => {
+                        log_trace!();
+                        self.callback_queue
+                            .push(CallbackData::TorBootstrapStatusChanged { progress, tag });
                     }
-
-                    self.callback_queue
-                        .push(CallbackData::TorNetworkStatusChanged {
-                            status: tego_tor_network_status::tego_tor_network_status_ready,
-                        });
-
-/*
-                    self.callback_queue.push(
-                        CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_added});
-
-                    // start onion service
-                    let listener = tor_client.listener(&self.private_key, RICOCHET_PORT, None)?;
-                    std::thread::Builder::new()
-                        .name("listener-loop".to_string())
-                        .spawn({
-                            let command_queue = self.command_queue.downgrade();
-                            move || {
-                                let task = ListenerTask::new(listener, command_queue);
-                                let _ = task.run();
-                            }
-                        })?;
-
-                    // try to connect to contacts
-                    for (user_id, user_data) in self.users.iter() {
-                        use tego_user_type::*;
-                        match user_data.user_type {
-                            tego_user_type_allowed | tego_user_type_pending => {
-                                self.command_queue.push(
-                                    CommandData::ConnectContact {
-                                        service_id: user_id.clone(),
-                                        contact_request_message: None,
-                                    },
-                                    Duration::ZERO,
-                                );
-                            }
-                            _ => (),
+                    TorEvent::BootstrapComplete => {
+                        if let Some(connect_complete) = self.connect_complete.upgrade() {
+                            connect_complete.store(true, Ordering::Relaxed);
                         }
+
+                        self.callback_queue.push(CallbackData::TorBootstrapComplete);
+    /*
+                        self.callback_queue
+                            .push(CallbackData::TorNetworkStatusChanged {
+                                status: tego_tor_network_status::tego_tor_network_status_ready,
+                            });
+
+                        self.callback_queue.push(
+                            CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_added});
+
+                        // start onion service
+                        let listener = tor_client.listener(&self.private_key, RICOCHET_PORT, None)?;
+                        std::thread::Builder::new()
+                            .name("listener-loop".to_string())
+                            .spawn({
+                                let command_queue = self.command_queue.downgrade();
+                                move || {
+                                    let task = ListenerTask::new(listener, command_queue);
+                                    let _ = task.run();
+                                }
+                            })?;
+
+                        // try to connect to contacts
+                        for (user_id, user_data) in self.users.iter() {
+                            use tego_user_type::*;
+                            match user_data.user_type {
+                                tego_user_type_allowed | tego_user_type_pending => {
+                                    self.command_queue.push(
+                                        CommandData::ConnectContact {
+                                            service_id: user_id.clone(),
+                                            contact_request_message: None,
+                                        },
+                                        Duration::ZERO,
+                                    );
+                                }
+                                _ => (),
+                            }
+                        }
+    */
                     }
-*/
-                }
-                TorEvent::LogReceived { line } => {
-                    // if let Some(tor_logs) = self.tor_logs.upgrade() {
-                    //     let mut tor_logs = tor_logs.lock().expect("tor_logs mutex poisoned");
-                    //     if !tor_logs.is_empty() {
-                    //         tor_logs.push('\n');
-                    //     }
-                    //     tor_logs.push_str(line.as_str());
-                    // }
-                    self.callback_queue
-                        .push(CallbackData::TorLogReceived { line });
-                }
-                TorEvent::OnionServicePublished { service_id: _ } => {
-                    self.callback_queue.push(
-                        CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
-                }
-                TorEvent::ConnectComplete { handle, stream } => {
-                    let mut handle_connect_complete = || -> Result<()> {
+                    TorEvent::LogReceived { line } => {
+                        // if let Some(tor_logs) = self.tor_logs.upgrade() {
+                        //     let mut tor_logs = tor_logs.lock().expect("tor_logs mutex poisoned");
+                        //     if !tor_logs.is_empty() {
+                        //         tor_logs.push('\n');
+                        //     }
+                        //     tor_logs.push_str(line.as_str());
+                        // }
+                        self.callback_queue
+                            .push(CallbackData::TorLogReceived { line });
+                    }
+                    TorEvent::OnionServicePublished { service_id: _ } => {
+                        self.callback_queue.push(
+                            CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
+                    }
+                    TorEvent::ConnectComplete { handle, stream } => {
+                        let mut handle_connect_complete = || -> Result<()> {
+                            if let Some(pending_connection) = self.pending_connections.remove(&handle) {
+                                // todo schedule a new connedct attempt if this fails?
+                                stream
+                                    .set_nonblocking(true)
+                                    .expect("failed to set_nonblockinsg");
+
+                                let service_id = pending_connection.service_id;
+                                let message_text = pending_connection.message_text;
+    /*
+                                if !self.packet_handler.has_verified_connection(&service_id) {
+                                    log_info!("connected to {service_id:?}");
+                                    let mut replies: Vec<Packet> = Default::default();
+                                    let handle = self.packet_handler.new_outgoing_connection(
+                                        service_id.clone(),
+                                        message_text,
+                                        &mut replies,
+                                    )?;
+
+                                    let connection = Connection {
+                                        service_id: Some(service_id),
+                                        stream,
+                                        read_bytes: Default::default(),
+                                        read_packets: Default::default(),
+                                        write_packets: replies,
+                                        file_downloads: Default::default(),
+                                        file_uploads: Default::default(),
+                                    };
+
+                                    self.connections.insert(handle, connection);
+                                } else {
+                                    log_info!("connected to {service_id:?} but verified connection already exists, dropping");
+                                }
+    */
+                            }
+                            Ok(())
+                        };
+                        let _ = handle_connect_complete();
+                    }
+                    TorEvent::ConnectFailed { handle, error: _ } => {
                         if let Some(pending_connection) = self.pending_connections.remove(&handle) {
-                            // todo schedule a new connedct attempt if this fails?
-                            stream
-                                .set_nonblocking(true)
-                                .expect("failed to set_nonblockinsg");
-
                             let service_id = pending_connection.service_id;
-                            let message_text = pending_connection.message_text;
-/*
-                            if !self.packet_handler.has_verified_connection(&service_id) {
-                                log_info!("connected to {service_id:?}");
-                                let mut replies: Vec<Packet> = Default::default();
-                                let handle = self.packet_handler.new_outgoing_connection(
-                                    service_id.clone(),
-                                    message_text,
-                                    &mut replies,
-                                )?;
+    /*
+                            if let Some(user_data) = self.users.get_mut(&service_id) {
+                                user_data.connection_failures += 1;
 
-                                let connection = Connection {
-                                    service_id: Some(service_id),
-                                    stream,
-                                    read_bytes: Default::default(),
-                                    read_packets: Default::default(),
-                                    write_packets: replies,
-                                    file_downloads: Default::default(),
-                                    file_uploads: Default::default(),
+                                let failure_count = user_data.connection_failures;
+                                // delay before trying to connect in seconds
+                                let delay = Self::retry_delay(failure_count);
+
+                                log_info!("connect attempt {failure_count} to {service_id:?} failed; try again in {delay:?}");
+
+                                let contact_request_message = pending_connection.message_text;
+                                let command_data = CommandData::ConnectContact {
+                                    service_id,
+                                    contact_request_message,
                                 };
 
-                                self.connections.insert(handle, connection);
-                            } else {
-                                log_info!("connected to {service_id:?} but verified connection already exists, dropping");
+                                self.command_queue.push(command_data, delay);
                             }
-*/
+    */
                         }
-                        Ok(())
-                    };
-                    let _ = handle_connect_complete();
-                }
-                TorEvent::ConnectFailed { handle, error: _ } => {
-                    if let Some(pending_connection) = self.pending_connections.remove(&handle) {
-                        let service_id = pending_connection.service_id;
-/*
-                        if let Some(user_data) = self.users.get_mut(&service_id) {
-                            user_data.connection_failures += 1;
-
-                            let failure_count = user_data.connection_failures;
-                            // delay before trying to connect in seconds
-                            let delay = Self::retry_delay(failure_count);
-
-                            log_info!("connect attempt {failure_count} to {service_id:?} failed; try again in {delay:?}");
-
-                            let contact_request_message = pending_connection.message_text;
-                            let command_data = CommandData::ConnectContact {
-                                service_id,
-                                contact_request_message,
-                            };
-
-                            self.command_queue.push(command_data, delay);
-                        }
-*/
                     }
                 }
             }
         }
-
         Ok(())
     }
 
@@ -281,6 +288,22 @@ impl EventLoopTask {
 
             match cmd.data() {
                 CommandData::EndEventLoop => self.task_complete = true,
+                CommandData::BeginLegacyTorBootstrap{legacy_tor_client_config} => {
+                    log_trace!();
+                    // todo: surface this error to the user
+                    let mut tor_provider = LegacyTorClient::new(legacy_tor_client_config)?;
+                    tor_provider.bootstrap()?;
+                    self.tor_provider = Some(Box::new(tor_provider));
+                }
+                CommandData::CancelTorBootstrap => {
+                    if let Some(tor_provider) = &mut self.tor_provider {
+                        if let Some(connect_complete) = self.connect_complete.upgrade() {
+                            if !connect_complete.load(Ordering::Relaxed) {
+                                self.tor_provider = None;
+                            }
+                        }
+                    }
+                }
                 _ => (),
             }
             //     CommandData::ForgetUser { service_id, result } => {
@@ -1535,14 +1558,14 @@ impl EventLoopTask {
     }
 
     fn handle_callbacks(&mut self) -> Result<()> {
-        // let context: *mut tego_context = self.context.into();
+        let context: *mut tego_context = self.context_handle.into();
 
-        // let callbacks = self.callbacks.upgrade().context("callbacks dropped")?;
-        // let callbacks = callbacks.lock().expect("callbacks mutex poisoned");
+        let callbacks = self.callbacks.upgrade().context("callbacks dropped")?;
+        let callbacks = callbacks.lock().expect("callbacks mutex poisoned");
 
-        // for cd in self.callback_queue.drain(..) {
-        //     callbacks.invoke(context, cd)?;
-        // }
+        for cd in self.callback_queue.drain(..) {
+            callbacks.invoke(context, cd)?;
+        }
         Ok(())
     }
 }

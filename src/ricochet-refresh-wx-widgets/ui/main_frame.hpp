@@ -13,6 +13,11 @@ public:
     void show_connection_status_panel();
     void hide_overlay_panel();
 
+    // panel getters
+    class BootstrapPanel& get_bootstrap_panel_mut() {
+        return *this->main_panels.bootstrap_panel;
+    }
+
 private:
     void setup_menubar();
     void setup_main_panels(wxBoxSizer* sizer);

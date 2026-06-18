@@ -37,6 +37,58 @@ pub unsafe extern "C" fn tego_context_initialize(
     })
 }
 
+/// Begin connecting to the tor network with the given tego_tor_config
+///
+/// @param context : the current tego context
+/// @param tor_config : the tor config to use
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_begin_bootstrap(
+    context: *mut tego_context,
+    tor_config: *const tego_tor_config,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_null!(tor_config);
+
+        let tor_config = Handle::try_from(tor_config)?;
+        let tor_config = tego_tor_config_map().get(&tor_config)?.clone();
+
+        let context = Handle::try_from(context)?;
+        tego_context_map().get_mut(&context)?.begin_bootstrap(tor_config)?;
+
+        Ok(())
+    })
+}
+
+/// Cancel on-going bootstrap attempt and drop backing TorProvider
+///
+/// @param context : the current tego context
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_cancel_bootstrap(
+    context: *mut tego_context,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+
+        let context = Handle::try_from(context)?;
+        tego_context_map().get_mut(&context)?.cancel_bootstrap()?;
+
+        Ok(())
+    })
+}
+
 /// Get the current status of the tor daemon's connection
 /// to the tor network
 ///
