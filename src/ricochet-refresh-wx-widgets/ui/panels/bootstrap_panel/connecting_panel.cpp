@@ -52,8 +52,9 @@ void ConnectingPanel::update_progress_bar(unsigned n) {
 }
 
 void ConnectingPanel::view_logs() {
-    // todo: open the tor logs pane
     LOG_INFO("View Logs");
+
+    wxGetApp().get_main_frame().show_connection_status_panel();
 }
 
 void ConnectingPanel::cancel() {

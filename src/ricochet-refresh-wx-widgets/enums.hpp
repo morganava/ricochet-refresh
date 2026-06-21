@@ -29,8 +29,8 @@ enum class ConnectionStatus {
 // Settings-related enums
 //
 
-// todo: gate InProcessArti on feature gate
 enum class TorBackend {
+    None,
     BundledLegacyTor,
     ExternalLegacyTor,
     InProcessArti,

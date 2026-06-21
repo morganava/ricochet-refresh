@@ -13,6 +13,10 @@ pub(crate) enum CallbackData {
     TorNetworkStatusChanged {
         status: tego_tor_network_status,
     },
+    TorProviderInitialized {
+        tor_config_type: tego_tor_config_type,
+        version: Option<String>,
+    },
     TorBootstrapStatusChanged {
         progress: u32,
         tag: String,
@@ -81,6 +85,7 @@ pub(crate) enum CallbackData {
 #[derive(Default)]
 pub(crate) struct Callbacks {
     pub on_tor_network_status_changed: tego_tor_network_status_changed_callback,
+    pub on_tor_provider_initialized: tego_tor_provider_initialized_callback,
     pub on_tor_bootstrap_status_changed: tego_tor_bootstrap_status_changed_callback,
     pub on_tor_bootstrap_complete: tego_tor_bootstrap_complete_callback,
     pub on_tor_log_received: tego_tor_log_received_callback,
@@ -110,6 +115,24 @@ impl Callbacks {
 
             //     on_tor_network_status_changed(context, status);
             // }
+            TorProviderInitialized {
+                tor_config_type,
+                version,
+            } => {
+                let on_tor_provider_initialized = self
+                    .on_tor_provider_initialized
+                    .context("missing on_tor_provider_initialized callback")?;
+                log_trace!("invoke on_tor_provider_initialized");
+
+                if let Some(version) = version {
+                    let version = tego_string_map()
+                        .insert(CString::new(version).expect("version string contains null-byte"));
+                    on_tor_provider_initialized(context, tor_config_type, version.into());
+                    let _ = tego_string_map().remove(&version);
+                } else {
+                    on_tor_provider_initialized(context, tor_config_type, std::ptr::null_mut());
+                }
+            }
             TorBootstrapStatusChanged { progress, tag } => {
                 let on_tor_bootstrap_status_changed = self
                     .on_tor_bootstrap_status_changed
@@ -119,24 +142,25 @@ impl Callbacks {
                 on_tor_bootstrap_status_changed(context, progress as i32, tag.as_str().into());
             }
             TorBootstrapComplete => {
-                let on_tor_bootstrap_complete = self.on_tor_bootstrap_complete.context("missing on_tor_bootstrap_complete callback")?;
+                let on_tor_bootstrap_complete = self
+                    .on_tor_bootstrap_complete
+                    .context("missing on_tor_bootstrap_complete callback")?;
                 log_trace!("invoke on_tor_bootstrap_complete");
 
                 on_tor_bootstrap_complete(context);
             }
-            // TorLogReceived { line } => {
-            //     let on_tor_log_received = self
-            //         .on_tor_log_received
-            //         .context("missing on_tor_log_received callback")?;
-            //     log_trace!("invoke on_tor_log_received");
+            TorLogReceived { line } => {
+                let on_tor_log_received = self
+                    .on_tor_log_received
+                    .context("missing on_tor_log_received callback")?;
+                log_trace!("invoke on_tor_log_received");
 
-            //     let line =
-            //         CString::new(line.replace("\0", "")).expect("tor log line contains null-byte");
-            //     let line_len = line.as_bytes().len();
-            //     let line = line.as_c_str().as_ptr();
-
-            //     on_tor_log_received(context, line, line_len);
-            // }
+                let line =
+                    CString::new(line.replace("\0", "")).expect("tor log line contains null-byte");
+                let line = tego_string_map().insert(line);
+                on_tor_log_received(context, line.into());
+                let _ = tego_string_map().remove(&line);
+            }
             // HostOnionServiceStateChanged { state } => {
             //     let on_host_onion_service_state_changed = self
             //         .on_host_onion_service_state_changed

@@ -18,6 +18,10 @@ public:
         return *this->main_panels.bootstrap_panel;
     }
 
+    class ConnectionStatusPanel& get_connection_status_panel_mut() {
+        return *this->overlay_panels.connection_status_panel;
+    }
+
 private:
     void setup_menubar();
     void setup_main_panels(wxBoxSizer* sizer);

@@ -15,6 +15,7 @@
 
 // wxWidgets
 #include <wx/app.h>
+#include <wx/clipbrd.h>
 #include <wx/cmdline.h>
 #include <wx/dcbuffer.h>
 #include <wx/event.h>

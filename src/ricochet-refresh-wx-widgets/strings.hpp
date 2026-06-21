@@ -327,6 +327,10 @@ public:
             return Locale::translate(u8"Connection Status");
         }
 
+        static wxString none_client_string() {
+            return Locale::translate(u8"None");
+        }
+
         static wxString bundled_client_string(const wxString& client, const wxString& version) {
             /* Bundled out-of-process tor implemenation (e.g. "bundled tor (version 0.4.8.21), bundled arti (version 1.8.0), etc)" */
             auto fmt_string = Locale::translate(u8"bundled %s (version %s)");
@@ -358,6 +362,10 @@ public:
 
         static wxString copy_tor_logs_button() {
             return Locale::translate(u8"Copy Logs to Clipboard");
+        }
+
+        static wxString copied() {
+            return Locale::translate(u8"Copied!");
         }
 
         static wxString close_button() {

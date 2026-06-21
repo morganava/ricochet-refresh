@@ -425,6 +425,19 @@ pub enum tego_chat_acknowledge {
 pub type tego_tor_network_status_changed_callback =
     Option<extern "C" fn(context: *mut tego_context, status: tego_tor_network_status) -> ()>;
 
+/// Callback fired when a tor provider has been initialized
+///
+/// @param context: the current tego context
+/// @param tor_config_type: the type of config used to initialize the tor provider
+/// @param version: the version string of the initialized tor provider (may be NULL in which case the version is unknown)
+pub type tego_tor_provider_initialized_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        tor_config_type: tego_tor_config_type,
+        version: *const tego_string,
+    ) -> (),
+>;
+
 /// Callback fired when tor's bootstrap status changes
 ///
 /// @param context : the current tego context
@@ -437,18 +450,16 @@ pub type tego_tor_bootstrap_status_changed_callback = Option<
 /// Callback fired when tor's bootstrap proces is completed
 ///
 /// @param context : the current tego context
-pub type tego_tor_bootstrap_complete_callback = Option<
-    extern "C" fn(context: *mut tego_context) -> (),
->;
+pub type tego_tor_bootstrap_complete_callback =
+    Option<extern "C" fn(context: *mut tego_context) -> ()>;
 
 /// Callback fired when a log entry is received from the tor daemon
 ///
 /// @param context : the current tego context
 /// @param message : a null-terminated log entry string
 /// @param message_length : length of the message not including null-terminator
-pub type tego_tor_log_received_callback = Option<
-    extern "C" fn(context: *mut tego_context, message: *const c_char, message_length: usize) -> (),
->;
+pub type tego_tor_log_received_callback =
+    Option<extern "C" fn(context: *mut tego_context, line: *const tego_string) -> ()>;
 
 /// Callback fired when the host user state changes
 ///
@@ -659,6 +670,15 @@ pub extern "C" fn tego_context_set_tor_network_status_changed_callback(
     error: *mut *mut tego_error,
 ) {
     impl_callback_setter!(on_tor_network_status_changed, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_tor_provider_initialized_callback(
+    context: *mut tego_context,
+    callback: tego_tor_provider_initialized_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_tor_provider_initialized, context, callback, error);
 }
 
 #[no_mangle]

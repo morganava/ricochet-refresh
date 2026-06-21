@@ -13,7 +13,7 @@ use anyhow::{Context as AnyhowContext, Result};
 use rico_settings::common::BridgeConfig;
 use rico_settings::v4::settings::TorConfig;
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
-use tor_interface::legacy_tor_client::{LegacyTorClientConfig, LegacyTorClient};
+use tor_interface::legacy_tor_client::{LegacyTorClient, LegacyTorClientConfig};
 use tor_interface::legacy_tor_version::LegacyTorVersion;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 
@@ -45,12 +45,7 @@ impl Context {
         let connect_complete = Arc::downgrade(&self.connect_complete);
         let command_queue = self.command_queue.downgrade();
 
-        let task = EventLoopTask::new(
-            context_handle,
-            callbacks,
-            connect_complete,
-            command_queue,
-        );
+        let task = EventLoopTask::new(context_handle, callbacks, connect_complete, command_queue);
 
         self.event_loop_thread_handle = Some(
             std::thread::Builder::new()
@@ -63,14 +58,19 @@ impl Context {
                         log_flush!();
                         panic!();
                     }
-                }).expect("failed to start event-loop thread"),
+                })
+                .expect("failed to start event-loop thread"),
         );
     }
 
     pub fn begin_bootstrap(&mut self, tor_config: TorConfig) -> Result<()> {
         match tor_config {
             #[cfg(feature = "bundled-tor")]
-            TorConfig::BundledTor { bridge_config, proxy_config, firewall_config } => {
+            TorConfig::BundledTor {
+                bridge_config,
+                proxy_config,
+                firewall_config,
+            } => {
                 let tor_bin_path = Self::tor_bin_path()?;
                 let data_directory = Self::data_directory();
 
@@ -98,8 +98,10 @@ impl Context {
                     pluggable_transports,
                     bridge_lines,
                 };
-                self.push_command(CommandData::BeginLegacyTorBootstrap{legacy_tor_client_config});
-            },
+                self.push_command(CommandData::BeginLegacyTorBootstrap {
+                    legacy_tor_client_config,
+                });
+            }
         }
 
         Ok(())

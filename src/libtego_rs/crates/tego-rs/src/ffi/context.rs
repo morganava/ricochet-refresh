@@ -32,7 +32,9 @@ pub unsafe extern "C" fn tego_context_initialize(
         unsafe {
             *out_context = context.into();
         }
-        tego_context_map().get_mut(&context)?.start_event_loop(context);
+        tego_context_map()
+            .get_mut(&context)?
+            .start_event_loop(context);
         Ok(())
     })
 }
@@ -60,7 +62,9 @@ pub unsafe extern "C" fn tego_context_begin_bootstrap(
         let tor_config = tego_tor_config_map().get(&tor_config)?.clone();
 
         let context = Handle::try_from(context)?;
-        tego_context_map().get_mut(&context)?.begin_bootstrap(tor_config)?;
+        tego_context_map()
+            .get_mut(&context)?
+            .begin_bootstrap(tor_config)?;
 
         Ok(())
     })

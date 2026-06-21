@@ -227,11 +227,7 @@ void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
     settings_panel->Hide();
     overlay_panels.settings_panel = settings_panel;
 
-    auto connection_status_panel = new ConnectionStatusPanel(
-        this,
-        Strings::ConnectionStatusPanel::bundled_client_string("tor", "0.4.8.21"),
-        ConnectionStatus::Online
-    );
+    auto connection_status_panel = new ConnectionStatusPanel(this);
     sizer->Add(connection_status_panel, 1, wxEXPAND);
     connection_status_panel->Hide();
     overlay_panels.connection_status_panel = connection_status_panel;

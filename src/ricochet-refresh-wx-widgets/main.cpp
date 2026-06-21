@@ -1,10 +1,13 @@
 #include "main.hpp"
 
+#include "enums.hpp"
+#include "ffi.hpp"
 #include "locale.hpp"
 #include "strings.hpp"
 #include "ui/main_frame.hpp"
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/bootstrap_panel/connecting_panel.hpp"
+#include "ui/panels/connection_status_panel.hpp"
 
 wxIMPLEMENT_APP(RicochetRefresh);
 
@@ -112,6 +115,31 @@ void RicochetRefresh::init_settings() {
 
 void RicochetRefresh::init_callbacks() {
     auto context = this->context.get();
+    // tor provider init'd callback
+    tego_context_set_tor_provider_initialized_callback(
+        context,
+        [](tego_context*, tego_tor_config_type tor_provider_type, const tego_string* version) {
+            wxString backend;
+            switch (tor_provider_type) {
+#ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
+                case tego_tor_config_type_bundled_tor: {
+                    assert(version != nullptr);
+                    backend = Strings::ConnectionStatusPanel::bundled_client_string(
+                        "tor",
+                        into_wxString(version)
+                    );
+                } break;
+#endif // ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
+            }
+            wxGetApp().CallAfter([=]() {
+                auto& connection_status_panel =
+                    wxGetApp().get_main_frame().get_connection_status_panel_mut();
+                connection_status_panel.set_backend(backend);
+                connection_status_panel.set_connection_status(ConnectionStatus::Connecting);
+            });
+        },
+        tego::panic_on_error()
+    );
     // bootstrap status callback
     tego_context_set_tor_bootstrap_status_changed_callback(
         context,
@@ -131,7 +159,22 @@ void RicochetRefresh::init_callbacks() {
         context,
         [](tego_context*) {
             wxGetApp().CallAfter([=]() {
-                wxGetApp().get_main_frame().get_bootstrap_panel_mut().show_connected();
+                auto& main_frame = wxGetApp().get_main_frame();
+                main_frame.get_bootstrap_panel_mut().show_connected();
+                main_frame.get_connection_status_panel_mut().set_connection_status(
+                    ConnectionStatus::Online
+                );
+            });
+        },
+        tego::panic_on_error()
+    );
+    // tor log line received
+    tego_context_set_tor_log_received_callback(
+        context,
+        [](tego_context*, const tego_string* line) {
+            const auto log_line = into_wxString(line);
+            wxGetApp().CallAfter([=]() {
+                wxGetApp().get_main_frame().get_connection_status_panel_mut().add_log(log_line);
             });
         },
         tego::panic_on_error()
