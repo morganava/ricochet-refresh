@@ -66,6 +66,9 @@ endif()
 if(ENABLE_ARTI_CLIENT)
     list(APPEND TEGO_RS_FEATURE_LIST "arti-client")
 endif()
+if(ENABLE_TOR_EXPERT_BUNDLE)
+    list(APPEND TEGO_RS_FEATURE_LIST "pluggable-transports")
+endif()
 
 list(JOIN TEGO_RS_FEATURE_LIST "," TEGO_RS_FEATURES)
 if (TEGO_RS_FEATURES)
@@ -77,16 +80,22 @@ endif()
 # build tego-rs static lib
 #
 
+if(ENABLE_TOR_EXPERT_BUNDLE)
+    # path to the pt_config.json file
+    get_target_property(PT_CONFIG_JSON tor_expert_bundle PT_CONFIG_JSON)
+endif()
+
 add_custom_command(
     DEPENDS ${tego_rs_sources}
     OUTPUT ${tego_rs_outputs}
-    COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo build ${CARGO_FLAGS} ${TEGO_RS_FEATURES}
+    COMMAND env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} PT_CONFIG_JSON="${PT_CONFIG_JSON}" cargo build ${CARGO_FLAGS} ${TEGO_RS_FEATURES}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_custom_target(tego_rs_target
     DEPENDS ${tego_rs_outputs}
 )
+add_dependencies(tego_rs_target tor_expert_bundle_target)
 
 #
 # create static library target for consumers
@@ -115,7 +124,7 @@ if (ENABLE_LINTING)
     # Run crate linting
     #
     add_custom_target(tego_rs_cargo_clippy_target
-        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} cargo clippy ${TEGO_RS_FEATURES}
+        COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} RUSTFLAGS=${RUSTFLAGS} PT_CONFIG_JSON="${PT_CONFIG_JSON}" cargo clippy ${TEGO_RS_FEATURES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     add_dependencies(linting tego_rs_cargo_clippy_target)
 endif()

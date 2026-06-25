@@ -1,0 +1,12 @@
+[package]
+name = "pt-config"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+anyhow = "1.0"
+regex = "1.9"
+serde_json = "1.0"
+
+[dependencies]

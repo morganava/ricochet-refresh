@@ -1,3 +1,6 @@
+if (ENABLE_TOR_EXPERT_BUNDLE)
+    add_subdirectory(pt-config)
+endif()
 add_subdirectory(rico-profile)
 add_subdirectory(rico-protocol)
 add_subdirectory(rico-settings)

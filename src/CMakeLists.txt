@@ -133,6 +133,9 @@ if(NOT ENABLE_BUNDLED_TOR AND NOT ENABLE_EXTERNAL_TOR AND NOT ENABLE_ARTI_CLIENT
     )
 endif()
 
+# Include pluggable-transports and builtin bridges
+option(ENABLE_TOR_EXPERT_BUNDLE "Add pluggable-transport support and include built-in bridges" ON)
+
 # Sources
 add_subdirectory(extern)
 add_subdirectory(libtego_rs)

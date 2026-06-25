@@ -107,6 +107,9 @@ endif()
 if (ENABLE_ARTI_CLIENT)
     target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE ENABLE_RICOCHET_REFRESH_ARTI_CLIENT=1)
 endif()
+if (ENABLE_TOR_EXPERT_BUNDLE)
+    target_compile_definitions(ricochet-refresh-wx-widgets PRIVATE ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS=1)
+endif()
 
 #
 # Localisation
