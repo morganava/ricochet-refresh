@@ -2,6 +2,7 @@
 use std::collections::BTreeMap;
 use std::ffi::CString;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, Mutex,
@@ -10,9 +11,11 @@ use std::time::Duration;
 
 // extern
 use anyhow::{Context as AnyhowContext, Result};
-use rico_settings::common::BridgeConfig;
+#[cfg(feature = "pluggable-transports")]
+use pt_config::pt_config::*;
+use rico_settings::common::{BridgeConfig, BuiltInBridge};
 use rico_settings::v4::settings::TorConfig;
-use tor_interface::censorship_circumvention::PluggableTransportConfig;
+use tor_interface::censorship_circumvention::{BridgeLine, PluggableTransportConfig};
 use tor_interface::legacy_tor_client::{LegacyTorClient, LegacyTorClientConfig};
 use tor_interface::legacy_tor_version::LegacyTorVersion;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
@@ -75,14 +78,22 @@ impl Context {
                 let data_directory = Self::data_directory();
 
                 let proxy_settings = proxy_config;
-                let allowed_ports = if let Some(firewall_config) = firewall_config {
-                    Some(firewall_config.allowed_ports().clone())
-                } else {
-                    None
-                };
-                let pluggable_transports = Self::pluggable_transports();
+                let allowed_ports = firewall_config.map(|conf| conf.allowed_ports().clone());
+                let pluggable_transports = Some(Self::pluggable_transports()?);
                 let bridge_lines = match bridge_config {
-                    Some(BridgeConfig::BuiltIn(builtin)) => None,
+                    Some(BridgeConfig::BuiltIn(builtin)) => {
+                        let bridge_lines: &[&str] = match builtin {
+                            BuiltInBridge::Obfs4 => &BUILTIN_OBFS4_BRIDGE_LINES,
+                            BuiltInBridge::Meek => &BUILTIN_MEEK_BRIDGE_LINES,
+                            BuiltInBridge::Snowflake => &BUILTIN_SNOWFLAKE_BRIDGE_LINES,
+                        };
+                        Some(
+                            bridge_lines
+                                .iter()
+                                .map(|bridge| BridgeLine::from_str(bridge).unwrap())
+                                .collect(),
+                        )
+                    }
                     Some(BridgeConfig::Custom(first, bridge_lines)) => {
                         let mut bridge_lines = bridge_lines;
                         bridge_lines.insert(0, first);
@@ -309,8 +320,35 @@ impl Context {
     }
 
     #[cfg(feature = "bundled-tor")]
-    pub fn pluggable_transports() -> Option<Vec<PluggableTransportConfig>> {
-        None
+    pub fn pluggable_transports() -> Result<Vec<PluggableTransportConfig>> {
+        let mut pluggable_transports: Vec<PluggableTransportConfig> =
+            Vec::with_capacity(PLUGGABLE_TRANSPORTS.len());
+
+        let mut path = std::env::current_exe()?;
+        path.pop();
+        path.push("pluggable_transports");
+
+        for pluggable_transport in PLUGGABLE_TRANSPORTS {
+            let transports: Vec<String> = pluggable_transport
+                .transports
+                .iter()
+                .map(|transport| transport.to_string())
+                .collect();
+
+            let mut path_to_binary = path.clone();
+            path_to_binary.push(pluggable_transport.binary_name);
+
+            let mut pluggable_transport_config =
+                PluggableTransportConfig::new(transports, path_to_binary)?;
+
+            for option in pluggable_transport.options {
+                pluggable_transport_config.add_option(option.to_string());
+            }
+
+            pluggable_transports.push(pluggable_transport_config);
+        }
+
+        Ok(pluggable_transports)
     }
 }
 
