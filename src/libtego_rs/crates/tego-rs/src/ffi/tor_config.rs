@@ -2,6 +2,7 @@
 use std::str::FromStr;
 
 // external
+use pt_config::pt_config::SUPPORTED_TRANSPORTS;
 use rico_settings::common::{BridgeConfig, FirewallConfig};
 use rico_settings::v4::settings::TorConfig;
 use tor_interface::proxy::*;
@@ -242,6 +243,35 @@ pub unsafe extern "C" fn tego_tor_config_get_firewall_config(
         Ok(())
     })
 }
+
+/// Get the transport types supported
+///
+/// @param out_transports: destination to store the supported transports
+///  as a comma-delimitted list
+/// @param error: filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_get_supported_transports(
+    out_transports: *mut *mut tego_string,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(out_transports);
+        let transports = SUPPORTED_TRANSPORTS.join(",");
+        let transports = CString::new(transports)?;
+        let transports = tego_string_map().insert(transports);
+
+        unsafe {
+            *out_transports = transports.into();
+        }
+
+        Ok(())
+    });
+}
+
 
 //
 // BridgeConfig
