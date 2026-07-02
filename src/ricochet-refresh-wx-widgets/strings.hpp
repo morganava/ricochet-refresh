@@ -13,11 +13,23 @@ public:
     struct Common {
         static wxString app_name() {
             // we don't want to translate the application name
-            return from_utf8(u8"Ricochet-Refresh");
+            return from_utf8(u8"Ricochet Refresh");
         }
 
         static wxString close_button() {
             return Locale::translate(u8"Close");
+        }
+
+        static wxString next_button() {
+            return Locale::translate(u8"Next");
+        }
+
+        static wxString back_button() {
+            return Locale::translate(u8"Back");
+        }
+
+        static wxString finish_button() {
+            return Locale::translate(u8"Finish");
         }
 
         static wxString new_line() {
@@ -130,6 +142,10 @@ public:
 
                     static wxString open_profile() {
                         return Locale::translate(u8"Open Profile…");
+                    }
+
+                    static wxString import_profile() {
+                        return Locale::translate(u8"Import Profile…");
                     }
 
                     static wxString save_profile_as() {
@@ -714,6 +730,69 @@ public:
             } else {
                 return from_utf8(u8"▷");
             }
+        }
+    };
+
+    struct NewProfilePanel {
+        static wxString title(NewProfile new_profile) {
+            switch (new_profile) {
+                case NewProfile::Generate:
+                    return Locale::translate(u8"Create New Profile");
+                case NewProfile::ImportLegacy:
+                    return Locale::translate(u8"Import Legacy Profile");
+                default:
+                    return wxEmptyString;
+            }
+        }
+
+        static wxString progress_heading(ProfileCreationStep step) {
+            auto fmt_string = Locale::translate(u8"Step %i of %i");
+            return wxString::Format(
+                fmt_string,
+                static_cast<int>(step) + 1,
+                static_cast<int>(ProfileCreationStep::Count)
+            );
+        }
+
+        static wxString profile_destination() {
+            return Locale::translate(u8"New profile destination:");
+        }
+
+        static wxString legacy_profile_destination() {
+            return Locale::translate(u8"Legacy profile destination:");
+        }
+
+        static wxString browse_button() {
+            return Locale::translate(u8"Browse…");
+        }
+
+        static wxString display_name() {
+            return Locale::translate(u8"Display name:");
+        }
+
+        static wxString password() {
+            return Locale::translate(u8"Password:");
+        }
+
+        static wxString confirm_password() {
+            return Locale::translate(u8"Confirm password:");
+        }
+
+        static wxString ricochet_id() {
+            auto fmt_string = Locale::translate(u8"%s id:");
+            return wxString::Format(fmt_string, Common::app_name());
+        }
+
+        static wxString next_button() {
+            return Strings::Common::next_button();
+        }
+
+        static wxString back_button() {
+            return Strings::Common::back_button();
+        }
+
+        static wxString finish_button() {
+            return Strings::Common::finish_button();
         }
     };
 };

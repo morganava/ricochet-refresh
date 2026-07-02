@@ -49,16 +49,18 @@ set(RICOCHET_REFRESH_SOURCE
     ui/main_frame.hpp
     ui/metrics.cpp
     ui/metrics.hpp
+    ui/panels/bootstrap_panel.cpp
+    ui/panels/bootstrap_panel.hpp
     ui/panels/bootstrap_panel/connected_panel.cpp
     ui/panels/bootstrap_panel/connected_panel.hpp
     ui/panels/bootstrap_panel/connecting_panel.cpp
     ui/panels/bootstrap_panel/connecting_panel.hpp
-    ui/panels/bootstrap_panel.cpp
     ui/panels/bootstrap_panel/disconnected_panel.cpp
     ui/panels/bootstrap_panel/disconnected_panel.hpp
-    ui/panels/bootstrap_panel.hpp
     ui/panels/connection_status_panel.cpp
     ui/panels/connection_status_panel.hpp
+    ui/panels/conversations_panel.cpp
+    ui/panels/conversations_panel.hpp
     ui/panels/conversations_panel/chat_panel.cpp
     ui/panels/conversations_panel/chat_panel.hpp
     ui/panels/conversations_panel/contact_group_heading_panel.cpp
@@ -67,18 +69,18 @@ set(RICOCHET_REFRESH_SOURCE
     ui/panels/conversations_panel/contact_list_panel.hpp
     ui/panels/conversations_panel/contact_panel.cpp
     ui/panels/conversations_panel/contact_panel.hpp
-    ui/panels/conversations_panel.cpp
-    ui/panels/conversations_panel.hpp
     ui/panels/conversations_panel/message_entry_panel.cpp
     ui/panels/conversations_panel/message_entry_panel.hpp
     ui/panels/conversations_panel/user_status_panel.cpp
     ui/panels/conversations_panel/user_status_panel.hpp
+    ui/panels/new_profile_panel.cpp
+    ui/panels/new_profile_panel.hpp
+    ui/panels/settings_panel.cpp
+    ui/panels/settings_panel.hpp
     ui/panels/settings_panel/connection_settings_panel.cpp
     ui/panels/settings_panel/connection_settings_panel.hpp
-    ui/panels/settings_panel.cpp
     ui/panels/settings_panel/general_settings_panel.cpp
     ui/panels/settings_panel/general_settings_panel.hpp
-    ui/panels/settings_panel.hpp
     ui/panels/settings_panel/interface_settings_panel.cpp
     ui/panels/settings_panel/interface_settings_panel.hpp
     ui/widgets/wrapped_static_text.cpp

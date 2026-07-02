@@ -6,6 +6,7 @@
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
 #include "ui/panels/conversations_panel.hpp"
+#include "ui/panels/new_profile_panel.hpp"
 #include "ui/panels/settings_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
@@ -45,6 +46,14 @@ void MainFrame::show_settings_panel(Settings settings) {
 
 void MainFrame::show_connection_status_panel() {
     this->show_overlay_panel(this->overlay_panels.connection_status_panel);
+}
+
+void MainFrame::show_generate_profile_panel() {
+    this->show_overlay_panel(this->overlay_panels.generate_profile_panel);
+}
+
+void MainFrame::show_import_legacy_profile_panel() {
+    this->show_overlay_panel(this->overlay_panels.import_legacy_profile_panel);
 }
 
 void MainFrame::hide_overlay_panel() {
@@ -93,6 +102,12 @@ void MainFrame::setup_menubar() {
     auto profile_menu = new wxMenu();
     auto new_profile =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::new_profile());
+    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_new_profile, this, new_profile->GetId());
+    auto import_profile = profile_menu->Append(
+        wxID_ANY,
+        Strings::MainFrame::MenuBar::Menu::Profile::import_profile()
+    );
+    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_import_legacy, this, import_profile->GetId());
     auto open_profile =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::open_profile());
     auto save_profile_as = profile_menu->Append(
@@ -231,4 +246,26 @@ void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
     sizer->Add(connection_status_panel, 1, wxEXPAND);
     connection_status_panel->Hide();
     overlay_panels.connection_status_panel = connection_status_panel;
+
+    auto generate_profile_panel = new NewProfilePanel(this, NewProfile::Generate);
+    sizer->Add(generate_profile_panel, 1, wxEXPAND);
+    generate_profile_panel->Hide();
+    overlay_panels.generate_profile_panel = generate_profile_panel;
+
+    auto import_legacy_profile_panel = new NewProfilePanel(this, NewProfile::ImportLegacy);
+    sizer->Add(import_legacy_profile_panel, 1, wxEXPAND);
+    import_legacy_profile_panel->Hide();
+    overlay_panels.import_legacy_profile_panel = import_legacy_profile_panel;
+}
+
+//
+// Event Handlers
+//
+
+void MainFrame::on_new_profile(wxCommandEvent&) {
+    this->show_generate_profile_panel();
+}
+
+void MainFrame::on_import_legacy(wxCommandEvent&) {
+    this->show_import_legacy_profile_panel();
 }

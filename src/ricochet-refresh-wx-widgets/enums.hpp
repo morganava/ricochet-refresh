@@ -76,6 +76,22 @@ enum class Settings {
 };
 
 //
+// New Profile-related enums
+//
+
+enum class NewProfile {
+    Generate = 0,
+    ImportLegacy,
+};
+
+enum class ProfileCreationStep {
+    SetPaths = 0,
+    CreateCredentials,
+    Review,
+    Count
+};
+
+//
 // Conversation-related enums
 //
 

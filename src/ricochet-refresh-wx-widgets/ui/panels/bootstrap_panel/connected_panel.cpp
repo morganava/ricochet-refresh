@@ -2,6 +2,7 @@
 
 #include "strings.hpp"
 #include "ui/fonts.hpp"
+#include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
 
 ConnectedPanel::ConnectedPanel(wxWindow* parent) : wxPanel(parent) {
@@ -52,7 +53,7 @@ std::vector<std::filesystem::path> ConnectedPanel::get_recent_profiles() {
 }
 
 void ConnectedPanel::create_profile() {
-    LOG_INFO("create profile");
+    wxGetApp().get_main_frame().show_generate_profile_panel();
 }
 
 void ConnectedPanel::open_profile() {
@@ -60,7 +61,7 @@ void ConnectedPanel::open_profile() {
 }
 
 void ConnectedPanel::import_profile() {
-    LOG_INFO("import profile");
+    wxGetApp().get_main_frame().show_import_legacy_profile_panel();
 }
 
 void ConnectedPanel::open_recent_profile(int index) {
