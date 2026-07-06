@@ -5,11 +5,9 @@ pub mod handle;
 #[cfg(feature = "logging")]
 pub mod logger;
 pub mod object_map;
-pub mod pluggable_transport_config;
 pub mod settings;
 pub mod string;
 pub mod tor_config;
-pub mod tor_daemon_config;
 pub mod user_id;
 pub mod v3_onion_service_id;
 
@@ -43,8 +41,6 @@ impl_handle_tags!(
     TEGO_ED25519_PRIVATE_KEY_TAG,
     TEGO_V3_ONION_SERVICE_ID_TAG,
     TEGO_USER_ID_TAG,
-    TEGO_PLUGGABLE_TRANSPORT_CONFIG_TAG,
-    TEGO_TOR_DAEMON_CONFIG_TAG,
     TEGO_TOR_CONFIG_TAG,
     TEGO_BRIDGE_CONFIG_TAG,
     TEGO_FIREWALL_CONFIG_TAG,
@@ -61,8 +57,6 @@ impl_object_map!(tego_settings, SettingsStore);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
 impl_object_map!(tego_user_id, V3OnionServiceId);
-impl_object_map!(tego_pluggable_transport_config, PluggableTransportConfig);
-impl_object_map!(tego_tor_daemon_config, LegacyTorClientConfig);
 impl_object_map!(tego_tor_config, TorConfig);
 impl_object_map!(tego_bridge_config, BridgeConfig);
 impl_object_map!(tego_firewall_config, FirewallConfig);
@@ -859,18 +853,6 @@ pub extern "C" fn tego_v3_onion_service_id_delete(value: *mut tego_v3_onion_serv
 #[no_mangle]
 pub extern "C" fn tego_user_id_delete(value: *mut tego_user_id) {
     impl_object_deleter!(tego_user_id, value);
-}
-
-#[no_mangle]
-pub extern "C" fn tego_pluggable_transport_config_delete(
-    value: *mut tego_pluggable_transport_config,
-) {
-    impl_object_deleter!(tego_pluggable_transport_config, value);
-}
-
-#[no_mangle]
-pub extern "C" fn tego_tor_daemon_config_delete(value: *mut tego_tor_daemon_config) {
-    impl_object_deleter!(tego_tor_daemon_config, value);
 }
 
 #[no_mangle]
