@@ -34,8 +34,6 @@ pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 pub(crate) struct Context {
     // callback struct
     pub callbacks: Arc<Mutex<Callbacks>>,
-    // flags
-    connect_complete: Arc<AtomicBool>,
     // command queue
     command_queue: CommandQueue,
     // event loop thread handle
@@ -45,10 +43,9 @@ pub(crate) struct Context {
 impl Context {
     pub fn start_event_loop(&mut self, context_handle: TegoContextHandle) {
         let callbacks = Arc::downgrade(&self.callbacks);
-        let connect_complete = Arc::downgrade(&self.connect_complete);
         let command_queue = self.command_queue.downgrade();
 
-        let task = EventLoopTask::new(context_handle, callbacks, connect_complete, command_queue);
+        let task = EventLoopTask::new(context_handle, callbacks, command_queue);
 
         self.event_loop_thread_handle = Some(
             std::thread::Builder::new()
@@ -121,13 +118,6 @@ impl Context {
     pub fn cancel_bootstrap(&mut self) -> Result<()> {
         self.push_command(CommandData::CancelTorBootstrap);
         Ok(())
-    }
-
-    // todo: remove need for this
-    pub fn connect_complete(&self) -> bool {
-        log_trace!();
-
-        self.connect_complete.load(Ordering::Relaxed)
     }
 
     fn push_command(&self, data: CommandData) {

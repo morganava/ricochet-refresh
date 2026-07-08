@@ -32,7 +32,6 @@ use crate::macros::*;
 pub(crate) struct EventLoopTask {
     context_handle: TegoContextHandle,
     callbacks: Weak<Mutex<Callbacks>>,
-    connect_complete: Weak<AtomicBool>,
     command_queue: CommandQueue,
 
     tor_provider: Option<Box<dyn TorProvider>>,
@@ -57,7 +56,6 @@ impl EventLoopTask {
     pub fn new(
         context_handle: TegoContextHandle,
         callbacks: Weak<Mutex<Callbacks>>,
-        connect_complete: Weak<AtomicBool>,
         command_queue: CommandQueue,
     ) -> Self {
         // create our list of known contacts from our users
@@ -81,7 +79,6 @@ impl EventLoopTask {
         Self {
             context_handle,
             callbacks,
-            connect_complete,
             command_queue,
             tor_provider: None,
             // read_buffer: [0u8; Self::READ_BUFFER_SIZE],
@@ -144,10 +141,6 @@ impl EventLoopTask {
                             .push(CallbackData::TorBootstrapStatusChanged { progress, tag });
                     }
                     TorEvent::BootstrapComplete => {
-                        if let Some(connect_complete) = self.connect_complete.upgrade() {
-                            connect_complete.store(true, Ordering::Relaxed);
-                        }
-
                         self.callback_queue.push(CallbackData::TorBootstrapComplete);
                         /*
                                             self.callback_queue
@@ -304,13 +297,7 @@ impl EventLoopTask {
                     self.tor_provider = Some(Box::new(tor_provider));
                 }
                 CommandData::CancelTorBootstrap => {
-                    if let Some(tor_provider) = &mut self.tor_provider {
-                        if let Some(connect_complete) = self.connect_complete.upgrade() {
-                            if !connect_complete.load(Ordering::Relaxed) {
-                                self.tor_provider = None;
-                            }
-                        }
-                    }
+                    self.tor_provider = None;
                 }
                 _ => (),
             }

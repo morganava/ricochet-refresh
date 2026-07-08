@@ -93,39 +93,6 @@ pub unsafe extern "C" fn tego_context_cancel_bootstrap(
     })
 }
 
-/// Get the current status of the tor daemon's connection
-/// to the tor network
-///
-/// @param context : the current tego context
-/// @param out_status : destination to save network status
-/// @param error : filled on error
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_context_get_tor_network_status(
-    context: *const tego_context,
-    out_status: *mut tego_tor_network_status,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_null!(out_status);
-
-        let context = Handle::try_from(context)?;
-        use tego_tor_network_status::*;
-        let status = if tego_context_map().get(&context)?.connect_complete() {
-            tego_tor_network_status_ready
-        } else {
-            tego_tor_network_status_offline
-        };
-
-        unsafe { *out_status = status };
-        Ok(())
-    })
-}
-
 /// Send a text message from the host to the given user
 ///
 /// @param context : the current tego context
