@@ -75,6 +75,37 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_from_string(
     })
 }
 
+/// Construct a service id object fromm private key.
+///
+/// @param out_service_id : returned v3 onion service id
+/// @param private_key: the ed25519 private key to drive service id from
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_v3_onion_service_id_from_ed25519_private_key(
+    out_service_id: *mut *mut tego_v3_onion_service_id,
+    private_key: *const tego_ed25519_private_key,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(out_service_id);
+        bail_if_null!(private_key);
+
+        let private_key = Handle::try_from(private_key)?;
+        let service_id =
+            V3OnionServiceId::from_private_key(tego_ed25519_private_key_map().get(&private_key)?);
+        let service_id = tego_v3_onion_service_id_map().insert(service_id);
+
+        unsafe {
+            *out_service_id = service_id.into();
+        }
+        Ok(())
+    })
+}
+
 /// Serializes out a service id object as a null-terminated utf8 string
 /// to provided character buffer.
 ///
@@ -93,33 +124,20 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_from_string(
 #[no_mangle]
 pub unsafe extern "C" fn tego_v3_onion_service_id_to_string(
     service_id: *const tego_v3_onion_service_id,
-    out_service_id_string: *mut c_char,
-    service_id_string_size: usize,
+    out_service_id_string: *mut *mut tego_string,
     error: *mut *mut tego_error,
-) -> usize {
-    translate_failures(0usize, error, || -> Result<usize> {
+) -> () {
+    translate_failures((), error, || -> Result<()> {
         bail_if_null!(service_id);
         bail_if_null!(out_service_id_string);
-        bail_if!(service_id_string_size < TEGO_V3_ONION_SERVICE_ID_SIZE);
 
         let service_id = Handle::try_from(service_id)?;
-        let service_id = tego_v3_onion_service_id_map().get(&service_id)?.to_string();
-        let service_id = service_id.to_string();
-        let service_id = service_id.as_str();
-        assert!(service_id.len() == TEGO_V3_ONION_SERVICE_ID_LENGTH);
-
+        let service_id_string = tego_v3_onion_service_id_map().get(&service_id)?.to_string();
+        let service_id_string = CString::new(service_id_string)?;
+        let service_id_string = tego_string_map().insert(service_id_string);
         unsafe {
-            let out_service_id_string = std::slice::from_raw_parts_mut(
-                out_service_id_string as *mut u8,
-                service_id_string_size,
-            );
-            std::ptr::copy(
-                service_id.as_ptr(),
-                out_service_id_string.as_mut_ptr(),
-                service_id.len(),
-            );
-            out_service_id_string[TEGO_V3_ONION_SERVICE_ID_LENGTH] = 0u8;
+            *out_service_id_string = service_id_string.into();
         }
-        Ok(TEGO_V3_ONION_SERVICE_ID_SIZE)
+        Ok(())
     })
 }
