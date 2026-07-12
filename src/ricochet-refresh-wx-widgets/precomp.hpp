@@ -37,7 +37,13 @@
 inline auto format_as(const wxString& str) {
     return str.utf8_string();
 }
-#endif
+
+// enable wxColour usage with fmt
+inline auto format_as(const wxColour& col) {
+    return fmt::format("#{:02X}{:02X}{:02X}", col.Red(), col.Green(), col.Blue());
+}
+
+#endif // RICOCHET_REFRESH_LOGGING
 
 // tego-rs
 #include <tego/tego.hpp>

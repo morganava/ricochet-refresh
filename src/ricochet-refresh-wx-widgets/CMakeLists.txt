@@ -49,6 +49,8 @@ set(RICOCHET_REFRESH_SOURCE
     ui/main_frame.hpp
     ui/metrics.cpp
     ui/metrics.hpp
+    ui/palette.cpp
+    ui/palette.hpp
     ui/panels/bootstrap_panel.cpp
     ui/panels/bootstrap_panel.hpp
     ui/panels/bootstrap_panel/connected_panel.cpp
