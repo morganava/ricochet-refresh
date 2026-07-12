@@ -16,6 +16,22 @@ public:
             return from_utf8(u8"Ricochet Refresh");
         }
 
+        static wxString profile_file_extension() {
+            return from_utf8(u8".rr-profile");
+        }
+
+        static wxString all_files_file_extension_wildcard() {
+            return from_utf8(u8"*.*");
+        }
+
+        static wxString profile_file_extension_wildcard() {
+            return from_utf8(u8"*.rr-profile");
+        }
+
+        static wxString legacy_profile_file_extension_wildcard() {
+            return from_utf8(u8"*.json");
+        }
+
         static wxString close_button() {
             return Locale::translate(u8"Close");
         }
@@ -39,6 +55,8 @@ public:
         static wxString error_dialog_title() {
             return Locale::translate(u8"Error");
         }
+
+        static wxString ricochet_v4_id_uri(const tego_v3_onion_service_id* service_id);
     };
 
     struct Enums {
@@ -797,6 +815,52 @@ public:
 
         static wxString finish_button() {
             return Strings::Common::finish_button();
+        }
+
+        static wxString save_profile_file_dialog_title() {
+            auto fmt_string = Locale::translate(u8"Save %s profile as");
+            return wxString::Format(fmt_string, Common::app_name());
+        }
+
+        static wxString open_legacy_profile_file_dialog_title() {
+            auto fmt_string = Locale::translate(u8"Open legacy %s profile");
+            return wxString::Format(fmt_string, Common::app_name());
+        }
+
+        static wxString profile_file_dialog_wildcard() {
+            const auto file_description_fmt_string = Locale::translate(u8"%s profiles (%s)");
+            auto file_description = wxString::Format(
+                file_description_fmt_string,
+                Common::app_name(),
+                Common::profile_file_extension_wildcard()
+            );
+            return wxString::Format(
+                "%s|%s",
+                file_description,
+                Common::profile_file_extension_wildcard()
+            );
+        }
+
+        static wxString legacy_profile_dialog_wildcard() {
+            const auto file_description_fmt_string = Locale::translate(u8"Legacy %s profiles (%s)");
+            auto file_description = wxString::Format(
+                file_description_fmt_string,
+                Common::app_name(),
+                Common::legacy_profile_file_extension_wildcard()
+            );
+            return wxString::Format(
+                "%s|%s",
+                file_description,
+                Common::legacy_profile_file_extension_wildcard()
+            );
+        }
+
+        static wxString error_creating_profile() {
+            return Locale::translate(u8"An error occurred during profile creation.");
+        }
+
+        static wxString error_loading_legacy_profile() {
+            return Locale::translate(u8"An error occurred loading and parsing legacy profile.");
         }
     };
 };
