@@ -13,6 +13,7 @@ use std::time::Duration;
 use anyhow::{Context as AnyhowContext, Result};
 #[cfg(feature = "pluggable-transports")]
 use pt_config::pt_config::*;
+use rico_profile::v4::profile::{Profile, UserType};
 use rico_settings::common::{BridgeConfig, BuiltInBridge};
 use rico_settings::v4::settings::TorConfig;
 use tor_interface::censorship_circumvention::{BridgeLine, PluggableTransportConfig};
@@ -27,10 +28,13 @@ use crate::event_loop_task::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::promise::Promise;
+use crate::session::Session;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
-pub(crate) type UserID = u64;
+pub(crate) type SessionHandle = i64;
+pub(crate) type UserHandle = i64;
+
 #[derive(Default)]
 pub(crate) struct Context {
     // callback struct
@@ -39,6 +43,10 @@ pub(crate) struct Context {
     command_queue: CommandQueue,
     // event loop thread handle
     event_loop_thread_handle: Option<std::thread::JoinHandle<()>>,
+    // our open sessions
+    session_map: BTreeMap<SessionHandle, Session>,
+    // the next session id
+    next_session_handle: SessionHandle,
 }
 
 impl Context {
@@ -127,6 +135,67 @@ impl Context {
 
     fn push_command_ex(&self, data: CommandData, delay: Duration) {
         self.command_queue.push(data, delay);
+    }
+
+    pub fn begin_session(&mut self, profile: Profile) -> Result<SessionHandle> {
+        let session_handle = self.next_session_handle;
+        self.next_session_handle += 1;
+
+        let session = Session::new(profile)?;
+
+        self.session_map.insert(session_handle, session);
+
+        Ok(session_handle)
+    }
+
+    pub fn end_session(&mut self, session_handle: SessionHandle) -> Result<()> {
+        bail_if!(self.session_map.remove(&session_handle).is_none());
+
+        Ok(())
+    }
+
+    fn get_session(&self, session_handle: SessionHandle) -> Result<&Session> {
+        self.session_map
+            .get(&session_handle)
+            .context("Session with handle {session_handle} does not exit")
+    }
+
+    pub fn get_user_count(&self, session_handle: SessionHandle) -> Result<usize> {
+        Ok(self.get_session(session_handle)?.get_user_count())
+    }
+
+    pub fn get_user_handles(&self, session_handle: SessionHandle) -> Result<Vec<UserHandle>> {
+        Ok(self.get_session(session_handle)?.get_user_handles())
+    }
+
+    pub fn get_user_type(
+        &self,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+    ) -> Result<UserType> {
+        Ok(self
+            .get_session(session_handle)?
+            .get_user_type(user_handle)?)
+    }
+
+    pub fn get_user_nickname(
+        &self,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+    ) -> Result<String> {
+        Ok(self
+            .get_session(session_handle)?
+            .get_user_nickname(user_handle)?)
+    }
+
+    pub fn get_user_pet_name(
+        &self,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+    ) -> Result<Option<String>> {
+        Ok(self
+            .get_session(session_handle)?
+            .get_user_pet_name(user_handle)?)
     }
 
     pub fn forget_user(&mut self, service_id: V3OnionServiceId) -> Result<()> {

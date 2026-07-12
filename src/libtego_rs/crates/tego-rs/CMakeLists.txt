@@ -26,6 +26,7 @@ set(tego_rs_sources
     src/listener_task.rs
     src/macros.rs
     src/promise.rs
+    src/session.rs
     src/settings.rs
 )
 

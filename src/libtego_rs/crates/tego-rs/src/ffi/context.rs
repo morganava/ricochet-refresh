@@ -93,6 +93,260 @@ pub unsafe extern "C" fn tego_context_cancel_bootstrap(
     })
 }
 
+/// Create a new session from an unlocked profile
+///
+/// @param context : the current tego context
+/// @param out_session_handle : destination to save handle
+/// @param profile : profile associated with this session; consumed by this
+///  function if arguments
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_begin_session(
+    context: *mut tego_context,
+    out_session_handle: *mut tego_session_handle,
+    profile: *mut tego_profile,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_null!(out_session_handle);
+        bail_if_null!(profile);
+
+        let profile = Handle::try_from(profile)?;
+        let profile = tego_profile_map().remove(&profile)?;
+
+        let context = Handle::try_from(context)?;
+        let session_handle = tego_context_map()
+            .get_mut(&context)?
+            .begin_session(profile)?;
+
+        unsafe {
+            *out_session_handle = session_handle;
+        }
+
+        Ok(())
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_end_session(
+    context: *mut tego_context,
+    session_handle: tego_session_handle,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+
+        let context = Handle::try_from(context)?;
+        tego_context_map()
+            .get_mut(&context)?
+            .end_session(session_handle)?;
+
+        Ok(())
+    })
+}
+
+/// Get the total number of users known to this session
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to get user number of
+/// @param out_user_count : numbe of users is stored here
+/// @param error : filled on eror
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub extern "C" fn tego_context_get_user_count(
+    context: *const tego_context,
+    session_handle: tego_session_handle,
+    out_user_count: *mut usize,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+        bail_if_null!(out_user_count);
+
+        let context = Handle::try_from(context)?;
+        let user_count = tego_context_map()
+            .get(&context)?
+            .get_user_count(session_handle)?;
+
+        unsafe {
+            *out_user_count = user_count;
+        }
+
+        Ok(())
+    })
+}
+
+/// Get the user handles for al users in this session
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to get the user handles from
+/// @param out_user_handles_buffer : buffer to store all the user handles
+/// @param user_handles_buffer_length : the number of handles which can be stored in
+///  out_user_handles_buffer
+/// @param error : filled on error
+///
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub extern "C" fn tego_context_get_user_handles(
+    context: *const tego_context,
+    session_handle: tego_session_handle,
+    out_user_handles_buffer: *mut tego_user_handle,
+    user_handles_buffer_length: usize,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+        bail_if!(out_user_handles_buffer.is_null() || user_handles_buffer_length == 0usize);
+
+        let context = Handle::try_from(context)?;
+        let user_handles = match tego_context_map().get(&context) {
+            Ok(context) => context.get_user_handles(session_handle)?,
+            Err(err) => return Err(err),
+        };
+        bail_if!(user_handles.len() != user_handles_buffer_length);
+        let out_user_handles_buffer = unsafe {
+            std::slice::from_raw_parts_mut(out_user_handles_buffer, user_handles_buffer_length)
+        };
+        out_user_handles_buffer.copy_from_slice(user_handles.as_slice());
+
+        Ok(())
+    })
+}
+
+/// Get a particular user's type
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to the user is in
+/// @param user_handle : the user to get the type of
+/// @param out_user_type : user type stored here
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_get_user_type(
+    context: *const tego_context,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    out_user_type: *mut tego_user_type,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
+        bail_if_null!(out_user_type);
+
+        let context = Handle::try_from(context)?;
+        let user_type = tego_context_map()
+            .get(&context)?
+            .get_user_type(session_handle, user_handle)?;
+
+        unsafe {
+            *out_user_type = user_type.into();
+        }
+        Ok(())
+    })
+}
+
+/// Get a particular user's nickname
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to the user is in
+/// @param user_handle : the user to get the type of
+/// @param out_user_nickname : user nickname stored here
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_get_user_nickname(
+    context: *const tego_context,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    out_user_nickname: *mut *mut tego_string,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
+        bail_if_null!(out_user_nickname);
+
+        let context = Handle::try_from(context)?;
+        let user_nickname = tego_context_map()
+            .get(&context)?
+            .get_user_nickname(session_handle, user_handle)?;
+        let user_nickname = CString::new(user_nickname)?;
+        let user_nickname = tego_string_map().insert(user_nickname);
+        unsafe {
+            *out_user_nickname = user_nickname.into();
+        }
+        Ok(())
+    })
+}
+
+/// Get a particular user's pet name
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to the user is in
+/// @param user_handle : the user to get the pet name of
+/// @param out_user_type : user pet name stored here
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_context_get_user_pet_name(
+    context: *const tego_context,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    out_user_pet_name: *mut *mut tego_string,
+    error: *mut *mut tego_error,
+) {
+    translate_failures((), error, || -> Result<()> {
+        bail_if_null!(context);
+        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
+        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
+        bail_if_null!(out_user_pet_name);
+
+        let context = Handle::try_from(context)?;
+        let user_pet_name = tego_context_map()
+            .get(&context)?
+            .get_user_pet_name(session_handle, user_handle)?;
+        let user_pet_name = if let Some(user_pet_name) = user_pet_name {
+            let user_pet_name = CString::new(user_pet_name)?;
+            let user_pet_name = tego_string_map().insert(user_pet_name);
+            user_pet_name.into()
+        } else {
+            std::ptr::null_mut()
+        };
+
+        unsafe {
+            *out_user_pet_name = user_pet_name;
+        }
+        Ok(())
+    })
+}
+
+/*
 /// Send a text message from the host to the given user
 ///
 /// @param context : the current tego context
@@ -378,3 +632,4 @@ pub unsafe extern "C" fn tego_context_forget_user(
         Ok(())
     })
 }
+*/

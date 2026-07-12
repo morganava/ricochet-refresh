@@ -272,7 +272,6 @@ pub unsafe extern "C" fn tego_get_supported_transports(
     });
 }
 
-
 //
 // BridgeConfig
 //

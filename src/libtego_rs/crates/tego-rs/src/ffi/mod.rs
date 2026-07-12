@@ -16,7 +16,7 @@ use std::ffi::{c_char, c_int, CString};
 
 // extern
 use anyhow::{bail, Result};
-use rico_profile::v4::profile::{Profile, UserProfile};
+use rico_profile::v4::profile::{Profile, UserProfile, UserType};
 use rico_settings::common::{BridgeConfig, BuiltInBridge, FirewallConfig};
 use rico_settings::v4::settings::{ButtonStyle, Language, TorConfig};
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
@@ -84,7 +84,18 @@ pub struct tego_context;
 pub struct tego_settings;
 pub struct tego_profile;
 
-pub type tego_user_handle = crate::context::UserID;
+pub type tego_session_handle = crate::context::SessionHandle;
+pub const TEGO_INVALID_SESSION_HANDLE: tego_session_handle = -1i64;
+pub type tego_user_handle = crate::context::UserHandle;
+pub const TEGO_INVALID_USER_HANDLE: tego_user_handle = -1i64;
+
+#[repr(C)]
+pub enum tego_profile_visibility {
+    tego_profile_visibility_online,
+    tego_profile_visibility_restricted,
+    tego_profile_visibility_hidden,
+    tego_profile_visibility_offline,
+}
 #[repr(C)]
 pub enum tego_language {
     tego_language_system,
@@ -228,18 +239,32 @@ pub enum tego_user_status {
 #[derive(Clone, Copy)]
 pub enum tego_user_type {
     /// the host user
-    tego_user_type_host,
+    tego_user_type_owner,
     /// in host's contact list
     tego_user_type_allowed,
-    /// users who have added host but the host has not replied yet
-    // todo: remove requesting type
-    tego_user_type_requesting,
-    /// users who have added host but the host has blocked
-    tego_user_type_blocked,
     /// users the host has added but who have not replied yet
     tego_user_type_pending,
-    /// user the host has added but who have replied with rejection
+    /// users who have added host but the host has not replied yet
+    tego_user_type_requesting,
+    /// user the owner has tried to add but who has replied with rejection
     tego_user_type_rejected,
+    /// users who have added host but the host has blocked
+    tego_user_type_blocked,
+}
+
+impl From<UserType> for tego_user_type {
+    fn from(user_type: UserType) -> tego_user_type {
+        use tego_user_type::*;
+        use UserType::*;
+        match user_type {
+            Owner => tego_user_type_owner,
+            Allowed => tego_user_type_allowed,
+            Pending => tego_user_type_pending,
+            Requesting => tego_user_type_requesting,
+            Rejected => tego_user_type_rejected,
+            Blocked => tego_user_type_blocked,
+        }
+    }
 }
 
 pub struct tego_tor_daemon_config;
@@ -845,6 +870,7 @@ pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
 
 #[no_mangle]
 pub extern "C" fn tego_profile_delete(value: *mut tego_profile) {
+    log_trace!();
     impl_object_deleter!(tego_profile, value);
 }
 

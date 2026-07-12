@@ -9,6 +9,7 @@ pub(crate) mod listener_task;
 pub(crate) mod logger;
 pub(crate) mod macros;
 pub(crate) mod promise;
+pub(crate) mod session;
 pub(crate) mod settings;
 
 #[allow(non_camel_case_types)]
