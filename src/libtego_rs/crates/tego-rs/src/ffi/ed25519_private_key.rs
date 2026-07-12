@@ -1,5 +1,6 @@
 // standard
 use std::ffi::c_char;
+use std::str::FromStr;
 
 // extern
 use anyhow::Result;
@@ -117,5 +118,36 @@ pub unsafe extern "C" fn tego_ed25519_keyblob_from_ed25519_private_key(
             out_keyblob[TEGO_ED25519_KEYBLOB_LENGTH] = 0u8;
         }
         Ok(TEGO_ED25519_KEYBLOB_SIZE)
+    })
+}
+
+/// Get the ed25519 private key from a legacy Ricochet-Refresh profile
+///
+/// @param out_private_key : returned ed25519 private key
+/// @param legacy_profile_path : location of the legacy profile
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
+#[no_mangle]
+pub unsafe extern "C" fn tego_ed25519_private_key_from_legacy_profile(
+    out_private_key: *mut *mut tego_ed25519_private_key,
+    legacy_profile_path: *const tego_string,
+    error: *mut *mut tego_error,
+) -> () {
+    translate_failures((), error, || -> Result<()> {
+        let legacy_profile_path = Handle::try_from(legacy_profile_path)?;
+        let legacy_profile_path =
+            std::path::PathBuf::from_str(tego_string_map().get(&legacy_profile_path)?.to_str()?)?;
+        let v3_json = std::fs::read_to_string(legacy_profile_path)?;
+        let v3_profile = rico_profile::v3::profile::Profile::from_str(&v3_json)?;
+
+        let private_key = v3_profile.private_key;
+        let private_key = tego_ed25519_private_key_map().insert(private_key);
+        unsafe {
+            *out_private_key = private_key.into();
+        }
+        Ok(())
     })
 }
