@@ -1786,6 +1786,7 @@ dependencies = [
  "data-encoding",
  "paste",
  "pt-config",
+ "rico-profile",
  "rico-protocol",
  "rico-settings",
  "time",

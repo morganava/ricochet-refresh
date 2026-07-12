@@ -5,6 +5,7 @@ pub mod handle;
 #[cfg(feature = "logging")]
 pub mod logger;
 pub mod object_map;
+pub mod profile;
 pub mod settings;
 pub mod string;
 pub mod tor_config;
@@ -16,6 +17,7 @@ use std::ffi::{c_char, c_int, CString};
 
 // extern
 use anyhow::{bail, Result};
+use rico_profile::v4::profile::{Profile, UserProfile};
 use rico_settings::common::{BridgeConfig, BuiltInBridge, FirewallConfig};
 use rico_settings::v4::settings::{ButtonStyle, Language, TorConfig};
 use tor_interface::censorship_circumvention::PluggableTransportConfig;
@@ -38,6 +40,7 @@ impl_handle_tags!(
     TEGO_STRING_TAG,
     TEGO_CONTEXT_TAG,
     TEGO_SETTINGS_TAG,
+    TEGO_PROFILE_TAG,
     TEGO_ED25519_PRIVATE_KEY_TAG,
     TEGO_V3_ONION_SERVICE_ID_TAG,
     TEGO_USER_ID_TAG,
@@ -54,6 +57,7 @@ impl_object_map!(tego_error, Error);
 impl_object_map!(tego_string, CString);
 impl_object_map!(tego_context, Context);
 impl_object_map!(tego_settings, SettingsStore);
+impl_object_map!(tego_profile, Profile);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
 impl_object_map!(tego_user_id, V3OnionServiceId);
@@ -81,6 +85,8 @@ pub struct tego_error;
 pub struct tego_string;
 pub struct tego_context;
 pub struct tego_settings;
+pub struct tego_profile;
+
 #[repr(C)]
 pub enum tego_language {
     tego_language_system,
@@ -838,6 +844,11 @@ pub extern "C" fn tego_context_delete(value: *mut tego_context) {
 #[no_mangle]
 pub extern "C" fn tego_settings_delete(value: *mut tego_settings) {
     impl_object_deleter!(tego_settings, value);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_profile_delete(value: *mut tego_profile) {
+    impl_object_deleter!(tego_profile, value);
 }
 
 #[no_mangle]

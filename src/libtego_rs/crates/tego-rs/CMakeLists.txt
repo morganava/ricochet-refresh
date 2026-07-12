@@ -17,6 +17,7 @@ set(tego_rs_sources
     src/ffi/logger.rs
     src/ffi/mod.rs
     src/ffi/object_map.rs
+    src/ffi/profile.rs
     src/ffi/settings.rs
     src/ffi/string.rs
     src/ffi/tor_config.rs
