@@ -35,6 +35,10 @@ public:
         static wxString new_line() {
             return from_utf8(u8"\n");
         }
+
+        static wxString error_dialog_title() {
+            return Locale::translate(u8"Error");
+        }
     };
 
     struct Enums {

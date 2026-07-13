@@ -22,6 +22,7 @@
 #include <wx/event.h>
 #include <wx/intl.h>
 #include <wx/renderer.h>
+#include <wx/richmsgdlg.h>
 #include <wx/splitter.h>
 #include <wx/stdpaths.h>
 #include <wx/textwrapper.h>

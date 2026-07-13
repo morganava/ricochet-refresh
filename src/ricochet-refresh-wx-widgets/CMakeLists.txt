@@ -43,6 +43,8 @@ set(RICOCHET_REFRESH_SOURCE
     strings.hpp
     ui/events.cpp
     ui/events.hpp
+    ui/error_popup.cpp
+    ui/error_popup.hpp
     ui/fonts.cpp
     ui/fonts.hpp
     ui/main_frame.cpp
