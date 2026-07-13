@@ -11,9 +11,75 @@ use rico_profile::v4;
 
 #[test]
 fn test_construction() -> anyhow::Result<()> {
+    // creates an empty profile
     let profile = v4::profile::test::create_test_profile("test_construction.ricochet-profile")?;
 
     assert_eq!(profile.get_version()?, v4::profile::Version::LATEST);
+
+    Ok(())
+}
+
+#[test]
+fn test_generate_new() -> anyhow::Result<()> {
+    let private_key = Ed25519PrivateKey::generate();
+    let nickname = "Bob".to_string();
+
+    let mut path = std::env::temp_dir();
+    path.push("test_generate_new.ricochet-profile");
+    if Path::exists(&path) {
+        std::fs::remove_file(&path)?;
+    }
+
+    let profile = v4::profile::Profile::new_from_private_key(
+        private_key.clone(),
+        nickname.clone(),
+        &path,
+        "hunter42",
+    )?;
+
+    // only the owner user should be present
+    let users = profile.get_users()?;
+    assert!(users.len() == 1);
+
+    for (user, _user_handle) in users {
+        use v4::profile::UserType;
+
+        let user_type = user.user_type;
+        let nickname = user.user_profile.nickname;
+        let pet_name = user.user_profile.pet_name;
+        let pronouns = user.user_profile.pronouns;
+        let avatar = user.user_profile.avatar;
+        let status = user.user_profile.status;
+        let description = user.user_profile.description;
+        let identity_ed25519_public_key = user.identity_ed25519_public_key;
+        let identity_ed25519_private_key = user.identity_ed25519_private_key;
+        let remote_endpoint_ed25519_public_key = user.remote_endpoint_ed25519_public_key;
+        let remote_endpoint_x25519_private_key = user.remote_endpoint_x25519_private_key;
+        let local_endpoint_ed25519_private_key = user.local_endpoint_ed25519_private_key;
+        let local_endpoint_x25519_public_key = user.local_endpoint_x25519_public_key;
+
+        match (user_type, nickname.as_str()) {
+            (UserType::Owner, "Bob") => {
+                assert!(pet_name.is_none());
+                assert!(pronouns.is_none());
+                assert!(avatar.is_none());
+                assert!(status.is_none());
+                assert!(description.is_none());
+                assert_eq!(identity_ed25519_private_key.as_ref(), Some(&private_key));
+                assert_eq!(
+                    Ed25519PublicKey::from_private_key(
+                        identity_ed25519_private_key.as_ref().unwrap()
+                    ),
+                    identity_ed25519_public_key
+                );
+                assert!(remote_endpoint_ed25519_public_key.is_none());
+                assert!(remote_endpoint_x25519_private_key.is_none());
+                assert!(local_endpoint_ed25519_private_key.is_none());
+                assert!(local_endpoint_x25519_public_key.is_none());
+            }
+            _ => unreachable!(),
+        }
+    }
 
     Ok(())
 }
@@ -54,8 +120,12 @@ fn test_legacy_import() -> anyhow::Result<()> {
         std::fs::remove_file(&path)?;
     }
 
-    let mut v4_profile =
-        v4::profile::Profile::new_from_v3_profile(v3_profile, "morgan", &path, "hunter42")?;
+    let mut v4_profile = v4::profile::Profile::new_from_v3_profile(
+        v3_profile,
+        "morgan".to_string(),
+        &path,
+        "hunter42",
+    )?;
 
     println!("created profile: {path:?}");
 

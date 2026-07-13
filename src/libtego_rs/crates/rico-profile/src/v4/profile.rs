@@ -84,23 +84,17 @@ impl Profile {
         Self::open(path, password)
     }
 
-    #[cfg(feature = "v3-profile")]
-    pub fn new_from_v3_profile(
-        v3_profile: v3::profile::Profile,
-        nickname: &str,
+    pub fn new_from_private_key(
+        host_identity_ed25519_private_key: Ed25519PrivateKey,
+        nickname: String,
         path: &std::path::Path,
         password: &str,
     ) -> Result<Profile, Error> {
-        // todo, write profile to a temp file and move after successful creation
         let mut profile = Profile::new(path, password)?;
-        let tx = profile.conn.transaction()?;
 
         //
         // Add our host user
         //
-
-        let host_identity_ed25519_private_key = v3_profile.private_key;
-        let nickname = nickname.to_string();
 
         let host_identity_ed25519_public_key =
             Ed25519PublicKey::from_private_key(&host_identity_ed25519_private_key);
@@ -124,6 +118,52 @@ impl Profile {
             local_endpoint_x25519_public_key: None,
         };
 
+        let tx = profile.conn.transaction()?;
+        let _ = db::insert_user(&tx, &host_user)?;
+        tx.commit()?;
+
+        Ok(profile)
+    }
+
+    #[cfg(feature = "v3-profile")]
+    pub fn new_from_v3_profile(
+        v3_profile: v3::profile::Profile,
+        nickname: String,
+        path: &std::path::Path,
+        password: &str,
+    ) -> Result<Profile, Error> {
+        // todo, write profile to a temp file and move after successful creation
+        let mut profile = Profile::new(path, password)?;
+
+        //
+        // Add our host user
+        //
+
+        let host_identity_ed25519_private_key = v3_profile.private_key;
+
+        let host_identity_ed25519_public_key =
+            Ed25519PublicKey::from_private_key(&host_identity_ed25519_private_key);
+        let host_identity_ed25519_private_key = Some(host_identity_ed25519_private_key);
+
+        let host_user = User {
+            user_type: UserType::Owner,
+            user_profile: UserProfile {
+                nickname,
+                pet_name: None,
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: host_identity_ed25519_public_key.clone(),
+            identity_ed25519_private_key: host_identity_ed25519_private_key,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+
+        let tx = profile.conn.transaction()?;
         let host_user_handle = db::insert_user(&tx, &host_user)?;
 
         for (service_id, user) in v3_profile.users {
