@@ -48,6 +48,25 @@ public:
             return Locale::translate(u8"Finish");
         }
 
+        static wxString open_profile_file_dialog_title() {
+            auto fmt_string = Locale::translate(u8"Open %s profile");
+            return wxString::Format(fmt_string, Common::app_name());
+        }
+
+        static wxString profile_file_dialog_wildcard() {
+            const auto file_description_fmt_string = Locale::translate(u8"%s profiles (%s)");
+            auto file_description = wxString::Format(
+                file_description_fmt_string,
+                Common::app_name(),
+                Common::profile_file_extension_wildcard()
+            );
+            return wxString::Format(
+                "%s|%s",
+                file_description,
+                Common::profile_file_extension_wildcard()
+            );
+        }
+
         static wxString new_line() {
             return from_utf8(u8"\n");
         }
@@ -349,6 +368,14 @@ public:
 
         static wxString open_profile_button() {
             return Locale::translate(u8"Open existing profile");
+        }
+
+        static wxString open_profile_file_dialog_title() {
+            return Strings::Common::open_profile_file_dialog_title();
+        }
+
+        static wxString profile_file_dialog_wildcard() {
+            return Strings::Common::profile_file_dialog_wildcard();
         }
 
         static wxString import_profile_button() {
@@ -828,17 +855,7 @@ public:
         }
 
         static wxString profile_file_dialog_wildcard() {
-            const auto file_description_fmt_string = Locale::translate(u8"%s profiles (%s)");
-            auto file_description = wxString::Format(
-                file_description_fmt_string,
-                Common::app_name(),
-                Common::profile_file_extension_wildcard()
-            );
-            return wxString::Format(
-                "%s|%s",
-                file_description,
-                Common::profile_file_extension_wildcard()
-            );
+            return Strings::Common::profile_file_dialog_wildcard();
         }
 
         static wxString legacy_profile_dialog_wildcard() {

@@ -1,11 +1,13 @@
 #include "main_frame.hpp"
 
 #include "enums.hpp"
+#include "paths.hpp"
 #include "strings.hpp"
 #include "ui/metrics.hpp"
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
 #include "ui/panels/new_profile_panel.hpp"
+#include "ui/panels/sessions_notebook.hpp"
 #include "ui/panels/settings_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
@@ -34,8 +36,8 @@ void MainFrame::show_bootstrap_panel() {
     this->show_main_panel(this->main_panels.bootstrap_panel);
 }
 
-void MainFrame::show_profile_notebook_panel() {
-    // todo
+void MainFrame::show_sessions_notebook_panel() {
+    this->show_main_panel(this->main_panels.sessions_notebook_panel);
 }
 
 void MainFrame::show_settings_panel(Settings settings) {
@@ -67,7 +69,6 @@ void MainFrame::hide_overlay_panel() {
 }
 
 void MainFrame::show_main_panel(wxPanel* panel) {
-    assert(this->main_panels.current != panel);
     if (this->main_panels.current) {
         this->main_panels.current->Show(false);
     }
@@ -87,6 +88,11 @@ void MainFrame::show_overlay_panel(wxPanel* panel) {
     this->overlay_panels.current = panel;
     this->overlay_panels.current->Show(true);
     this->Layout();
+}
+
+void MainFrame::open_profile(const wxString& profile_path) {
+    this->get_sessions_notebook_panel_mut().open_session(profile_path);
+    this->show_sessions_notebook_panel();
 }
 
 //
@@ -109,6 +115,7 @@ void MainFrame::setup_menubar() {
     profile_menu->Bind(wxEVT_MENU, &MainFrame::on_import_legacy, this, import_profile->GetId());
     auto open_profile =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::open_profile());
+    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_open_profile, this, open_profile->GetId());
     auto save_profile_as = profile_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::save_profile_as()
@@ -229,7 +236,10 @@ void MainFrame::setup_main_panels(wxBoxSizer* sizer) {
     bootstrap_panel->Hide();
     main_panels.bootstrap_panel = bootstrap_panel;
 
-    // todo develop the profile ntebook panel
+    auto sessions_notebook_panel = new SessionsNotebook(this);
+    sizer->Add(sessions_notebook_panel, 1, wxEXPAND);
+    sessions_notebook_panel->Hide();
+    main_panels.sessions_notebook_panel = sessions_notebook_panel;
 }
 
 void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
@@ -260,6 +270,22 @@ void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
 //
 // Event Handlers
 //
+
+void MainFrame::on_open_profile(wxCommandEvent&) {
+    wxFileDialog open_profile_dialog(
+        this,
+        Strings::ConnectedPanel::open_profile_file_dialog_title(),
+        Paths::home().GetAbsolutePath(),
+        "",
+        Strings::ConnectedPanel::profile_file_dialog_wildcard(),
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST
+    );
+
+    if (open_profile_dialog.ShowModal() == wxID_OK) {
+        const auto profile_path = open_profile_dialog.GetPath();
+        this->open_profile(profile_path);
+    }
+}
 
 void MainFrame::on_new_profile(wxCommandEvent&) {
     this->show_generate_profile_panel();

@@ -1,9 +1,11 @@
 #include "connected_panel.hpp"
 
+#include "paths.hpp"
 #include "strings.hpp"
 #include "ui/fonts.hpp"
 #include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
+#include "ui/panels/sessions_notebook.hpp"
 
 ConnectedPanel::ConnectedPanel(wxWindow* parent) : wxPanel(parent) {
     auto v_sizer = new wxBoxSizer(wxVERTICAL);
@@ -57,7 +59,19 @@ void ConnectedPanel::create_profile() {
 }
 
 void ConnectedPanel::open_profile() {
-    LOG_INFO("open profile");
+    wxFileDialog open_profile_dialog(
+        this,
+        Strings::ConnectedPanel::open_profile_file_dialog_title(),
+        Paths::home().GetAbsolutePath(),
+        "",
+        Strings::ConnectedPanel::profile_file_dialog_wildcard(),
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST
+    );
+
+    if (open_profile_dialog.ShowModal() == wxID_OK) {
+        const auto profile_path = open_profile_dialog.GetPath();
+        wxGetApp().get_main_frame().open_profile(profile_path);
+    }
 }
 
 void ConnectedPanel::import_profile() {
