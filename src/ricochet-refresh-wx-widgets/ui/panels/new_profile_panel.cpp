@@ -2,6 +2,7 @@
 
 #include "enums.hpp"
 #include "ffi.hpp"
+#include "paths.hpp"
 #include "strings.hpp"
 #include "ui/error_popup.hpp"
 #include "ui/fonts.hpp"
@@ -443,7 +444,7 @@ void NewProfilePanel::on_get_new_profile_destination() {
     wxFileDialog save_profile_dialog(
         this,
         Strings::NewProfilePanel::save_profile_file_dialog_title(),
-        wxStandardPaths::Get().GetUserDir(wxStandardPaths::Dir_Documents),
+        Paths::home().GetAbsolutePath(),
         "alice.rr-profile", // default filename
         Strings::NewProfilePanel::profile_file_dialog_wildcard(),
         wxFD_SAVE | wxFD_OVERWRITE_PROMPT
@@ -472,7 +473,7 @@ void NewProfilePanel::on_get_legacy_profile_destination() {
     wxFileDialog open_legacy_profile_dialog(
         this,
         Strings::NewProfilePanel::open_legacy_profile_file_dialog_title(),
-        wxStandardPaths::Get().GetUserDir(wxStandardPaths::Dir_Documents),
+        Paths::config_directory().GetAbsolutePath(),
         "ricochet.json",
         Strings::NewProfilePanel::legacy_profile_dialog_wildcard(),
         wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_SHOW_HIDDEN

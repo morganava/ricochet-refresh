@@ -21,6 +21,7 @@
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
 #include <wx/filedlg.h>
+#include <wx/filename.h>
 #include <wx/intl.h>
 #include <wx/renderer.h>
 #include <wx/richmsgdlg.h>

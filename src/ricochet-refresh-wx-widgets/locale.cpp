@@ -1,18 +1,18 @@
 #include "locale.hpp"
 
 #include "enums.hpp"
+#include "paths.hpp"
 
 void Locale::init() {
     // load platform
     wxUILocale::UseDefault();
 
     // get executable's parent directory
-    const auto executable_path_string = wxStandardPaths::Get().GetExecutablePath();
-    const std::filesystem::path executable_path(executable_path_string.utf8_string());
-    const auto executable_parent_path = executable_path.parent_path();
+    const auto executable_path = Paths::executable_path();
+    const auto executable_parent_path = executable_path.GetPath();
 
     // add to catalog path
-    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(executable_parent_path.c_str());
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(executable_parent_path);
 
     // load translations
     auto translations = new wxTranslations();
