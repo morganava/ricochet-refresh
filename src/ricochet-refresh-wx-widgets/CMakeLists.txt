@@ -29,6 +29,7 @@ endif()
 set_target_properties(ricochet-refresh-wx-widgets PROPERTIES OUTPUT_NAME "ricochet-refresh")
 
 set(RICOCHET_REFRESH_SOURCE
+    build_config.hpp
     enums.hpp
     ffi.cpp
     ffi.hpp
