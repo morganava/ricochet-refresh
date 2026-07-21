@@ -5,7 +5,6 @@
 #include "ui/metrics.hpp"
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
-#include "ui/panels/conversations_panel.hpp"
 #include "ui/panels/new_profile_panel.hpp"
 #include "ui/panels/settings_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"

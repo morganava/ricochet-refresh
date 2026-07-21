@@ -6,8 +6,8 @@
 #include "strings.hpp"
 #include "ui/events.hpp"
 #include "ui/metrics.hpp"
-#include "ui/panels/conversations_panel/contact_group_heading_panel.hpp"
-#include "ui/panels/conversations_panel/contact_panel.hpp"
+#include "ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.hpp"
+#include "ui/panels/sessions_notebook/conversations_panel/contact_panel.hpp"
 
 using namespace mock;
 

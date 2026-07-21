@@ -2,7 +2,7 @@
 
 #include "strings.hpp"
 #include "ui/metrics.hpp"
-#include "ui/panels/conversations_panel/contact_list_panel.hpp"
+#include "ui/panels/sessions_notebook/conversations_panel/contact_list_panel.hpp"
 
 ContactGroupHeadingPanel::ContactGroupHeadingPanel(
     ContactListPanel* parent,

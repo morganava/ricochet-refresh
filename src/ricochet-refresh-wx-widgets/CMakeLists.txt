@@ -66,20 +66,20 @@ set(RICOCHET_REFRESH_SOURCE
     ui/panels/bootstrap_panel/disconnected_panel.hpp
     ui/panels/connection_status_panel.cpp
     ui/panels/connection_status_panel.hpp
-    ui/panels/conversations_panel.cpp
-    ui/panels/conversations_panel.hpp
-    ui/panels/conversations_panel/chat_panel.cpp
-    ui/panels/conversations_panel/chat_panel.hpp
-    ui/panels/conversations_panel/contact_group_heading_panel.cpp
-    ui/panels/conversations_panel/contact_group_heading_panel.hpp
-    ui/panels/conversations_panel/contact_list_panel.cpp
-    ui/panels/conversations_panel/contact_list_panel.hpp
-    ui/panels/conversations_panel/contact_panel.cpp
-    ui/panels/conversations_panel/contact_panel.hpp
-    ui/panels/conversations_panel/message_entry_panel.cpp
-    ui/panels/conversations_panel/message_entry_panel.hpp
-    ui/panels/conversations_panel/user_status_panel.cpp
-    ui/panels/conversations_panel/user_status_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/chat_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/chat_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/contact_list_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/contact_list_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/contact_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/contact_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/message_entry_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/message_entry_panel.hpp
+    ui/panels/sessions_notebook/conversations_panel/user_status_panel.cpp
+    ui/panels/sessions_notebook/conversations_panel/user_status_panel.hpp
     ui/panels/new_profile_panel.cpp
     ui/panels/new_profile_panel.hpp
     ui/panels/settings_panel.cpp
