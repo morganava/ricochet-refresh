@@ -49,7 +49,7 @@ const wxString& SendMessageEvent::get_text() const {
 //
 wxDEFINE_EVENT(wxEVT_CONTACT_SELECTED, ContactSelectedEvent);
 
-ContactSelectedEvent::ContactSelectedEvent(std::optional<ContactHandle> contact_handle) :
+ContactSelectedEvent::ContactSelectedEvent(std::optional<tego_user_handle> contact_handle) :
     wxCommandEvent(wxEVT_CONTACT_SELECTED),
     contact_handle(contact_handle) {}
 
@@ -57,7 +57,7 @@ wxEvent* ContactSelectedEvent::Clone() const {
     return new ContactSelectedEvent(this->contact_handle);
 }
 
-std::optional<ContactHandle> ContactSelectedEvent::get_contact_handle() const {
+std::optional<tego_user_handle> ContactSelectedEvent::get_contact_handle() const {
     return this->contact_handle;
 }
 
@@ -66,7 +66,7 @@ std::optional<ContactHandle> ContactSelectedEvent::get_contact_handle() const {
 //
 wxDEFINE_EVENT(wxEVT_CONTACT_REMOVED, ContactRemovedEvent);
 
-ContactRemovedEvent::ContactRemovedEvent(ContactHandle contact_handle) :
+ContactRemovedEvent::ContactRemovedEvent(tego_user_handle contact_handle) :
     wxCommandEvent(wxEVT_CONTACT_REMOVED),
     contact_handle(contact_handle) {}
 
@@ -74,6 +74,23 @@ wxEvent* ContactRemovedEvent::Clone() const {
     return new ContactRemovedEvent(this->contact_handle);
 }
 
-ContactHandle ContactRemovedEvent::get_contact_handle() const {
+tego_user_handle ContactRemovedEvent::get_contact_handle() const {
     return this->contact_handle;
+}
+
+//
+// ProfileUnlockedEvent
+//
+wxDEFINE_EVENT(wxEVT_PROFILE_UNLOCKED, ProfileUnlockedEvent);
+
+ProfileUnlockedEvent::ProfileUnlockedEvent(std::unique_ptr<tego_profile>&& profile) :
+    wxCommandEvent(wxEVT_PROFILE_UNLOCKED),
+    profile(std::move(profile)) {}
+
+wxEvent* ProfileUnlockedEvent::Clone() const {
+    return new ProfileUnlockedEvent(std::move(this->profile));
+}
+
+std::unique_ptr<tego_profile> ProfileUnlockedEvent::take_profile() {
+    return std::move(this->profile);
 }

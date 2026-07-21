@@ -6,6 +6,7 @@
 #include <cassert>
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <span>
 #include <string_view>

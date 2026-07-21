@@ -1,6 +1,5 @@
 #include "conversations_panel.hpp"
 
-#include "mock_ffi.hpp"
 #include "strings.hpp"
 #include "ui/events.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/chat_panel.hpp"
@@ -8,8 +7,9 @@
 #include "ui/panels/sessions_notebook/conversations_panel/message_entry_panel.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/user_status_panel.hpp"
 
-ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const ContactHandle> contacts) :
-    wxSplitterWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE) {
+ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle session_handle) :
+    wxSplitterWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE),
+    session_handle(session_handle) {
     auto left_panel = new wxPanel(this);
     auto right_panel = new wxPanel(this);
 
@@ -18,7 +18,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const Contact
     auto left_v_sizer = new wxBoxSizer(wxVERTICAL);
 
     // todo: replace with actual implementation
-    auto contact_list_panel = new ContactListPanel(left_panel, contacts);
+    auto contact_list_panel = new ContactListPanel(left_panel, {});
     contact_list_panel->Bind(wxEVT_CONTACT_SELECTED, [this](const ContactSelectedEvent& evt) {
         this->select_contact(evt.get_contact_handle());
     });
@@ -38,6 +38,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const Contact
 
     this->right_v_sizer = new wxBoxSizer(wxVERTICAL);
 
+    /*
     for (auto contact_handle : contacts) {
         auto chat_panel = new ChatPanel(right_panel);
         // todo: load chat back-log from profile
@@ -63,6 +64,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const Contact
 
         this->contact_widgets.insert({contact_handle, {v_sizer, chat_panel, message_entry_panel}});
     }
+*/
     this->right_v_sizer->ShowItems(false);
 
     right_panel->SetSizer(this->right_v_sizer);
@@ -75,19 +77,27 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, std::span<const Contact
     this->SetSashGravity(0.0);
 }
 
+ConversationsPanel::~ConversationsPanel() {
+    tego_context_end_session(
+        &wxGetApp().get_context_mut(),
+        this->session_handle,
+        tego::panic_on_error()
+    );
+}
+
 void ConversationsPanel::receive_message(
-    const ContactHandle recipient,
+    const tego_user_handle recipient,
     const wxDateTime& timestamp,
     const wxString& message
 ) {
     if (auto it = this->contact_widgets.find(recipient); it != this->contact_widgets.end()) {
         auto& contact_widgets = it->second;
-        const auto nickname = mock::nickname_from_contact_handle(recipient);
+        const auto nickname = wxString(); //mock::nickname_from_contact_handle(recipient);
         contact_widgets.chat_panel->add_chat_message(timestamp, nickname, message);
     }
 }
 
-void ConversationsPanel::select_contact(const std::optional<ContactHandle> contact_handle) {
+void ConversationsPanel::select_contact(const std::optional<tego_user_handle> contact_handle) {
     // hide everything
     this->right_v_sizer->ShowItems(false);
     if (contact_handle) {
@@ -101,7 +111,7 @@ void ConversationsPanel::select_contact(const std::optional<ContactHandle> conta
     }
 }
 
-void ConversationsPanel::remove_contact(const ContactHandle contact_handle) {
+void ConversationsPanel::remove_contact(const tego_user_handle contact_handle) {
     if (auto it = this->contact_widgets.find(contact_handle); it != this->contact_widgets.end()) {
         auto& v_sizer = it->second.v_sizer;
 

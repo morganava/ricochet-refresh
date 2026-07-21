@@ -2,16 +2,13 @@
 
 #include "enums.hpp"
 #include "locale.hpp"
-#include "mock_ffi.hpp"
 #include "strings.hpp"
 #include "ui/events.hpp"
 #include "ui/metrics.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/contact_panel.hpp"
 
-using namespace mock;
-
-ContactListPanel::ContactListPanel(wxWindow* parent, std::span<const ContactHandle> contacts) :
+ContactListPanel::ContactListPanel(wxWindow* parent, std::span<const tego_user_handle> contacts) :
     wxScrolled<wxControl>(
         parent,
         wxID_ANY,
@@ -47,8 +44,8 @@ ContactListPanel::ContactListPanel(wxWindow* parent, std::span<const ContactHand
     for (const auto contact_handle : contacts) {
         this->add_contact(
             contact_handle,
-            nickname_from_contact_handle(contact_handle),
-            avatar_from_contact_handle(contact_handle),
+            {}, // nickname_from_contact_handle(contact_handle),
+            {}, // avatar_from_contact_handle(contact_handle),
             ContactGroup::Disconnected
         );
     }
@@ -59,7 +56,7 @@ ContactListPanel::ContactListPanel(wxWindow* parent, std::span<const ContactHand
 }
 
 void ContactListPanel::add_contact(
-    ContactHandle contact_handle,
+    tego_user_handle contact_handle,
     const wxString& nickname,
     const wxBitmap& avatar,
     ContactGroup contact_group
@@ -105,7 +102,7 @@ void ContactListPanel::add_contact(
     this->Layout();
 }
 
-void ContactListPanel::remove_contact(ContactHandle contact_handle) {
+void ContactListPanel::remove_contact(tego_user_handle contact_handle) {
     if (auto it = this->contact_map.find(contact_handle); it != this->contact_map.end()) {
         // remove widget
         auto contact_panel = it->second;
@@ -371,13 +368,13 @@ void ContactListPanel::navigate_in() {
     }
 }
 
-void ContactListPanel::emit_contact_selected(std::optional<ContactHandle> contact_handle) {
+void ContactListPanel::emit_contact_selected(std::optional<tego_user_handle> contact_handle) {
     auto evt = ContactSelectedEvent(contact_handle);
     evt.SetEventObject(this);
     this->GetEventHandler()->ProcessEvent(evt);
 }
 
-void ContactListPanel::emit_contact_removed(ContactHandle contact_handle) {
+void ContactListPanel::emit_contact_removed(tego_user_handle contact_handle) {
     auto evt = ContactRemovedEvent(contact_handle);
     evt.SetEventObject(this);
     this->GetEventHandler()->ProcessEvent(evt);

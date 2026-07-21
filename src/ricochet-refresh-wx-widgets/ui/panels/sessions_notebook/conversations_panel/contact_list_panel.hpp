@@ -1,22 +1,20 @@
 #pragma once
 #include "enums.hpp"
-#include "mock_ffi.hpp"
-using namespace mock;
 
 struct ContactGroupHeadingPanel;
 struct ContactPanel;
 
 class ContactListPanel: public wxScrolled<wxControl> {
 public:
-    ContactListPanel(wxWindow* parent, std::span<const ContactHandle> contacts);
+    ContactListPanel(wxWindow* parent, std::span<const tego_user_handle> contacts);
 
     void add_contact(
-        ContactHandle contact_handle,
+        tego_user_handle contact_handle,
         const wxString& nickname,
         const wxBitmap& avatar,
         ContactGroup contact_group
     );
-    void remove_contact(ContactHandle contact_handle);
+    void remove_contact(tego_user_handle contact_handle);
 
 private:
     // event handlers
@@ -40,8 +38,8 @@ private:
     void navigate_in();
 
     // event emiitters
-    void emit_contact_selected(std::optional<ContactHandle> contact_handle);
-    void emit_contact_removed(ContactHandle contact_handle);
+    void emit_contact_selected(std::optional<tego_user_handle> contact_handle);
+    void emit_contact_removed(tego_user_handle contact_handle);
 
     // parent group nodes for each of our contact groups
     ContactGroupHeadingPanel* group_heading_panel[static_cast<size_t>(ContactGroup::Count)];
@@ -52,5 +50,5 @@ private:
     ContactGroupHeadingPanel* selected_contact_group_heading_panel = nullptr;
     ContactPanel* selected_contact_panel = nullptr;
 
-    std::unordered_map<ContactHandle, ContactPanel*> contact_map;
+    std::unordered_map<tego_user_handle, ContactPanel*> contact_map;
 };

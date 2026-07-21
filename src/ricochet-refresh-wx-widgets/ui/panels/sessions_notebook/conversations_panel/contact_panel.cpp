@@ -5,7 +5,7 @@
 
 ContactPanel::ContactPanel(
     ContactListPanel* parent,
-    const ContactHandle contact_handle,
+    const tego_user_handle contact_handle,
     const wxString& nickname,
     const wxBitmap& avatar
 ) :
@@ -180,7 +180,7 @@ bool ContactPanel::get_mouse_hovering() const {
     return this->mouse_hovering;
 }
 
-ContactHandle ContactPanel::get_contact_handle() const {
+tego_user_handle ContactPanel::get_contact_handle() const {
     return this->contact_handle;
 }
 

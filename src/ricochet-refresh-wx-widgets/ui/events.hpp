@@ -1,8 +1,5 @@
 #pragma once
 
-#include "mock_ffi.hpp"
-using namespace mock;
-
 /*
 SendMessageEvent: event is sent when the user submits a message through
 a MessageEntryPanel
@@ -46,13 +43,13 @@ wxDECLARE_EVENT(wxEVT_CONTACT_SELECTED, ContactSelectedEvent);
 
 class ContactSelectedEvent: public wxCommandEvent {
 public:
-    explicit ContactSelectedEvent(std::optional<ContactHandle> contact_handle);
+    explicit ContactSelectedEvent(std::optional<tego_user_handle> contact_handle);
     wxEvent* Clone() const override;
 
-    std::optional<ContactHandle> get_contact_handle() const;
+    std::optional<tego_user_handle> get_contact_handle() const;
 
 private:
-    const std::optional<ContactHandle> contact_handle;
+    const std::optional<tego_user_handle> contact_handle;
 };
 
 /*
@@ -64,11 +61,28 @@ wxDECLARE_EVENT(wxEVT_CONTACT_REMOVED, ContactRemovedEvent);
 
 class ContactRemovedEvent: public wxCommandEvent {
 public:
-    explicit ContactRemovedEvent(ContactHandle contact_handle);
+    explicit ContactRemovedEvent(tego_user_handle contact_handle);
     wxEvent* Clone() const override;
 
-    ContactHandle get_contact_handle() const;
+    tego_user_handle get_contact_handle() const;
 
 private:
-    const ContactHandle contact_handle;
+    const tego_user_handle contact_handle;
+};
+
+/*
+ProfileUnlockedEvent: event is sent when a profile is unlocked
+*/
+class ProfileUnlockedEvent;
+wxDECLARE_EVENT(wxEVT_PROFILE_UNLOCKED, ProfileUnlockedEvent);
+
+class ProfileUnlockedEvent: public wxCommandEvent {
+public:
+    explicit ProfileUnlockedEvent(std::unique_ptr<tego_profile>&& profile);
+    wxEvent* Clone() const override;
+
+    std::unique_ptr<tego_profile> take_profile();
+
+private:
+    mutable std::unique_ptr<tego_profile> profile;
 };

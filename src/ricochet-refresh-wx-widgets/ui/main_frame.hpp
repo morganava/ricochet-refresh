@@ -45,6 +45,7 @@ private:
     void on_open_profile(wxCommandEvent&);
     void on_new_profile(wxCommandEvent&);
     void on_import_legacy(wxCommandEvent&);
+    void on_close_profile(wxCommandEvent&);
 
     // main panels
     // we only move 'forward' through the main panels (e.g. from the bootstrap panel

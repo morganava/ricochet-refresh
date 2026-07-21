@@ -1,24 +1,24 @@
 #pragma once
 
-#include "mock_ffi.hpp"
-using namespace mock;
-
 class ChatPanel;
 class MessageEntryPanel;
 
 class ConversationsPanel: public wxSplitterWindow {
 public:
-    ConversationsPanel(wxWindow* parent, std::span<const ContactHandle> contacts);
+    ConversationsPanel(wxWindow* parent, tego_session_handle session_handle);
+    ~ConversationsPanel();
 
     void receive_message(
-        const ContactHandle recipient,
+        const tego_user_handle recipient,
         const wxDateTime& timestamp,
         const wxString& message
     );
 
 private:
-    void select_contact(const std::optional<ContactHandle> contact_handle);
-    void remove_contact(ContactHandle contact_handle);
+    void select_contact(const std::optional<tego_user_handle> contact);
+    void remove_contact(tego_user_handle contact);
+
+    tego_session_handle session_handle = TEGO_INVALID_SESSION_HANDLE;
 
     wxBoxSizer* right_v_sizer = nullptr;
 
@@ -29,5 +29,5 @@ private:
         MessageEntryPanel* message_entry_panel;
     };
 
-    std::unordered_map<ContactHandle, ContactWidgets> contact_widgets;
+    std::unordered_map<tego_user_handle, ContactWidgets> contact_widgets;
 };

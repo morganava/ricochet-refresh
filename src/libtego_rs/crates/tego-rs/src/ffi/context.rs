@@ -132,6 +132,16 @@ pub unsafe extern "C" fn tego_context_begin_session(
     })
 }
 
+/// End an existing session, disconnect all connections
+/// and close the profile
+///
+/// @param context : the current tego context
+/// @param session_handle : the session to end
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub extern "C" fn tego_context_end_session(
     context: *mut tego_context,

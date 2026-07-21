@@ -130,6 +130,8 @@ void MainFrame::setup_menubar() {
 
     auto close_profile_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::close_profile());
+    profile_menu
+        ->Bind(wxEVT_MENU, &MainFrame::on_close_profile, this, close_profile_menu_item->GetId());
     auto logout_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::logout());
 
@@ -298,4 +300,8 @@ void MainFrame::on_new_profile(wxCommandEvent&) {
 
 void MainFrame::on_import_legacy(wxCommandEvent&) {
     this->show_import_legacy_profile_panel();
+}
+
+void MainFrame::on_close_profile(wxCommandEvent&) {
+    this->get_sessions_notebook_panel_mut().close_focused_session();
 }
