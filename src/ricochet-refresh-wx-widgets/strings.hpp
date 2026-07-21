@@ -863,4 +863,18 @@ public:
             return Locale::translate(u8"An error occurred loading and parsing legacy profile.");
         }
     };
+
+    struct UnlockProfilePanel {
+        static wxString title() {
+            return Locale::translate(u8"Unlock Profile");
+        }
+
+        static wxString enter_password() {
+            return Locale::translate(u8"Enter password:");
+        }
+
+        static wxString unlock_button() {
+            return Locale::translate(u8"Unlock");
+        }
+    };
 };

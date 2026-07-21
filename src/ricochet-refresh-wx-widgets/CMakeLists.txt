@@ -80,6 +80,8 @@ set(RICOCHET_REFRESH_SOURCE
     ui/panels/sessions_notebook/conversations_panel/message_entry_panel.hpp
     ui/panels/sessions_notebook/conversations_panel/user_status_panel.cpp
     ui/panels/sessions_notebook/conversations_panel/user_status_panel.hpp
+    ui/panels/sessions_notebook/unlock_profile_panel.cpp
+    ui/panels/sessions_notebook/unlock_profile_panel.hpp
     ui/panels/new_profile_panel.cpp
     ui/panels/new_profile_panel.hpp
     ui/panels/settings_panel.cpp

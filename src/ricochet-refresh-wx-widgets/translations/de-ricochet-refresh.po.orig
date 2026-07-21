@@ -7,7 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ricochet-Refresh 3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 10:31+0000\n"
+<<<<<<< HEAD
+"POT-Creation-Date: 2026-07-13 19:46+0000\n"
+=======
+"POT-Creation-Date: 2026-07-21 10:18+0000\n"
+>>>>>>> 9930b9cf (ricochet-refresh-wx-widgets: implement UnlockProfilePanel)
 "PO-Revision-Date: 2026-01-14 10:43+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -591,14 +595,14 @@ msgstr ""
 msgid "An error occurred loading and parsing legacy profile."
 msgstr ""
 
-#: strings.hpp:869
+#: strings.hpp:886
 msgid "Unlock Profile"
 msgstr ""
 
-#: strings.hpp:873
+#: strings.hpp:890
 msgid "Enter password:"
 msgstr ""
 
-#: strings.hpp:877
+#: strings.hpp:894
 msgid "Unlock"
 msgstr ""
