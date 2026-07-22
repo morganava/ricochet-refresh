@@ -15,6 +15,9 @@ pub enum Error {
     #[error(transparent)]
     Rusqlite(#[from] rusqlite::Error),
 
+    #[error("invalid password")]
+    InvalidPassword,
+
     #[error(transparent)]
     RicoProtocolV4(#[from] rico_protocol::v4::Error),
 

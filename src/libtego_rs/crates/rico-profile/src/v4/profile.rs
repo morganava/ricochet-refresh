@@ -254,10 +254,11 @@ impl Profile {
 
         let profile = Profile { conn };
 
-        match profile.get_version()? {
-            Version::LATEST => Ok(profile),
+        match profile.get_version() {
+            Ok(Version::LATEST) => Ok(profile),
             // todo: we can add migration functions here when the version number needs to be bumped
-            version => Err(Error::UnknownProfileVersion(version)),
+            Ok(version) => Err(Error::UnknownProfileVersion(version)),
+            Err(_) => Err(Error::InvalidPassword),
         }
     }
 
@@ -666,6 +667,25 @@ pub mod test {
             local_endpoint_ed25519_private_key,
             local_endpoint_x25519_public_key,
         )
+    }
+
+    #[test]
+    fn test_wrong_password() -> anyhow::Result<()> {
+        let name = "test_wrong_password.ricochet-profile";
+        let profile = create_test_profile(name)?;
+        std::mem::drop(profile);
+
+        let mut path = std::env::temp_dir();
+        path.push(name);
+
+        assert!(Profile::open(&path, "hunter42").is_ok());
+        match Profile::open(&path, "prey24") {
+            Err(Error::InvalidPassword) => (),
+            Err(e) => anyhow::bail!("open should have failed using wrong password: {e}"),
+            _ => (),
+        }
+
+        Ok(())
     }
 
     #[test]
