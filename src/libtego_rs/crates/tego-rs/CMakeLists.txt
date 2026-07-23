@@ -21,7 +21,6 @@ set(tego_rs_sources
     src/ffi/settings.rs
     src/ffi/string.rs
     src/ffi/tor_config.rs
-    src/ffi/user_id.rs
     src/ffi/v3_onion_service_id.rs
     src/lib.rs
     src/listener_task.rs

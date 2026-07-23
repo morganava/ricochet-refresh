@@ -30,6 +30,7 @@ use crate::promise::Promise;
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
+pub(crate) type UserID = u64;
 #[derive(Default)]
 pub(crate) struct Context {
     // callback struct

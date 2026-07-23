@@ -9,7 +9,6 @@ pub mod profile;
 pub mod settings;
 pub mod string;
 pub mod tor_config;
-pub mod user_id;
 pub mod v3_onion_service_id;
 
 // standard
@@ -43,7 +42,6 @@ impl_handle_tags!(
     TEGO_PROFILE_TAG,
     TEGO_ED25519_PRIVATE_KEY_TAG,
     TEGO_V3_ONION_SERVICE_ID_TAG,
-    TEGO_USER_ID_TAG,
     TEGO_TOR_CONFIG_TAG,
     TEGO_BRIDGE_CONFIG_TAG,
     TEGO_FIREWALL_CONFIG_TAG,
@@ -60,7 +58,6 @@ impl_object_map!(tego_settings, SettingsStore);
 impl_object_map!(tego_profile, Profile);
 impl_object_map!(tego_ed25519_private_key, Ed25519PrivateKey);
 impl_object_map!(tego_v3_onion_service_id, V3OnionServiceId);
-impl_object_map!(tego_user_id, V3OnionServiceId);
 impl_object_map!(tego_tor_config, TorConfig);
 impl_object_map!(tego_bridge_config, BridgeConfig);
 impl_object_map!(tego_firewall_config, FirewallConfig);
@@ -87,6 +84,7 @@ pub struct tego_context;
 pub struct tego_settings;
 pub struct tego_profile;
 
+pub type tego_user_handle = crate::context::UserID;
 #[repr(C)]
 pub enum tego_language {
     tego_language_system,
@@ -208,7 +206,6 @@ pub enum tego_proxy_type {
 }
 pub struct tego_ed25519_private_key;
 pub struct tego_v3_onion_service_id;
-pub struct tego_user_id;
 
 /// State of the host user's onion service
 #[repr(C)]
@@ -477,7 +474,7 @@ pub type tego_host_onion_service_state_changed_callback =
 pub type tego_chat_request_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        sender: *const tego_user_id,
+        sender: tego_user_handle,
         message: *const c_char,
         message_length: usize,
     ) -> (),
@@ -491,7 +488,7 @@ pub type tego_chat_request_received_callback = Option<
 pub type tego_chat_request_response_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        sender: *const tego_user_id,
+        sender: tego_user_handle,
         accepted_request: tego_bool,
     ) -> (),
 >;
@@ -507,7 +504,7 @@ pub type tego_chat_request_response_received_callback = Option<
 pub type tego_message_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        sender: *const tego_user_id,
+        sender: tego_user_handle,
         timestamp: tego_time,
         message_id: tego_message_id,
         message: *const c_char,
@@ -525,7 +522,7 @@ pub type tego_message_received_callback = Option<
 pub type tego_message_acknowledged_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        user_id: *const tego_user_id,
+        user_id: tego_user_handle,
         message_id: tego_message_id,
         message_acked: tego_bool,
     ) -> (),
@@ -543,7 +540,7 @@ pub type tego_message_acknowledged_callback = Option<
 pub type tego_file_transfer_request_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        sender: *const tego_user_id,
+        sender: tego_user_handle,
         id: tego_file_transfer_id,
         file_name: *const c_char,
         file_name_length: usize,
@@ -562,7 +559,7 @@ pub type tego_file_transfer_request_received_callback = Option<
 pub type tego_file_transfer_request_acknowledged_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        receiver: *const tego_user_id,
+        receiver: tego_user_handle,
         id: tego_file_transfer_id,
         request_acked: tego_bool,
     ) -> (),
@@ -578,7 +575,7 @@ pub type tego_file_transfer_request_acknowledged_callback = Option<
 pub type tego_file_transfer_request_response_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        receiver: *const tego_user_id,
+        receiver: tego_user_handle,
         id: tego_file_transfer_id,
         response: tego_file_transfer_response,
     ) -> (),
@@ -602,7 +599,7 @@ pub enum tego_file_transfer_direction {
 pub type tego_file_transfer_progress_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        user_id: *const tego_user_id,
+        user_id: tego_user_handle,
         id: tego_file_transfer_id,
         direction: tego_file_transfer_direction,
         bytes_complete: tego_file_size,
@@ -639,7 +636,7 @@ pub enum tego_file_transfer_result {
 pub type tego_file_transfer_complete_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        user_id: *const tego_user_id,
+        user_id: tego_user_handle,
         id: tego_file_transfer_id,
         direction: tego_file_transfer_direction,
         result: tego_file_transfer_result,
@@ -654,7 +651,7 @@ pub type tego_file_transfer_complete_callback = Option<
 pub type tego_user_status_changed_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
-        user: *const tego_user_id,
+        user: tego_user_handle,
         status: tego_user_status,
     ) -> (),
 >;
@@ -859,11 +856,6 @@ pub extern "C" fn tego_ed25519_private_key_delete(value: *mut tego_ed25519_priva
 #[no_mangle]
 pub extern "C" fn tego_v3_onion_service_id_delete(value: *mut tego_v3_onion_service_id) {
     impl_object_deleter!(tego_v3_onion_service_id, value);
-}
-
-#[no_mangle]
-pub extern "C" fn tego_user_id_delete(value: *mut tego_user_id) {
-    impl_object_deleter!(tego_user_id, value);
 }
 
 #[no_mangle]
