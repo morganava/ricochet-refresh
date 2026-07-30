@@ -89,11 +89,11 @@ pub(crate) use func;
 macro_rules! log_trace {
     () => {{
         #[cfg(feature = "logging")]
-        crate::logger::Logger::log(crate::logger::LogLevel::Trace, format!("{} in {}:{}", func!(), std::file!(), std::line!()))
+        crate::logger::Logger::log(crate::logger::LogLevel::Trace, format!("{} in {}:{}", crate::macros::func!(), std::file!(), std::line!()))
     }};
     ($($arg:tt)*) => {{
         #[cfg(feature = "logging")]
-        crate::logger::Logger::log(crate::logger::LogLevel::Trace, format!("{} in {}:{} {}", func!(), std::file!(), std::line!(), format!($($arg)*)))
+        crate::logger::Logger::log(crate::logger::LogLevel::Trace, format!("{} in {}:{} {}", crate::macros::func!(), std::file!(), std::line!(), format!($($arg)*)))
     }};
 }
 pub(crate) use log_trace;
