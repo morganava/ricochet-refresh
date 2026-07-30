@@ -2,6 +2,9 @@ set(tego_rs_sources
     build.rs
     Cargo.toml
     cbindgen.toml
+    include/tego/logger.hpp
+    include/tego/tego.hpp
+    include/tego/utilities.hpp
     src/callbacks.rs
     src/command_queue.rs
     src/context.rs
