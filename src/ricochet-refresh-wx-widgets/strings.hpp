@@ -321,9 +321,10 @@ public:
         }
 
         static wxString explainer_text() {
-            return Locale::translate(
-                u8"Ricochet-Refresh routes your traffic over the Tor network, run by thousands of volunteers from around the world."
+            auto fmt_string = Locale::translate(
+                u8"%s routes your traffic over the Tor network, run by thousands of volunteers from around the world."
             );
+            return wxString::Format(fmt_string, Strings::Common::app_name());
         }
 
         static wxString connect_automatically_toggle() {
