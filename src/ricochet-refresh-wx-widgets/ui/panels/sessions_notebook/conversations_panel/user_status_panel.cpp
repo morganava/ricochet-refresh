@@ -2,6 +2,7 @@
 
 #include "enums.hpp"
 #include "strings.hpp"
+#include "ui/bitmaps.hpp"
 #include "ui/metrics.hpp"
 
 UserStatusPanel::UserStatusPanel(wxWindow* parent) : wxPanel(parent) {
@@ -29,13 +30,7 @@ UserStatusPanel::UserStatusPanel(wxWindow* parent) : wxPanel(parent) {
         this->set_visibility(static_cast<Visibility>(event.GetInt()));
     });
 
-    constexpr unsigned char avatar_data[] = {0xFF, 0xAA, 0xFF};
-    const auto avatar_size = Metrics::AVATAR_SIZE;
-    auto avatar_image = wxImage(1, 1, const_cast<unsigned char*>(avatar_data), true);
-    avatar_image.Rescale(avatar_size, avatar_size, wxIMAGE_QUALITY_BILINEAR);
-    const auto debug_avatar = wxBitmap(avatar_image);
-
-    auto profile_button = new wxBitmapButton(this, wxID_ANY, debug_avatar);
+    auto profile_button = new wxBitmapButton(this, wxID_ANY, Bitmaps::default_avatar());
     profile_button->Bind(wxEVT_BUTTON, [this](const wxCommandEvent&) {
         this->on_profile_button_clicked();
     });

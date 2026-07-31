@@ -42,6 +42,8 @@ set(RICOCHET_REFRESH_SOURCE
     precomp.hpp
     strings.cpp
     strings.hpp
+    ui/bitmaps.hpp
+    ui/bitmaps.cpp
     ui/events.cpp
     ui/events.hpp
     ui/error_popup.cpp

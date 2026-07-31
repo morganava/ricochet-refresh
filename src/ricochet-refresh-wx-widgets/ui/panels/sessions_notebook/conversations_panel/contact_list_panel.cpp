@@ -3,6 +3,7 @@
 #include "enums.hpp"
 #include "locale.hpp"
 #include "strings.hpp"
+#include "ui/bitmaps.hpp"
 #include "ui/events.hpp"
 #include "ui/metrics.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.hpp"
@@ -45,7 +46,7 @@ ContactListPanel::ContactListPanel(wxWindow* parent, std::span<const tego_user_h
         this->add_contact(
             contact_handle,
             {}, // nickname_from_contact_handle(contact_handle),
-            {}, // avatar_from_contact_handle(contact_handle),
+            Bitmaps::default_avatar(),
             ContactGroup::Disconnected
         );
     }
