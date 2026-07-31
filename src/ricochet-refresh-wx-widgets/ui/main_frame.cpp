@@ -105,49 +105,52 @@ void MainFrame::setup_menubar() {
 
     // create Profile menu
     auto profile_menu = new wxMenu();
-    auto new_profile =
+    auto new_profile_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::new_profile());
-    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_new_profile, this, new_profile->GetId());
-    auto import_profile = profile_menu->Append(
+    profile_menu
+        ->Bind(wxEVT_MENU, &MainFrame::on_new_profile, this, new_profile_menu_item->GetId());
+    auto import_profile_menu_item = profile_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::import_profile()
     );
-    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_import_legacy, this, import_profile->GetId());
-    auto open_profile =
+    profile_menu
+        ->Bind(wxEVT_MENU, &MainFrame::on_import_legacy, this, import_profile_menu_item->GetId());
+    auto open_profile_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::open_profile());
-    profile_menu->Bind(wxEVT_MENU, &MainFrame::on_open_profile, this, open_profile->GetId());
-    auto save_profile_as = profile_menu->Append(
+    profile_menu
+        ->Bind(wxEVT_MENU, &MainFrame::on_open_profile, this, open_profile_menu_item->GetId());
+    auto save_profile_as_menu_item = profile_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::save_profile_as()
     );
-    auto edit_profile =
+    auto edit_profile_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::edit_profile());
 
     profile_menu->AppendSeparator();
 
-    auto close_profile =
+    auto close_profile_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::close_profile());
-    auto logout =
+    auto logout_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::logout());
 
     profile_menu->AppendSeparator();
 
-    auto copy_user_id =
+    auto copy_user_id_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::copy_user_id());
     auto set_visibility_menu = new wxMenu();
-    auto visible = set_visibility_menu->Append(
+    auto visible_menu_item = set_visibility_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::SetVisibility::visible()
     );
-    auto restricted = set_visibility_menu->Append(
+    auto restricted_menu_item = set_visibility_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::SetVisibility::restricted()
     );
-    auto hidden = set_visibility_menu->Append(
+    auto hidden_menu_item = set_visibility_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::SetVisibility::hidden()
     );
-    auto offline = set_visibility_menu->Append(
+    auto offline_menu_item = set_visibility_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Profile::SetVisibility::offline()
     );
@@ -159,63 +162,65 @@ void MainFrame::setup_menubar() {
 
     profile_menu->AppendSeparator();
 
-    auto logout_all =
+    auto logout_all_menu_item =
         profile_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Profile::logout_all());
-    auto _quit =
+    auto quit_menu_item =
         profile_menu->Append(wxID_EXIT, Strings::MainFrame::MenuBar::Menu::Profile::quit());
 
     // create Contacts menu
     auto contacts_menu = new wxMenu();
-    auto add_contact =
+    auto add_contact_menu_item =
         contacts_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Contacts::add_contact());
-    auto delete_contact = contacts_menu->Append(
+    auto delete_contact_menu_item = contacts_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Contacts::delete_contact()
     );
-    auto connect_contact = contacts_menu->Append(
+    auto connect_contact_menu_item = contacts_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Contacts::connect_contact()
     );
-    auto disconnect_contact = contacts_menu->Append(
+    auto disconnect_contact_menu_item = contacts_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Contacts::disconnect_contact()
     );
-    auto block_contact = contacts_menu->Append(
+    auto block_contact_menu_item = contacts_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Contacts::block_contact()
     );
-    auto unblock_contact = contacts_menu->Append(
+    auto unblock_contact_menu_item = contacts_menu->Append(
         wxID_ANY,
         Strings::MainFrame::MenuBar::Menu::Contacts::unblock_contact()
     );
 
     // create Chat menu
     auto chat_menu = new wxMenu();
-    auto export_logs =
+    auto export_logs_menu_item =
         chat_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Chat::export_logs());
-    auto delete_logs =
+    auto delete_logs_menu_item =
         chat_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Chat::delete_logs());
 
     // create Tools menu
     auto tools_menu = new wxMenu();
-    auto downloads =
+    auto downloads_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::downloads());
-    auto tor_logs =
+    auto tor_logs_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::tor_logs());
-    auto settings =
+    auto settings_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::settings());
 
     // create Help menu
     auto help_menu = new wxMenu();
-    auto manual = help_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Help::manual());
-    auto changelog =
+    auto manual_menu_item =
+        help_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Help::manual());
+    auto changelog_menu_item =
         help_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Help::changelog());
-    auto licenses =
+    auto licenses_menu_item =
         help_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Help::licenses());
     help_menu->AppendSeparator();
-    auto check_for_updates =
+    auto check_for_updates_menu_item =
         help_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Help::check_for_updates());
-    auto about = help_menu->Append(wxID_ABOUT, Strings::MainFrame::MenuBar::Menu::Help::about());
+    auto about_menu_item =
+        help_menu->Append(wxID_ABOUT, Strings::MainFrame::MenuBar::Menu::Help::about());
 
     // add Menus to MenUBar
     menu_bar->Append(profile_menu, Strings::MainFrame::MenuBar::profile());
