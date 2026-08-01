@@ -193,8 +193,8 @@ impl EventLoopTask {
                             .push(CallbackData::TorLogReceived { line });
                     }
                     TorEvent::OnionServicePublished { service_id: _ } => {
-                        self.callback_queue.push(
-                            CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
+                        // self.callback_queue.push(
+                        //     CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
                     }
                     TorEvent::ConnectComplete { handle, stream } => {
                         let mut handle_connect_complete = || -> Result<()> {
