@@ -171,9 +171,8 @@ impl Profile {
             let user_type = user.user_type;
             let user_type = match user_type {
                 v3::profile::UserType::Allowed => UserType::Allowed,
-                v3::profile::UserType::Requesting | v3::profile::UserType::Pending => {
-                    UserType::Requesting
-                }
+                v3::profile::UserType::Requesting => UserType::Requesting,
+                v3::profile::UserType::Pending => UserType::Pending,
                 v3::profile::UserType::Rejected => UserType::Rejected,
                 v3::profile::UserType::Blocked => UserType::Blocked,
             };
@@ -528,6 +527,7 @@ pub struct User {
 pub enum UserType {
     Owner,
     Allowed,
+    Pending,
     Requesting,
     Rejected,
     Blocked,
@@ -538,9 +538,10 @@ impl From<UserType> for i64 {
         match value {
             UserType::Owner => 0i64,
             UserType::Allowed => 1i64,
-            UserType::Requesting => 2i64,
-            UserType::Rejected => 3i64,
-            UserType::Blocked => 4i64,
+            UserType::Pending => 2i64,
+            UserType::Requesting => 3i64,
+            UserType::Rejected => 4i64,
+            UserType::Blocked => 5i64,
         }
     }
 }
@@ -551,9 +552,10 @@ impl TryFrom<i64> for UserType {
         match value {
             0i64 => Ok(UserType::Owner),
             1i64 => Ok(UserType::Allowed),
-            2i64 => Ok(UserType::Requesting),
-            3i64 => Ok(UserType::Rejected),
-            4i64 => Ok(UserType::Blocked),
+            2i64 => Ok(UserType::Pending),
+            3i64 => Ok(UserType::Requesting),
+            4i64 => Ok(UserType::Rejected),
+            5i64 => Ok(UserType::Blocked),
             _ => Err(Error::TypeConversionFailed(format!("{value}"), "UserType")),
         }
     }

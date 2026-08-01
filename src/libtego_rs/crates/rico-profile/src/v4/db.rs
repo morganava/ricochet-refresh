@@ -108,7 +108,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), Error> {
         -- users
         CREATE TABLE users (
           rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_type INTEGER NOT NULL CHECK(user_type >= 0 AND user_type <= 4),
+          user_type INTEGER NOT NULL CHECK(user_type >= 0 AND user_type <= 5),
           user_profile_rowid INTEGER UNIQUE REFERENCES user_profiles(rowid),
           identity_ed25519_public_key_rowid INTEGER NOT NULL UNIQUE REFERENCES ed25519_public_keys(rowid),
           identity_ed25519_private_key_rowid INTEGER UNIQUE REFERENCES ed25519_private_keys(rowid),

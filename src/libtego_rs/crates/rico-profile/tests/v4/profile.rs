@@ -198,7 +198,7 @@ fn test_legacy_import() -> anyhow::Result<()> {
                         Some("claire"),
                     ) => (),
                     (
-                        UserType::Requesting,
+                        UserType::Pending,
                         "arn2oq6qp2gvcicolecju5x44x74zv56llno6cujvnxvtlcxyjhwlvid",
                         Some("danielle"),
                     ) => (),
