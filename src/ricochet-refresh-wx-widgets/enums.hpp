@@ -99,6 +99,7 @@ enum class ContactGroup {
     Connected = 0,
     Disconnected,
     Requesting,
+    Rejected,
     Blocked,
     Count,
 };

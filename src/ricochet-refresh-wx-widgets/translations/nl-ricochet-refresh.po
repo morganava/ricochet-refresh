@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ricochet-Refresh 3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-31 12:43+0000\n"
+"POT-Creation-Date: 2026-08-01 10:59+0000\n"
 "PO-Revision-Date: 2026-01-14 10:43+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -529,82 +529,86 @@ msgid "Requesting"
 msgstr ""
 
 #: strings.hpp:757
+msgid "Rejected"
+msgstr ""
+
+#: strings.hpp:759
 msgid "Blocked"
 msgstr ""
 
-#: strings.hpp:790
+#: strings.hpp:792
 msgid "Create New Profile"
 msgstr ""
 
-#: strings.hpp:792
+#: strings.hpp:794
 msgid "Import Legacy Profile"
 msgstr ""
 
-#: strings.hpp:799
+#: strings.hpp:801
 #, c-format
 msgid "Step %i of %i"
 msgstr ""
 
-#: strings.hpp:808
+#: strings.hpp:810
 msgid "New profile destination:"
 msgstr ""
 
-#: strings.hpp:812
+#: strings.hpp:814
 msgid "Legacy profile destination:"
 msgstr ""
 
-#: strings.hpp:816
+#: strings.hpp:818
 msgid "Browse…"
 msgstr ""
 
-#: strings.hpp:820
+#: strings.hpp:822
 msgid "Display name:"
 msgstr ""
 
-#: strings.hpp:824
+#: strings.hpp:826
 msgid "Password:"
 msgstr ""
 
-#: strings.hpp:828
+#: strings.hpp:830
 msgid "Confirm password:"
 msgstr ""
 
-#: strings.hpp:832
+#: strings.hpp:834
 #, c-format
 msgid "%s id:"
 msgstr ""
 
-#: strings.hpp:849
+#: strings.hpp:851
 #, c-format
 msgid "Save %s profile as"
 msgstr ""
 
-#: strings.hpp:854
+#: strings.hpp:856
 #, c-format
 msgid "Open legacy %s profile"
 msgstr ""
 
-#: strings.hpp:863
+#: strings.hpp:865
 #, c-format
 msgid "Legacy %s profiles (%s)"
 msgstr ""
 
-#: strings.hpp:877
+#: strings.hpp:879
 msgid "An error occurred during profile creation."
 msgstr ""
 
-#: strings.hpp:881
+#: strings.hpp:883
 msgid "An error occurred loading and parsing legacy profile."
 msgstr ""
 
-#: strings.hpp:887
+#: strings.hpp:889
 msgid "Unlock Profile"
 msgstr ""
 
-#: strings.hpp:891
+#: strings.hpp:893
 msgid "Enter password:"
 msgstr ""
 
-#: strings.hpp:895
+#: strings.hpp:897
 msgid "Unlock"
 msgstr ""

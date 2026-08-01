@@ -753,6 +753,8 @@ public:
                     return Locale::translate(u8"Disconnected");
                 case ContactGroup::Requesting:
                     return Locale::translate(u8"Requesting");
+                case ContactGroup::Rejected:
+                    return Locale::translate(u8"Rejected");
                 case ContactGroup::Blocked:
                     return Locale::translate(u8"Blocked");
                 default:

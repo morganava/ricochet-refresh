@@ -1,5 +1,6 @@
 #include "conversations_panel.hpp"
 
+#include "ffi.hpp"
 #include "strings.hpp"
 #include "ui/events.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/chat_panel.hpp"
@@ -10,6 +11,21 @@
 ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle session_handle) :
     wxSplitterWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE),
     session_handle(session_handle) {
+    // load our contacts list for this session
+    const auto& context = wxGetApp().get_context();
+
+    size_t user_count = 0;
+    tego_context_get_user_count(&context, session_handle, &user_count, tego::panic_on_error());
+    auto user_handles_buffer = std::make_unique<tego_user_handle[]>(user_count);
+    auto user_handles = std::span(user_handles_buffer.get(), user_count);
+    tego_context_get_user_handles(
+        &context,
+        session_handle,
+        user_handles.data(),
+        user_handles.size(),
+        tego::panic_on_error()
+    );
+
     auto left_panel = new wxPanel(this);
     auto right_panel = new wxPanel(this);
 
@@ -18,7 +34,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle ses
     auto left_v_sizer = new wxBoxSizer(wxVERTICAL);
 
     // todo: replace with actual implementation
-    auto contact_list_panel = new ContactListPanel(left_panel, {});
+    auto contact_list_panel = new ContactListPanel(left_panel, session_handle, user_handles);
     contact_list_panel->Bind(wxEVT_CONTACT_SELECTED, [this](const ContactSelectedEvent& evt) {
         this->select_contact(evt.get_contact_handle());
     });
@@ -38,8 +54,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle ses
 
     this->right_v_sizer = new wxBoxSizer(wxVERTICAL);
 
-    /*
-    for (auto contact_handle : contacts) {
+    for (auto user_handle : user_handles) {
         auto chat_panel = new ChatPanel(right_panel);
         // todo: load chat back-log from profile
 
@@ -50,7 +65,7 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle ses
             chat_panel->add_chat_message(timestamp, wxString("Me"), text);
             // todo: remove, this is just test plumbing
             this->receive_message(
-                contact_handle,
+                user_handle,
                 timestamp + wxTimeSpan(0, 0, 1),
                 "auto-reply: I've received your message"
             );
@@ -62,9 +77,9 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle ses
 
         this->right_v_sizer->Add(v_sizer, 1, wxEXPAND);
 
-        this->contact_widgets.insert({contact_handle, {v_sizer, chat_panel, message_entry_panel}});
+        this->contact_widgets.insert({user_handle, {v_sizer, chat_panel, message_entry_panel}});
     }
-*/
+
     this->right_v_sizer->ShowItems(false);
 
     right_panel->SetSizer(this->right_v_sizer);
@@ -92,8 +107,29 @@ void ConversationsPanel::receive_message(
 ) {
     if (auto it = this->contact_widgets.find(recipient); it != this->contact_widgets.end()) {
         auto& contact_widgets = it->second;
-        const auto nickname = wxString(); //mock::nickname_from_contact_handle(recipient);
-        contact_widgets.chat_panel->add_chat_message(timestamp, nickname, message);
+
+        const auto& context = wxGetApp().get_context();
+        auto user_handle = recipient;
+        std::unique_ptr<tego_string> user_name;
+        // first try the pet name (i.e. the name the local user has given this user)
+        tego_context_get_user_pet_name(
+            &context,
+            session_handle,
+            user_handle,
+            tego::out(user_name),
+            tego::panic_on_error()
+        );
+        // fallback to the user's self-given name if no pet name is defined
+        if (!user_name) {
+            tego_context_get_user_nickname(
+                &context,
+                session_handle,
+                user_handle,
+                tego::out(user_name),
+                tego::panic_on_error()
+            );
+        }
+        contact_widgets.chat_panel->add_chat_message(timestamp, into_wxString(user_name), message);
     }
 }
 
