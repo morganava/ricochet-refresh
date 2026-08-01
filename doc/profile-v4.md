@@ -80,7 +80,7 @@ A table of all our users.
 #### Schema
 | Name | Type | Constraints |
 | ---- | ---- | ----------- |
-| user_type | INTEGER | NOT NULL CHECK(user_type >= 0 AND user_type <= 4) |
+| user_type | INTEGER | NOT NULL CHECK(user_type >= 0 AND user_type <= 5) |
 | user_profile_rowid | INTEGER | NOT NULL UNIQUE REFERENCES user_profiles(rowid) |
 | identity_ed25519_public_key_rowid | INTEGER | NOT NULL UNIQUE REFERENCES ed25519_public_keys(rowid) |
 | identity_ed25519_private_key_rowid | INTEGER | UNIQUE REFERENCES ed25519_private_keys(rowid) |
@@ -96,9 +96,10 @@ A table of all our users.
 - **user_type** : an enum identifying this user's type; MUST be one of:
     - Owner(0) : the local owner of this profile; there MUST be only 1 row with this value
     - Allowed(1) : a remote user the owner has allowed access
-    - Requesting(2) : a remote user that is requesting access from the owner
-    - Rejected(3) : a remote user that has rejected the owner's request for access
-    - Blocked(4) : a remote user that the owner has permanently rejected
+    - Pending(2) : a remote user the owner has sent an access request to
+    - Requesting(3) : a remote user that has requested the owner for access
+    - Rejected(4) : a remote user that has rejected the owner's request for access
+    - Blocked(5) : a remote user that the owner has permanently rejected
 - **user_profile_rowid** : the `rowid` of the `profile` associated with this user
 - **identity_ed25519_public_key_rowid** : the `rowid` of the `ed25519_public_key` for the identity onion service associated with this user
 - **identity_ed25519_private_key_rowid** : the `rowid` of the `ed25519_private_key` for the identity onion service the user hosts; MUST be NULL if `user_type` is anything other than `0` (Owner)
