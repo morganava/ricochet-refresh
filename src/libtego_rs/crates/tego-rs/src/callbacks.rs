@@ -202,11 +202,6 @@ impl Callbacks {
             //     log_trace!("invoke on_chat_request_response_received");
 
             //     let sender = tego_user_id_map().insert(service_id);
-            //     let accepted_request = if accepted_request {
-            //         TEGO_TRUE
-            //     } else {
-            //         TEGO_FALSE
-            //     };
 
             //     on_chat_request_response_received(context, sender.into(), accepted_request);
 
@@ -255,7 +250,6 @@ impl Callbacks {
             //     log_trace!("invoke on_message_acknowledged");
 
             //     let user = tego_user_id_map().insert(service_id);
-            //     let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
             //     on_message_acknowledged(context, user.into(), message_id, accepted);
 
@@ -300,7 +294,6 @@ impl Callbacks {
             //     log_trace!("invoke on_file_transfer_request_acknowledged");
 
             //     let user = tego_user_id_map().insert(service_id);
-            //     let accepted = if accepted { TEGO_TRUE } else { TEGO_FALSE };
 
             //     on_file_transfer_request_acknowledged(
             //         context,

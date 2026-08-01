@@ -99,7 +99,7 @@ void UnlockProfilePanel::on_try_unlock_profile() {
             into_tego_string(password).get(),
             tego::panic_on_error()
         );
-        unlocked == TEGO_TRUE) {
+        unlocked) {
         auto evt = ProfileUnlockedEvent(std::move(profile));
         evt.SetEventObject(this);
         this->GetEventHandler()->ProcessEvent(evt);

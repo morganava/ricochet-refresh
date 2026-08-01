@@ -26,17 +26,13 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_string_is_valid(
     service_id_string: *const c_char,
     service_id_string_length: usize,
     error: *mut *mut tego_error,
-) -> tego_bool {
-    translate_failures(TEGO_FALSE, error, || -> Result<tego_bool> {
+) -> bool {
+    translate_failures(false, error, || -> Result<bool> {
         bail_if_null!(service_id_string);
 
         let service_id_string = raw_to_str!(service_id_string, service_id_string_length)?;
 
-        if V3OnionServiceId::is_valid(service_id_string) {
-            Ok(TEGO_TRUE)
-        } else {
-            Ok(TEGO_FALSE)
-        }
+        Ok(V3OnionServiceId::is_valid(service_id_string))
     })
 }
 

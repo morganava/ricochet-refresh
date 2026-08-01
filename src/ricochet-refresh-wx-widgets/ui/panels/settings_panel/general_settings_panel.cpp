@@ -61,7 +61,7 @@ void GeneralSettingsPanel::load_from_settings() {
     const auto& settings = wxGetApp().get_settings();
 
     // start only single instance
-    tego_bool start_only_single_instance = TEGO_FALSE;
+    auto start_only_single_instance = false;
     tego_settings_get_start_only_single_instance(
         &settings,
         &start_only_single_instance,
@@ -70,7 +70,7 @@ void GeneralSettingsPanel::load_from_settings() {
     this->start_only_single_instance_toggle->SetValue(start_only_single_instance);
 
     // check for updates automatically
-    tego_bool check_for_updates_automatically = TEGO_FALSE;
+    auto check_for_updates_automatically = false;
     tego_settings_get_check_for_updates_automatically(
         &settings,
         &check_for_updates_automatically,
@@ -85,7 +85,7 @@ void GeneralSettingsPanel::save_to_settings() {
     const bool start_only_single_instance = this->start_only_single_instance_toggle->GetValue();
     tego_settings_set_start_only_single_instance(
         &settings,
-        start_only_single_instance ? TEGO_TRUE : TEGO_FALSE,
+        start_only_single_instance,
         tego::panic_on_error()
     );
 
@@ -93,7 +93,7 @@ void GeneralSettingsPanel::save_to_settings() {
         this->check_for_updates_on_launch_toggle->GetValue();
     tego_settings_set_check_for_updates_automatically(
         &settings,
-        check_for_updates_automatically ? TEGO_TRUE : TEGO_FALSE,
+        check_for_updates_automatically,
         tego::panic_on_error()
     );
 }

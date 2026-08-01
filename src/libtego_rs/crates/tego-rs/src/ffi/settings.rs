@@ -118,7 +118,7 @@ pub unsafe extern "C" fn tego_settings_revert(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -127,8 +127,7 @@ pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value =
-            bool_to_tego_bool!(tego_settings_map().get(&handle)?.start_only_single_instance);
+        let value = tego_settings_map().get(&handle)?.start_only_single_instance;
         unsafe {
             *out_value = value;
         }
@@ -140,7 +139,7 @@ pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -149,11 +148,9 @@ pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(
-            tego_settings_map()
-                .get(&handle)?
-                .check_for_updates_automatically
-        );
+        let value = tego_settings_map()
+            .get(&handle)?
+            .check_for_updates_automatically;
         unsafe {
             *out_value = value;
         }
@@ -186,7 +183,7 @@ pub unsafe extern "C" fn tego_settings_get_language(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_toolbar(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -195,7 +192,7 @@ pub unsafe extern "C" fn tego_settings_get_show_toolbar(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.show_toolbar);
+        let value = tego_settings_map().get(&handle)?.show_toolbar;
         unsafe {
             *out_value = value;
         }
@@ -228,7 +225,7 @@ pub unsafe extern "C" fn tego_settings_get_button_style(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -237,8 +234,7 @@ pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value =
-            bool_to_tego_bool!(tego_settings_map().get(&handle)?.show_desktop_notifications);
+        let value = tego_settings_map().get(&handle)?.show_desktop_notifications;
         unsafe {
             *out_value = value;
         }
@@ -250,7 +246,7 @@ pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -259,7 +255,7 @@ pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.blink_taskbar_icon);
+        let value = tego_settings_map().get(&handle)?.blink_taskbar_icon;
         unsafe {
             *out_value = value;
         }
@@ -271,7 +267,7 @@ pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -280,7 +276,7 @@ pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.play_audio_notifications);
+        let value = tego_settings_map().get(&handle)?.play_audio_notifications;
         unsafe {
             *out_value = value;
         }
@@ -292,7 +288,7 @@ pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -301,7 +297,7 @@ pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.minimize_instead_of_exit);
+        let value = tego_settings_map().get(&handle)?.minimize_instead_of_exit;
         unsafe {
             *out_value = value;
         }
@@ -313,7 +309,7 @@ pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -322,7 +318,7 @@ pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.show_system_tray_icon);
+        let value = tego_settings_map().get(&handle)?.show_system_tray_icon;
         unsafe {
             *out_value = value;
         }
@@ -334,7 +330,7 @@ pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -343,7 +339,7 @@ pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.minimize_to_system_tray);
+        let value = tego_settings_map().get(&handle)?.minimize_to_system_tray;
         unsafe {
             *out_value = value;
         }
@@ -355,7 +351,7 @@ pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_connect_automatically(
     settings: *const tego_settings,
-    out_value: *mut tego_bool,
+    out_value: *mut bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -364,7 +360,7 @@ pub unsafe extern "C" fn tego_settings_get_connect_automatically(
         bail_if_null!(out_value);
 
         let handle = Handle::try_from(settings)?;
-        let value = bool_to_tego_bool!(tego_settings_map().get(&handle)?.connect_automatically);
+        let value = tego_settings_map().get(&handle)?.connect_automatically;
         unsafe {
             *out_value = value;
         }
@@ -403,7 +399,7 @@ pub unsafe extern "C" fn tego_settings_get_tor_config(
 #[no_mangle]
 pub extern "C" fn tego_settings_set_start_only_single_instance(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -411,7 +407,6 @@ pub extern "C" fn tego_settings_set_start_only_single_instance(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
 
         tego_settings_map()
             .get_mut(&handle)?
@@ -423,7 +418,7 @@ pub extern "C" fn tego_settings_set_start_only_single_instance(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -431,7 +426,6 @@ pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map()
             .get_mut(&handle)?
             .check_for_updates_automatically = value;
@@ -459,7 +453,7 @@ pub unsafe extern "C" fn tego_settings_set_language(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_toolbar(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -467,7 +461,6 @@ pub unsafe extern "C" fn tego_settings_set_show_toolbar(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map().get_mut(&handle)?.show_toolbar = value;
         Ok(())
     });
@@ -493,7 +486,7 @@ pub unsafe extern "C" fn tego_settings_set_button_style(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -501,7 +494,6 @@ pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map()
             .get_mut(&handle)?
             .show_desktop_notifications = value;
@@ -512,7 +504,7 @@ pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -520,7 +512,6 @@ pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map().get_mut(&handle)?.blink_taskbar_icon = value;
         Ok(())
     });
@@ -529,7 +520,7 @@ pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -537,7 +528,6 @@ pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map()
             .get_mut(&handle)?
             .play_audio_notifications = value;
@@ -548,7 +538,7 @@ pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -556,7 +546,6 @@ pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map()
             .get_mut(&handle)?
             .minimize_instead_of_exit = value;
@@ -567,7 +556,7 @@ pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -575,7 +564,6 @@ pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map().get_mut(&handle)?.show_system_tray_icon = value;
         Ok(())
     });
@@ -584,7 +572,7 @@ pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -592,7 +580,6 @@ pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map()
             .get_mut(&handle)?
             .minimize_to_system_tray = value;
@@ -603,7 +590,7 @@ pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_connect_automatically(
     settings: *mut tego_settings,
-    value: tego_bool,
+    value: bool,
     error: *mut *mut tego_error,
 ) {
     log_trace!();
@@ -611,7 +598,6 @@ pub unsafe extern "C" fn tego_settings_set_connect_automatically(
         bail_if_null!(settings);
 
         let handle = Handle::try_from(settings)?;
-        let value = tego_bool_to_bool!(value);
         tego_settings_map().get_mut(&handle)?.connect_automatically = value;
         Ok(())
     });

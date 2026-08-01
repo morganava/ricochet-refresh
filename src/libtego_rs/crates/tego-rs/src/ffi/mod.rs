@@ -63,9 +63,6 @@ impl_object_map!(tego_bridge_config, BridgeConfig);
 impl_object_map!(tego_firewall_config, FirewallConfig);
 impl_object_map!(tego_proxy_config, ProxyConfig);
 
-pub const TEGO_TRUE: i32 = 1;
-pub const TEGO_FALSE: i32 = 0;
-
 /// number of bytes in an ed25519 signature
 pub const TEGO_ED25519_SIGNATURE_SIZE: usize = 64usize;
 /// length of a valid v3 service id string not including null terminator
@@ -77,7 +74,6 @@ pub const TEGO_ED25519_KEYBLOB_LENGTH: usize = 99usize;
 /// length of an ed25519 keyblob string including null terminator
 pub const TEGO_ED25519_KEYBLOB_SIZE: usize = TEGO_ED25519_KEYBLOB_LENGTH + 1usize;
 
-pub type tego_bool = i32;
 pub struct tego_error;
 pub struct tego_string;
 pub struct tego_context;
@@ -509,12 +505,12 @@ pub type tego_chat_request_received_callback = Option<
 ///
 /// @param context : the current tego context
 /// @param sender : the user responding to our chat request
-/// @param accepted_request : TEGO_TRUE if request accepted, TEGO_FALSE if rejected
+/// @param accepted_request : true if request accepted, false if rejected
 pub type tego_chat_request_response_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
         sender: tego_user_handle,
-        accepted_request: tego_bool,
+        accepted_request: bool,
     ) -> (),
 >;
 
@@ -543,13 +539,13 @@ pub type tego_message_received_callback = Option<
 /// @param context : the current tego context
 /// @param user_id : the user the message was sent to
 /// @param message_id : id of the message being acknowledged
-/// @param message_acked : TEGO_TRUE if acknowledged, TEGO_FALSE if error
+/// @param message_acked : true if acknowledged, false if error
 pub type tego_message_acknowledged_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
         user_id: tego_user_handle,
         message_id: tego_message_id,
-        message_acked: tego_bool,
+        message_acked: bool,
     ) -> (),
 >;
 
@@ -580,13 +576,13 @@ pub type tego_file_transfer_request_received_callback = Option<
 /// @param context : the current tego cotext
 /// @param receiver : the user acknowledging our request
 /// @param id : the id of the file transfer that is being acknowledged
-/// @param request_acked : TEGO_TRUE if acknowledged, TEGO_FALSE if error
+/// @param request_acked : true if acknowledged, false if error
 pub type tego_file_transfer_request_acknowledged_callback = Option<
     extern "C" fn(
         context: *mut tego_context,
         receiver: tego_user_handle,
         id: tego_file_transfer_id,
-        request_acked: tego_bool,
+        request_acked: bool,
     ) -> (),
 >;
 
@@ -595,8 +591,8 @@ pub type tego_file_transfer_request_acknowledged_callback = Option<
 /// @param context : the current tego context
 /// @param receiver : the user accepting or rejecting our request
 /// @param id : the id of the file transfer that is being accepted
-/// @param response : TEGO_TRUE if the recipients wants to recevie
-///  our file, TEGO_FALSE otherwise
+/// @param response : true if the recipients wants to recevie
+///  our file, false otherwise
 pub type tego_file_transfer_request_response_received_callback = Option<
     extern "C" fn(
         context: *mut tego_context,

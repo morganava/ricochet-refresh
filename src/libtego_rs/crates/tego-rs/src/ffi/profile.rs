@@ -160,7 +160,7 @@ pub unsafe extern "C" fn tego_profile_import_legacy(
 /// @param profile_path : location of the profile
 /// @param password: password used to unlock the profile
 /// @param error : filled on error
-/// @return : TEGO_TRUE on success and TEGO_FALSE when provided password
+/// @return : true on success and false when provided password
 ///  is not correct
 ///
 /// # Safety
@@ -172,8 +172,8 @@ pub unsafe extern "C" fn tego_profile_try_open_existing(
     profile_path: *const tego_string,
     password: *const tego_string,
     error: *mut *mut tego_error,
-) -> tego_bool {
-    translate_failures(TEGO_FALSE, error, || -> Result<tego_bool> {
+) -> bool {
+    translate_failures(false, error, || -> Result<bool> {
         bail_if_null!(out_profile);
         bail_if_null!(profile_path);
         bail_if_null!(password);
@@ -195,13 +195,13 @@ pub unsafe extern "C" fn tego_profile_try_open_existing(
                 unsafe {
                     *out_profile = profile.into();
                 }
-                return Ok(TEGO_TRUE);
+                return Ok(true);
             }
             Err(rico_profile::v4::error::Error::InvalidPassword) => {
                 unsafe {
                     *out_profile = std::ptr::null_mut();
                 }
-                return Ok(TEGO_FALSE);
+                return Ok(false);
             }
             Err(err) => return Err(err.into()),
         }

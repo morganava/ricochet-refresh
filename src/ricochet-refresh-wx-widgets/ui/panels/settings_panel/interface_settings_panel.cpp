@@ -198,7 +198,7 @@ void InterfaceSettingsPanel::load_from_settings() {
     this->language_combobox->SetSelection(static_cast<int>(language));
 
     // show toolbar
-    tego_bool show_toolbar = TEGO_FALSE;
+    auto show_toolbar = false;
     tego_settings_get_show_toolbar(&settings, &show_toolbar, tego::panic_on_error());
     this->show_toolbar_toggle->SetValue(show_toolbar);
 
@@ -214,7 +214,7 @@ void InterfaceSettingsPanel::load_from_settings() {
     }
 
     // desktop notifications
-    tego_bool show_desktop_notifications = TEGO_FALSE;
+    auto show_desktop_notifications = false;
     tego_settings_get_show_desktop_notifications(
         &settings,
         &show_desktop_notifications,
@@ -223,12 +223,12 @@ void InterfaceSettingsPanel::load_from_settings() {
     this->show_desktop_notifications_toggle->SetValue(show_desktop_notifications);
 
     // blink taskbar icon
-    tego_bool blink_taskbar_icon = TEGO_FALSE;
+    auto blink_taskbar_icon = false;
     tego_settings_get_blink_taskbar_icon(&settings, &blink_taskbar_icon, tego::panic_on_error());
     this->blink_taskbar_icon_toggle->SetValue(blink_taskbar_icon);
 
     // enable audio notifications
-    tego_bool enable_audio_notifications = TEGO_FALSE;
+    auto enable_audio_notifications = false;
     tego_settings_get_play_audio_notifications(
         &settings,
         &enable_audio_notifications,
@@ -237,7 +237,7 @@ void InterfaceSettingsPanel::load_from_settings() {
     this->enable_audio_notifications_toggle->SetValue(enable_audio_notifications);
 
     // minimize instead of exit
-    tego_bool minimize_instead_of_exit = TEGO_FALSE;
+    auto minimize_instead_of_exit = false;
     tego_settings_get_minimize_instead_of_exit(
         &settings,
         &minimize_instead_of_exit,
@@ -246,7 +246,7 @@ void InterfaceSettingsPanel::load_from_settings() {
     this->minimize_instead_of_exit_toggle->SetValue(minimize_instead_of_exit);
 
     // show system tray icon
-    tego_bool show_system_tray_icon = TEGO_FALSE;
+    auto show_system_tray_icon = false;
     tego_settings_get_show_system_tray_icon(
         &settings,
         &show_system_tray_icon,
@@ -255,7 +255,7 @@ void InterfaceSettingsPanel::load_from_settings() {
     this->show_system_tray_icon_toggle->SetValue(show_system_tray_icon);
 
     // minimize to system tray
-    tego_bool minimize_to_system_tray = TEGO_FALSE;
+    auto minimize_to_system_tray = false;
     tego_settings_get_minimize_to_system_tray(
         &settings,
         &minimize_to_system_tray,
@@ -273,11 +273,7 @@ void InterfaceSettingsPanel::save_to_settings() {
 
     // show toolbar
     const auto show_toolbar = this->show_toolbar_toggle->GetValue();
-    tego_settings_set_show_toolbar(
-        &settings,
-        show_toolbar ? TEGO_TRUE : TEGO_FALSE,
-        tego::panic_on_error()
-    );
+    tego_settings_set_show_toolbar(&settings, show_toolbar, tego::panic_on_error());
 
     // button style
     const auto button_style =
@@ -288,23 +284,19 @@ void InterfaceSettingsPanel::save_to_settings() {
     const auto show_desktop_notifications = this->show_desktop_notifications_toggle->GetValue();
     tego_settings_set_show_desktop_notifications(
         &settings,
-        show_desktop_notifications ? TEGO_TRUE : TEGO_FALSE,
+        show_desktop_notifications,
         tego::panic_on_error()
     );
 
     // blink taskbar icon
     const auto blink_taskbar_icon = this->blink_taskbar_icon_toggle->GetValue();
-    tego_settings_set_blink_taskbar_icon(
-        &settings,
-        blink_taskbar_icon ? TEGO_TRUE : TEGO_FALSE,
-        tego::panic_on_error()
-    );
+    tego_settings_set_blink_taskbar_icon(&settings, blink_taskbar_icon, tego::panic_on_error());
 
     // enable audio notifications
     const auto enable_audio_notifications = this->enable_audio_notifications_toggle->GetValue();
     tego_settings_set_play_audio_notifications(
         &settings,
-        enable_audio_notifications ? TEGO_TRUE : TEGO_FALSE,
+        enable_audio_notifications,
         tego::panic_on_error()
     );
 
@@ -312,7 +304,7 @@ void InterfaceSettingsPanel::save_to_settings() {
     const auto minimize_instead_of_exit = this->minimize_instead_of_exit_toggle->GetValue();
     tego_settings_set_minimize_instead_of_exit(
         &settings,
-        minimize_instead_of_exit ? TEGO_TRUE : TEGO_FALSE,
+        minimize_instead_of_exit,
         tego::panic_on_error()
     );
 
@@ -320,7 +312,7 @@ void InterfaceSettingsPanel::save_to_settings() {
     const auto show_system_tray_icon = this->show_system_tray_icon_toggle->GetValue();
     tego_settings_set_show_system_tray_icon(
         &settings,
-        show_system_tray_icon ? TEGO_TRUE : TEGO_FALSE,
+        show_system_tray_icon,
         tego::panic_on_error()
     );
 
@@ -328,7 +320,7 @@ void InterfaceSettingsPanel::save_to_settings() {
     const auto minimize_to_system_tray = this->minimize_to_system_tray_toggle->GetValue();
     tego_settings_set_minimize_to_system_tray(
         &settings,
-        minimize_to_system_tray ? TEGO_TRUE : TEGO_FALSE,
+        minimize_to_system_tray,
         tego::panic_on_error()
     );
 }

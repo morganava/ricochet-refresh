@@ -166,30 +166,6 @@ macro_rules! raw_to_str {
 }
 pub(crate) use raw_to_str;
 
-// convert bool to tego_bool
-macro_rules! bool_to_tego_bool {
-    ($value:expr) => {{
-        if $value {
-            TEGO_TRUE
-        } else {
-            TEGO_FALSE
-        }
-    }};
-}
-pub(crate) use bool_to_tego_bool;
-
-// convert tego_bool to bool
-macro_rules! tego_bool_to_bool {
-    ($value:expr) => {{
-        match $value {
-            TEGO_TRUE => true,
-            TEGO_FALSE => false,
-            value => bail!("value must be either TEGO_TRUE(1) or TEGO_FALSE(0); found {value}"),
-        }
-    }};
-}
-pub(crate) use tego_bool_to_bool;
-
 //
 // logging macros
 //

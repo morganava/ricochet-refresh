@@ -413,7 +413,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
 void ConnectionSettingsPanel::load_from_settings() {
     const auto& settings = wxGetApp().get_settings();
 
-    tego_bool connect_automatically = TEGO_FALSE;
+    auto connect_automatically = false;
     tego_settings_get_connect_automatically(
         &settings,
         &connect_automatically,
@@ -562,7 +562,7 @@ void ConnectionSettingsPanel::save_to_settings() {
     auto connect_automatically = this->connect_automatically_toggle->GetValue();
     tego_settings_set_connect_automatically(
         &settings,
-        connect_automatically ? TEGO_TRUE : TEGO_FALSE,
+        connect_automatically,
         tego::panic_on_error()
     );
 
