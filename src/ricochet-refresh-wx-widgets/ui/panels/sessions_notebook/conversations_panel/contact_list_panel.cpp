@@ -10,11 +10,7 @@
 #include "ui/panels/sessions_notebook/conversations_panel/contact_group_heading_panel.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel/contact_panel.hpp"
 
-ContactListPanel::ContactListPanel(
-    wxWindow* parent,
-    tego_session_handle session_handle,
-    std::span<const tego_user_handle> user_handles
-) :
+ContactListPanel::ContactListPanel(wxWindow* parent, tego_session_handle session_handle) :
     wxScrolled<wxControl>(
         parent,
         wxID_ANY,
@@ -47,71 +43,16 @@ ContactListPanel::ContactListPanel(
         v_sizer->Add(this->group_v_sizer[i], 0, wxEXPAND);
     }
 
-    const auto& context = wxGetApp().get_context();
-    for (const auto user_handle : user_handles) {
-        tego_user_type user_type;
-        tego_context_get_user_type(
-            &context,
-            session_handle,
-            user_handle,
-            &user_type,
-            tego::panic_on_error()
-        );
-
-        if (user_type != tego_user_type_owner) {
-            std::unique_ptr<tego_string> user_name;
-            // first try the pet name (i.e. the name the local user has given this user)
-            tego_context_get_user_pet_name(
-                &context,
-                session_handle,
-                user_handle,
-                tego::out(user_name),
-                tego::panic_on_error()
-            );
-            // fallback to the user's self-given name if no pet name is defined
-            if (!user_name) {
-                tego_context_get_user_nickname(
-                    &context,
-                    session_handle,
-                    user_handle,
-                    tego::out(user_name),
-                    tego::panic_on_error()
-                );
-            }
-
-            auto contact_group = [&]() -> ContactGroup {
-                switch (user_type) {
-                    case tego_user_type_allowed:
-                    case tego_user_type_pending:
-                        return ContactGroup::Disconnected;
-                    case tego_user_type_requesting:
-                        return ContactGroup::Requesting;
-                    case tego_user_type_rejected:
-                        return ContactGroup::Rejected;
-                    case tego_user_type_blocked:
-                        return ContactGroup::Blocked;
-                }
-            }();
-
-            this->add_contact(
-                user_handle,
-                into_wxString(user_name),
-                Bitmaps::default_avatar(),
-                contact_group
-            );
-        }
-    }
-
     this->Bind(wxEVT_CHAR, &ContactListPanel::on_char, this);
 
     this->SetSizerAndFit(v_sizer);
 }
 
 void ContactListPanel::add_contact(
-    tego_user_handle contact_handle,
+    const tego_user_handle contact_handle,
     const wxString& nickname,
     const wxBitmap& avatar,
-    ContactGroup contact_group
+    const ContactGroup contact_group
 ) {
     assert(this->contact_map.find(contact_handle) == this->contact_map.end());
 

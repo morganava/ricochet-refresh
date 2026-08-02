@@ -54,3 +54,7 @@ const wxString& SessionPanel::get_profile_path() const {
 std::optional<tego_session_handle> SessionPanel::get_session_handle() const {
     return this->session_handle;
 }
+
+ConversationsPanel* SessionPanel::get_conversations_panel_mut() {
+    return this->conversations_panel;
+}

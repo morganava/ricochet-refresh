@@ -80,7 +80,7 @@ pub struct tego_context;
 pub struct tego_settings;
 pub struct tego_profile;
 
-pub type tego_session_handle = crate::context::SessionHandle;
+pub type tego_session_handle = crate::session::SessionHandle;
 pub const TEGO_INVALID_SESSION_HANDLE: tego_session_handle = -1i64;
 pub type tego_user_handle = crate::context::UserHandle;
 pub const TEGO_INVALID_USER_HANDLE: tego_user_handle = -1i64;
@@ -479,6 +479,25 @@ pub type tego_tor_bootstrap_complete_callback =
 pub type tego_tor_log_received_callback =
     Option<extern "C" fn(context: *mut tego_context, line: *const tego_string) -> ()>;
 
+/// Callback fired when a session has started
+///
+/// @param context : the current tego context
+/// @param session_handle : the session which has started
+/// @param user_handles : the handles for all of our users
+/// @param user_types : the types of all our users
+/// @param user_display_names : the names of all our users
+/// @param user_count : the number of users in this session
+pub type tego_session_began_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handles: *const tego_user_handle,
+        user_types: *const tego_user_type,
+        user_display_names: *const *const tego_string,
+        user_count: usize,
+    ),
+>;
+
 /// Callback fired when the host user state changes
 ///
 /// @param context : the current tego context
@@ -724,6 +743,15 @@ pub extern "C" fn tego_context_set_tor_log_received_callback(
     error: *mut *mut tego_error,
 ) {
     impl_callback_setter!(on_tor_log_received, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_session_began_callback(
+    context: *mut tego_context,
+    callback: tego_session_began_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_session_began, context, callback, error);
 }
 
 // #[no_mangle]

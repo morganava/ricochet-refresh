@@ -6,17 +6,13 @@ struct ContactPanel;
 
 class ContactListPanel: public wxScrolled<wxControl> {
 public:
-    ContactListPanel(
-        wxWindow* parent,
-        tego_session_handle session_handle,
-        std::span<const tego_user_handle> user_handles
-    );
+    ContactListPanel(wxWindow* parent, tego_session_handle session_handle);
 
     void add_contact(
-        tego_user_handle user_handle,
+        const tego_user_handle user_handle,
         const wxString& nickname,
         const wxBitmap& avatar,
-        ContactGroup contact_group
+        const ContactGroup contact_group
     );
     void remove_contact(tego_user_handle contact_handle);
 

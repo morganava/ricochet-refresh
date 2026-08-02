@@ -7,10 +7,10 @@ public:
     void close_focused_session();
     void close_session(class SessionPanel*);
 
+    class SessionPanel* get_session_panel_by_session_handle(tego_session_handle handle);
+
 private:
     wxNotebook* session_notebook = nullptr;
 
-    std::optional<class SessionPanel*> get_session_data_by_profile_path(const wxString& path);
-    std::optional<class SessionPanel*> get_session_data_by_session_handle(tego_session_handle handle
-    );
+    class SessionPanel* get_session_panel_by_profile_path(const wxString& path);
 };

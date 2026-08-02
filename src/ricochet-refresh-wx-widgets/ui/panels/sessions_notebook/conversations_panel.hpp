@@ -1,5 +1,7 @@
 #pragma once
 
+enum class ContactGroup;
+class ContactListPanel;
 class ChatPanel;
 class MessageEntryPanel;
 
@@ -7,6 +9,13 @@ class ConversationsPanel: public wxSplitterWindow {
 public:
     ConversationsPanel(wxWindow* parent, tego_session_handle session_handle);
     ~ConversationsPanel();
+
+    void add_user(
+        const tego_user_handle user_handle,
+        const wxString& display_name,
+        const wxBitmap& avatar,
+        const ContactGroup contact_group
+    );
 
     void receive_message(
         const tego_user_handle recipient,
@@ -20,6 +29,9 @@ private:
 
     tego_session_handle session_handle = TEGO_INVALID_SESSION_HANDLE;
 
+    ContactListPanel* contact_list_panel = nullptr;
+
+    wxPanel* right_panel = nullptr;
     wxBoxSizer* right_v_sizer = nullptr;
 
     struct ContactWidgets {

@@ -7,6 +7,8 @@ public:
     const wxString& get_profile_path() const;
     std::optional<tego_session_handle> get_session_handle() const;
 
+    class ConversationsPanel* get_conversations_panel_mut();
+
 private:
     // event handlers
     void on_profile_unlocked(std::unique_ptr<tego_profile>&& profile);

@@ -28,11 +28,10 @@ use crate::event_loop_task::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::promise::Promise;
-use crate::session::Session;
+use crate::session::{Session, SessionHandle};
 
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
 
-pub(crate) type SessionHandle = i64;
 pub(crate) type UserHandle = i64;
 
 #[derive(Default)]
@@ -43,10 +42,6 @@ pub(crate) struct Context {
     command_queue: CommandQueue,
     // event loop thread handle
     event_loop_thread_handle: Option<std::thread::JoinHandle<()>>,
-    // our open sessions
-    session_map: BTreeMap<SessionHandle, Session>,
-    // the next session id
-    next_session_handle: SessionHandle,
 }
 
 impl Context {
@@ -138,26 +133,22 @@ impl Context {
     }
 
     pub fn begin_session(&mut self, profile: Profile) -> Result<SessionHandle> {
-        let session_handle = self.next_session_handle;
-        self.next_session_handle += 1;
-
         let session = Session::new(profile)?;
+        let result: Promise<Result<SessionHandle>> = Default::default();
+        let result_future = result.get_future();
 
-        self.session_map.insert(session_handle, session);
+        self.push_command(CommandData::BeginSession { session, result });
 
-        Ok(session_handle)
+        result_future.wait()
     }
 
     pub fn end_session(&mut self, session_handle: SessionHandle) -> Result<()> {
-        bail_if!(self.session_map.remove(&session_handle).is_none());
-
+        self.push_command(CommandData::EndSession { session_handle });
         Ok(())
     }
 
     fn get_session(&self, session_handle: SessionHandle) -> Result<&Session> {
-        self.session_map
-            .get(&session_handle)
-            .context("Session with handle {session_handle} does not exit")
+        bail_not_implemented!();
     }
 
     pub fn get_user_count(&self, session_handle: SessionHandle) -> Result<usize> {

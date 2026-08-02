@@ -18,14 +18,14 @@ void SessionsNotebook::open_session(const wxString& profile_path) {
     const auto profile_file = wxFileName(profile_path);
     const auto absolute_profile_path = profile_file.GetAbsolutePath();
 
-    if (auto panel = this->get_session_data_by_profile_path(absolute_profile_path); panel) {
-        auto session_panel = panel.value();
+    if (auto* session_panel = this->get_session_panel_by_profile_path(absolute_profile_path);
+        session_panel) {
         const auto tab_index = this->session_notebook->FindPage(session_panel);
         if (tab_index != wxNOT_FOUND) {
             this->session_notebook->SetSelection(tab_index);
         }
     } else {
-        auto session_panel = new SessionPanel(this->session_notebook, absolute_profile_path);
+        session_panel = new SessionPanel(this->session_notebook, absolute_profile_path);
 
         const auto profile_filename = profile_file.GetFullName();
 
@@ -55,8 +55,7 @@ void SessionsNotebook::close_session(SessionPanel* session_panel) {
     }
 }
 
-std::optional<SessionPanel*> SessionsNotebook::get_session_data_by_profile_path(const wxString& path
-) {
+SessionPanel* SessionsNotebook::get_session_panel_by_profile_path(const wxString& path) {
     for (size_t i = 0; i < this->session_notebook->GetPageCount(); ++i) {
         auto window = this->session_notebook->GetPage(i);
         auto panel = dynamic_cast<SessionPanel*>(window);
@@ -64,11 +63,10 @@ std::optional<SessionPanel*> SessionsNotebook::get_session_data_by_profile_path(
             return panel;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }
 
-std::optional<SessionPanel*>
-SessionsNotebook::get_session_data_by_session_handle(tego_session_handle handle) {
+SessionPanel* SessionsNotebook::get_session_panel_by_session_handle(tego_session_handle handle) {
     for (size_t i = 0; i < this->session_notebook->GetPageCount(); ++i) {
         auto window = this->session_notebook->GetPage(i);
         auto panel = dynamic_cast<SessionPanel*>(window);
@@ -76,5 +74,5 @@ SessionsNotebook::get_session_data_by_session_handle(tego_session_handle handle)
             return panel;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }

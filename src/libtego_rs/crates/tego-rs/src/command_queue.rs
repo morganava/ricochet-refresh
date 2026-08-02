@@ -14,6 +14,7 @@ use tor_interface::tor_provider::{OnionStream, TorProvider};
 // internal
 use crate::ffi::*;
 use crate::promise::Promise;
+use crate::session::{Session, SessionHandle};
 
 pub(crate) struct Command {
     start_time: Instant,
@@ -64,6 +65,18 @@ pub(crate) enum CommandData {
     },
     // cancel bootstrapping (if it is in progres)
     CancelTorBootstrap,
+    BeginSession {
+        session: Session,
+        result: Promise<Result<SessionHandle>>,
+    },
+    EndSession {
+        session_handle: SessionHandle,
+    },
+
+    //
+    // Not Used Yet
+    //
+
     // remove a user from our internal lists
     ForgetUser {
         service_id: V3OnionServiceId,

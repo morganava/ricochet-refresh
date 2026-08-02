@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 
 // extern
 use anyhow::{Context as AnyhowContext, Result};
+use rico_profile::v4::profile::{User, UserType};
 use rico_protocol::v3::file_hasher::*;
 use rico_protocol::v3::packet_handler::*;
 use rico_protocol::v3::Error;
@@ -28,6 +29,7 @@ use crate::context::*;
 use crate::ffi::*;
 use crate::listener_task::*;
 use crate::macros::*;
+use crate::session::*;
 
 pub(crate) struct EventLoopTask {
     context_handle: TegoContextHandle,
@@ -35,6 +37,11 @@ pub(crate) struct EventLoopTask {
     command_queue: CommandQueue,
 
     tor_provider: Option<Box<dyn TorProvider>>,
+
+    // our open sessions
+    session_map: BTreeMap<SessionHandle, Session>,
+    // the next session id
+    next_session_handle: SessionHandle,
 
     // read_buffer: [u8; Self::READ_BUFFER_SIZE],
     // packet_handler: PacketHandler,
@@ -81,6 +88,8 @@ impl EventLoopTask {
             callbacks,
             command_queue,
             tor_provider: None,
+            session_map: Default::default(),
+            next_session_handle: 0,
             // read_buffer: [0u8; Self::READ_BUFFER_SIZE],
             // packet_handler: PacketHandler::new(private_key, known_contacts, blocked_contacts),
             pending_connections: Default::default(),
@@ -298,6 +307,36 @@ impl EventLoopTask {
                 }
                 CommandData::CancelTorBootstrap => {
                     self.tor_provider = None;
+                }
+                CommandData::BeginSession { session, result } => {
+                    let handle_begin_session = || -> Result<SessionHandle> {
+                        let users: Vec<(UserHandle, UserType, String)> = session
+                            .get_users()
+                            .into_iter()
+                            .map(|(user_handle, user)| {
+                                let display_name =
+                                    if let Some(pet_name) = &user.user_profile.pet_name {
+                                        pet_name.clone()
+                                    } else {
+                                        user.user_profile.nickname.clone()
+                                    };
+                                (*user_handle, user.user_type, display_name)
+                            })
+                            .collect();
+
+                        let session_handle = self.next_session_handle;
+                        self.next_session_handle += 1;
+
+                        self.session_map.insert(session_handle, session);
+
+                        self.callback_queue.push(CallbackData::SessionBegan {
+                            session_handle,
+                            users,
+                        });
+                        Ok(session_handle)
+                    };
+
+                    result.resolve(handle_begin_session());
                 }
                 _ => (),
             }

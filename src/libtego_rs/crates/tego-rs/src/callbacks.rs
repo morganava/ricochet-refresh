@@ -2,11 +2,14 @@
 use std::ffi::CString;
 // extern
 use anyhow::{Context, Result};
+use rico_profile::v4::profile::UserType;
 use tor_interface::tor_crypto::V3OnionServiceId;
 
 // internal crates
+use crate::context::*;
 use crate::ffi::*;
 use crate::macros::*;
+use crate::session::*;
 
 #[allow(dead_code)]
 pub(crate) enum CallbackData {
@@ -24,6 +27,11 @@ pub(crate) enum CallbackData {
     TorBootstrapComplete,
     TorLogReceived {
         line: String,
+    },
+    SessionBegan {
+        session_handle: SessionHandle,
+        // list of user handles and their display name
+        users: Vec<(UserHandle, UserType, String)>,
     },
     /*
         HostOnionServiceStateChanged {
@@ -91,6 +99,7 @@ pub(crate) struct Callbacks {
     pub on_tor_bootstrap_status_changed: tego_tor_bootstrap_status_changed_callback,
     pub on_tor_bootstrap_complete: tego_tor_bootstrap_complete_callback,
     pub on_tor_log_received: tego_tor_log_received_callback,
+    pub on_session_began: tego_session_began_callback,
     // pub on_host_onion_service_state_changed: tego_host_onion_service_state_changed_callback,
     // pub on_chat_request_received: tego_chat_request_received_callback,
     // pub on_chat_request_response_received: tego_chat_request_response_received_callback,
@@ -162,6 +171,42 @@ impl Callbacks {
                 let line = tego_string_map().insert(line);
                 on_tor_log_received(context, line.into());
                 let _ = tego_string_map().remove(&line);
+            }
+            SessionBegan {
+                session_handle,
+                users,
+            } => {
+                let on_session_began = self
+                    .on_session_began
+                    .context("missing on_session_begain callback")?;
+                log_trace!("invoke on_session_began");
+
+                let user_count = users.len();
+                let mut user_handles: Vec<tego_user_handle> = Vec::with_capacity(user_count);
+                let mut user_types: Vec<tego_user_type> = Vec::with_capacity(user_count);
+                let mut user_display_names: Vec<TegoStringHandle> = Vec::with_capacity(user_count);
+
+                for (user_handle, user_type, user_display_name) in users {
+                    let user_display_name = CString::new(user_display_name)?;
+                    let user_display_name = tego_string_map().insert(user_display_name);
+
+                    user_handles.push(user_handle);
+                    user_types.push(user_type.into());
+                    user_display_names.push(user_display_name);
+                }
+
+                on_session_began(
+                    context,
+                    session_handle,
+                    user_handles.as_ptr(),
+                    user_types.as_ptr(),
+                    user_display_names.as_ptr() as *const *const tego_string,
+                    user_count,
+                );
+
+                for user_display_name in user_display_names {
+                    tego_string_map().remove(&user_display_name)?;
+                }
             }
             // HostOnionServiceStateChanged { state } => {
             //     let on_host_onion_service_state_changed = self

@@ -1,5 +1,6 @@
 #include "conversations_panel.hpp"
 
+#include "enums.hpp"
 #include "ffi.hpp"
 #include "strings.hpp"
 #include "ui/events.hpp"
@@ -11,40 +12,24 @@
 ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle session_handle) :
     wxSplitterWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE),
     session_handle(session_handle) {
-    // load our contacts list for this session
-    const auto& context = wxGetApp().get_context();
-
-    size_t user_count = 0;
-    tego_context_get_user_count(&context, session_handle, &user_count, tego::panic_on_error());
-    auto user_handles_buffer = std::make_unique<tego_user_handle[]>(user_count);
-    auto user_handles = std::span(user_handles_buffer.get(), user_count);
-    tego_context_get_user_handles(
-        &context,
-        session_handle,
-        user_handles.data(),
-        user_handles.size(),
-        tego::panic_on_error()
-    );
-
     auto left_panel = new wxPanel(this);
-    auto right_panel = new wxPanel(this);
+    this->right_panel = new wxPanel(this);
 
     // Contacts List + User Status
 
     auto left_v_sizer = new wxBoxSizer(wxVERTICAL);
 
-    // todo: replace with actual implementation
-    auto contact_list_panel = new ContactListPanel(left_panel, session_handle, user_handles);
-    contact_list_panel->Bind(wxEVT_CONTACT_SELECTED, [this](const ContactSelectedEvent& evt) {
+    this->contact_list_panel = new ContactListPanel(left_panel, session_handle);
+    this->contact_list_panel->Bind(wxEVT_CONTACT_SELECTED, [this](const ContactSelectedEvent& evt) {
         this->select_contact(evt.get_contact_handle());
     });
-    contact_list_panel->Bind(wxEVT_CONTACT_REMOVED, [this](ContactRemovedEvent& evt) {
+    this->contact_list_panel->Bind(wxEVT_CONTACT_REMOVED, [this](ContactRemovedEvent& evt) {
         this->remove_contact(evt.get_contact_handle());
         evt.Skip();
     });
     auto user_status_panel = new UserStatusPanel(left_panel);
 
-    left_v_sizer->Add(contact_list_panel, 1, wxEXPAND);
+    left_v_sizer->Add(this->contact_list_panel, 1, wxEXPAND);
     left_v_sizer->Add(user_status_panel, 0, wxEXPAND);
 
     left_panel->SetSizer(left_v_sizer);
@@ -54,41 +39,13 @@ ConversationsPanel::ConversationsPanel(wxWindow* parent, tego_session_handle ses
 
     this->right_v_sizer = new wxBoxSizer(wxVERTICAL);
 
-    for (auto user_handle : user_handles) {
-        auto chat_panel = new ChatPanel(right_panel);
-        // todo: load chat back-log from profile
-
-        auto message_entry_panel = new MessageEntryPanel(right_panel);
-        message_entry_panel->Bind(wxEVT_SEND_MESSAGE, [=, this](const SendMessageEvent& evt) {
-            const auto& timestamp = evt.get_timestamp();
-            const auto& text = evt.get_text();
-            chat_panel->add_chat_message(timestamp, wxString("Me"), text);
-            // todo: remove, this is just test plumbing
-            this->receive_message(
-                user_handle,
-                timestamp + wxTimeSpan(0, 0, 1),
-                "auto-reply: I've received your message"
-            );
-        });
-
-        auto v_sizer = new wxBoxSizer(wxVERTICAL);
-        v_sizer->Add(chat_panel, 1, wxEXPAND);
-        v_sizer->Add(message_entry_panel, 0, wxEXPAND);
-
-        this->right_v_sizer->Add(v_sizer, 1, wxEXPAND);
-
-        this->contact_widgets.insert({user_handle, {v_sizer, chat_panel, message_entry_panel}});
-    }
-
-    this->right_v_sizer->ShowItems(false);
-
-    right_panel->SetSizer(this->right_v_sizer);
-    right_panel->SetMinSize(wxSize(288, -1));
+    this->right_panel->SetSizer(this->right_v_sizer);
+    this->right_panel->SetMinSize(wxSize(288, -1));
 
     // Layout
 
     this->SetMinimumPaneSize(32); // prevent dbl-click collapse
-    this->SplitVertically(left_panel, right_panel, 288);
+    this->SplitVertically(left_panel, this->right_panel, 288);
     this->SetSashGravity(0.0);
 }
 
@@ -100,6 +57,43 @@ ConversationsPanel::~ConversationsPanel() {
     );
 }
 
+void ConversationsPanel::add_user(
+    const tego_user_handle user_handle,
+    const wxString& display_name,
+    const wxBitmap& avatar,
+    const ContactGroup contact_group
+) {
+    // add user to ContactList
+    this->contact_list_panel->add_contact(user_handle, display_name, avatar, contact_group);
+
+    // add ContactWidgets for chatting
+
+    auto chat_panel = new ChatPanel(this->right_panel);
+    // todo: load chat back-log from profile
+
+    auto message_entry_panel = new MessageEntryPanel(this->right_panel);
+    message_entry_panel->Bind(wxEVT_SEND_MESSAGE, [=, this](const SendMessageEvent& evt) {
+        const auto& timestamp = evt.get_timestamp();
+        const auto& text = evt.get_text();
+        chat_panel->add_chat_message(timestamp, wxString("Me"), text);
+        // todo: remove, this is just test plumbing
+        this->receive_message(
+            user_handle,
+            timestamp + wxTimeSpan(0, 0, 1),
+            "auto-reply: I've received your message"
+        );
+    });
+
+    auto v_sizer = new wxBoxSizer(wxVERTICAL);
+    v_sizer->Add(chat_panel, 1, wxEXPAND);
+    v_sizer->Add(message_entry_panel, 0, wxEXPAND);
+
+    this->right_v_sizer->Add(v_sizer, 1, wxEXPAND);
+    this->right_v_sizer->Show(v_sizer, false);
+
+    this->contact_widgets.insert({user_handle, {v_sizer, chat_panel, message_entry_panel}});
+}
+
 void ConversationsPanel::receive_message(
     const tego_user_handle recipient,
     const wxDateTime& timestamp,
@@ -108,28 +102,7 @@ void ConversationsPanel::receive_message(
     if (auto it = this->contact_widgets.find(recipient); it != this->contact_widgets.end()) {
         auto& contact_widgets = it->second;
 
-        const auto& context = wxGetApp().get_context();
-        auto user_handle = recipient;
-        std::unique_ptr<tego_string> user_name;
-        // first try the pet name (i.e. the name the local user has given this user)
-        tego_context_get_user_pet_name(
-            &context,
-            session_handle,
-            user_handle,
-            tego::out(user_name),
-            tego::panic_on_error()
-        );
-        // fallback to the user's self-given name if no pet name is defined
-        if (!user_name) {
-            tego_context_get_user_nickname(
-                &context,
-                session_handle,
-                user_handle,
-                tego::out(user_name),
-                tego::panic_on_error()
-            );
-        }
-        contact_widgets.chat_panel->add_chat_message(timestamp, into_wxString(user_name), message);
+        contact_widgets.chat_panel->add_chat_message(timestamp, "reply-bot", message);
     }
 }
 

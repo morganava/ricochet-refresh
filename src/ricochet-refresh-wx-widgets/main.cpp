@@ -4,10 +4,14 @@
 #include "ffi.hpp"
 #include "locale.hpp"
 #include "strings.hpp"
+#include "ui/bitmaps.hpp"
 #include "ui/main_frame.hpp"
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/bootstrap_panel/connecting_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
+#include "ui/panels/sessions_notebook.hpp"
+#include "ui/panels/sessions_notebook/conversations_panel.hpp"
+#include "ui/panels/sessions_notebook/session_panel.hpp"
 
 wxIMPLEMENT_APP(RicochetRefresh);
 
@@ -175,6 +179,80 @@ void RicochetRefresh::init_callbacks() {
             const auto log_line = into_wxString(line);
             wxGetApp().CallAfter([=]() {
                 wxGetApp().get_main_frame().get_connection_status_panel_mut().add_log(log_line);
+            });
+        },
+        tego::panic_on_error()
+    );
+    // session began received
+    tego_context_set_session_began_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           const tego_user_handle* user_handles,
+           const tego_user_type* user_types,
+           const tego_string* const* user_display_names,
+           size_t user_count) {
+            // local copy of handles
+            std::vector<tego_user_handle> user_handles_copy(
+                user_handles,
+                user_handles + user_count
+            );
+
+            // local copy of types
+            std::vector<tego_user_type> user_types_copy(user_types, user_types + user_count);
+
+            // local copy of names
+            std::vector<wxString> user_display_names_copy;
+            user_display_names_copy.reserve(user_count);
+            std::transform(
+                user_display_names,
+                user_display_names + user_count,
+                std::back_inserter(user_display_names_copy),
+                [](const tego_string* value) -> wxString { return into_wxString(value); }
+            );
+
+            // add these users to the proper conversation panel
+            wxGetApp().CallAfter([=]() {
+                auto& sessions_notebook =
+                    wxGetApp().get_main_frame().get_sessions_notebook_panel_mut();
+
+                auto session_panel =
+                    sessions_notebook.get_session_panel_by_session_handle(session_handle);
+                if (!session_panel) {
+                    return;
+                }
+
+                auto conversation_panel = session_panel->get_conversations_panel_mut();
+                if (!conversation_panel) {
+                    return;
+                }
+
+                for (size_t k = 0; k < user_count; ++k) {
+                    const auto user_type = user_types_copy[k];
+                    if (user_type == tego_user_type_owner) {
+                        continue;
+                    }
+                    const auto user_handle = user_handles_copy[k];
+                    const auto& user_display_name = user_display_names_copy[k];
+                    const auto& avatar = Bitmaps::default_avatar();
+                    const auto contact_group = [&]() -> ContactGroup {
+                        switch (user_type) {
+                            case tego_user_type_requesting:
+                                return ContactGroup::Requesting;
+                            case tego_user_type_rejected:
+                                return ContactGroup::Rejected;
+                            case tego_user_type_blocked:
+                                return ContactGroup::Blocked;
+                            case tego_user_type_allowed:
+                            case tego_user_type_pending:
+                            default:
+                                return ContactGroup::Disconnected;
+                        }
+                    }();
+
+                    conversation_panel
+                        ->add_user(user_handle, user_display_name, avatar, contact_group);
+                }
             });
         },
         tego::panic_on_error()
