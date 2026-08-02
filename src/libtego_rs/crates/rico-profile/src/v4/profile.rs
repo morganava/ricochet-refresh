@@ -6,7 +6,8 @@ use std::collections::BTreeSet;
 use rusqlite::{Connection, OpenFlags};
 use time::UtcDateTime;
 use tor_interface::tor_crypto::{
-    Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature, X25519PrivateKey, X25519PublicKey,
+    Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature, V3OnionServiceId, X25519PrivateKey,
+    X25519PublicKey,
 };
 
 // internal
@@ -520,6 +521,24 @@ pub struct User {
     pub remote_endpoint_x25519_private_key: Option<X25519PrivateKey>,
     pub local_endpoint_ed25519_private_key: Option<Ed25519PrivateKey>,
     pub local_endpoint_x25519_public_key: Option<X25519PublicKey>,
+}
+
+impl User {
+    pub fn identity_v3_onion_service_id(&self) -> V3OnionServiceId {
+        V3OnionServiceId::from_public_key(&self.identity_ed25519_public_key)
+    }
+
+    pub fn remote_endpoint_v3_onion_service_id(&self) -> Option<V3OnionServiceId> {
+        self.remote_endpoint_ed25519_public_key
+            .as_ref()
+            .map(|key| V3OnionServiceId::from_public_key(&key))
+    }
+
+    pub fn local_endpoint_v3_onion_service_id(&self) -> Option<V3OnionServiceId> {
+        self.local_endpoint_ed25519_private_key
+            .as_ref()
+            .map(|key| V3OnionServiceId::from_private_key(&key))
+    }
 }
 
 #[cfg_attr(test, derive(PartialEq))]
