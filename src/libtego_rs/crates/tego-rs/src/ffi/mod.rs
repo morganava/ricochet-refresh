@@ -82,7 +82,7 @@ pub struct tego_profile;
 
 pub type tego_session_handle = crate::session::SessionHandle;
 pub const TEGO_INVALID_SESSION_HANDLE: tego_session_handle = -1i64;
-pub type tego_user_handle = crate::context::UserHandle;
+pub type tego_user_handle = crate::session::UserHandle;
 pub const TEGO_INVALID_USER_HANDLE: tego_user_handle = -1i64;
 
 #[repr(C)]

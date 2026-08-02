@@ -28,11 +28,10 @@ use crate::event_loop_task::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::promise::Promise;
-use crate::session::{Session, SessionHandle};
+use crate::session::{Session, SessionHandle, UserHandle};
 
+// todo: remove me
 pub(crate) const RICOCHET_PORT: u16 = 9878u16;
-
-pub(crate) type UserHandle = i64;
 
 #[derive(Default)]
 pub(crate) struct Context {
@@ -133,11 +132,10 @@ impl Context {
     }
 
     pub fn begin_session(&mut self, profile: Profile) -> Result<SessionHandle> {
-        let session = Session::new(profile)?;
         let result: Promise<Result<SessionHandle>> = Default::default();
         let result_future = result.get_future();
 
-        self.push_command(CommandData::BeginSession { session, result });
+        self.push_command(CommandData::BeginSession { profile, result });
 
         result_future.wait()
     }
@@ -174,9 +172,10 @@ impl Context {
         session_handle: SessionHandle,
         user_handle: UserHandle,
     ) -> Result<String> {
-        Ok(self
-            .get_session(session_handle)?
-            .get_user_nickname(user_handle)?)
+        bail_not_implemented!();
+        // Ok(self
+        //     .get_session(session_handle)?
+        //     .get_user_nickname(user_handle)?)
     }
 
     pub fn get_user_pet_name(
@@ -184,9 +183,10 @@ impl Context {
         session_handle: SessionHandle,
         user_handle: UserHandle,
     ) -> Result<Option<String>> {
-        Ok(self
-            .get_session(session_handle)?
-            .get_user_pet_name(user_handle)?)
+        bail_not_implemented!();
+        // Ok(self
+        //     .get_session(session_handle)?
+        //     .get_user_pet_name(user_handle)?)
     }
 
     pub fn forget_user(&mut self, service_id: V3OnionServiceId) -> Result<()> {
@@ -209,11 +209,12 @@ impl Context {
     ) {
         log_trace!();
 
-        let contact_request_message = Some(message);
-        self.push_command(CommandData::ConnectContact {
-            service_id,
-            contact_request_message,
-        });
+        // let contact_request_message = Some(message);
+        // self.push_command(CommandData::ConnectContact {
+        //     service_id,
+        //     contact_request_message,
+        // });
+        unimplemented!();
     }
 
     pub fn acknowledge_contact_request(

@@ -14,7 +14,7 @@ use tor_interface::tor_provider::{OnionStream, TorProvider};
 // internal
 use crate::ffi::*;
 use crate::promise::Promise;
-use crate::session::{Session, SessionHandle};
+use crate::session::{Session, SessionHandle, UserHandle};
 
 pub(crate) struct Command {
     start_time: Instant,
@@ -66,11 +66,19 @@ pub(crate) enum CommandData {
     // cancel bootstrapping (if it is in progres)
     CancelTorBootstrap,
     BeginSession {
-        session: Session,
+        profile: rico_profile::v4::profile::Profile,
         result: Promise<Result<SessionHandle>>,
     },
     EndSession {
         session_handle: SessionHandle,
+    },
+
+    //connect to a peer and optionally request to be an allowed contact
+    ConnectContact {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        contact_request_message:
+            Option<rico_protocol::v3::message::contact_request_channel::MessageText>,
     },
 
     //
@@ -89,12 +97,6 @@ pub(crate) enum CommandData {
     AcknowledgeContactRequest {
         service_id: V3OnionServiceId,
         response: tego_chat_acknowledge,
-    },
-    //connect to a peer and optionally request to be an allowed contact
-    ConnectContact {
-        service_id: V3OnionServiceId,
-        contact_request_message:
-            Option<rico_protocol::v3::message::contact_request_channel::MessageText>,
     },
     SendMessage {
         service_id: V3OnionServiceId,

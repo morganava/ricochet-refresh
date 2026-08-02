@@ -27,7 +27,6 @@ use crate::callbacks::*;
 use crate::command_queue::*;
 use crate::context::*;
 use crate::ffi::*;
-use crate::listener_task::*;
 use crate::macros::*;
 use crate::session::*;
 
@@ -37,6 +36,8 @@ pub(crate) struct EventLoopTask {
     command_queue: CommandQueue,
 
     tor_provider: Option<Box<dyn TorProvider>>,
+    // map of async connection handles to the session which requested them
+    connect_handles: BTreeMap<tor_interface::tor_provider::ConnectHandle, SessionHandle>,
 
     // our open sessions
     session_map: BTreeMap<SessionHandle, Session>,
@@ -44,8 +45,6 @@ pub(crate) struct EventLoopTask {
     next_session_handle: SessionHandle,
 
     // read_buffer: [u8; Self::READ_BUFFER_SIZE],
-    // packet_handler: PacketHandler,
-    pending_connections: BTreeMap<tor_interface::tor_provider::ConnectHandle, PendingConnection>,
     // connections: BTreeMap<ConnectionHandle, Connection>,
     callback_queue: Vec<CallbackData>,
     task_complete: bool,
@@ -65,34 +64,15 @@ impl EventLoopTask {
         callbacks: Weak<Mutex<Callbacks>>,
         command_queue: CommandQueue,
     ) -> Self {
-        // create our list of known contacts from our users
-        // and our UserData structs
-        // let mut known_contacts: BTreeSet<V3OnionServiceId> = Default::default();
-        // let mut blocked_contacts: BTreeSet<V3OnionServiceId> = Default::default();
-        // let mut user_data: BTreeMap<V3OnionServiceId, UserData> = Default::default();
-
-        // for (user_id, user_type) in users.into_iter() {
-        //     use tego_user_type::*;
-        //     match user_type {
-        //         tego_user_type_allowed | tego_user_type_pending => {
-        //             known_contacts.insert(user_id.clone())
-        //         }
-        //         tego_user_type_blocked => blocked_contacts.insert(user_id.clone()),
-        //         _ => false,
-        //     };
-        //     user_data.insert(user_id, UserData::new(user_type));
-        // }
-
         Self {
             context_handle,
             callbacks,
             command_queue,
             tor_provider: None,
+            connect_handles: Default::default(),
             session_map: Default::default(),
             next_session_handle: 0,
             // read_buffer: [0u8; Self::READ_BUFFER_SIZE],
-            // packet_handler: PacketHandler::new(private_key, known_contacts, blocked_contacts),
-            pending_connections: Default::default(),
             // connections: Default::default(),
             callback_queue: Default::default(),
             task_complete: false,
@@ -103,6 +83,9 @@ impl EventLoopTask {
     }
 
     pub fn run(mut self) -> Result<()> {
+        log_trace!();
+
+        // TODO: add a check here to sleep a frame if the previous iteration did not do any work
         while !self.task_complete {
             // handle tor provider events
             self.handle_tor_events()?;
@@ -110,14 +93,14 @@ impl EventLoopTask {
             // get and handle pending commands
             self.handle_commands()?;
 
+            self.handle_sessions()?;
+
             // read any pending bytes and update the packet handler
-            self.handle_connections()?;
+            // self.handle_connections()?;
 
             // trigger callbacks for frontend
             self.handle_callbacks()?;
         }
-
-        log_trace!();
 
         // TODO: we should trigger exit callback here?
 
@@ -135,142 +118,67 @@ impl EventLoopTask {
         Duration::from_secs(delay)
     }
 
+    fn unwrap_tor_provider(
+        tor_provider: &mut Option<Box<dyn TorProvider>>,
+    ) -> Result<&mut Box<dyn TorProvider>> {
+        tor_provider.as_mut().context("Missing TorProvider")
+    }
+
     fn handle_tor_events(&mut self) -> Result<()> {
         if let Some(tor_client) = &mut self.tor_provider {
             // handle tor events
-            for e in tor_client.update()? {
-                match e {
-                    TorEvent::BootstrapStatus {
-                        progress,
-                        tag,
-                        summary: _,
-                    } => {
-                        log_trace!();
-                        self.callback_queue
-                            .push(CallbackData::TorBootstrapStatusChanged { progress, tag });
-                    }
-                    TorEvent::BootstrapComplete => {
-                        self.callback_queue.push(CallbackData::TorBootstrapComplete);
-                        /*
-                                            self.callback_queue
-                                                .push(CallbackData::TorNetworkStatusChanged {
-                                                    status: tego_tor_network_status::tego_tor_network_status_ready,
-                                                });
+            for event in tor_client.update()? {
+                if let Err(err) = self.handle_tor_event(event) {
+                    log_error!("{err}");
+                }
+            }
+        }
+        Ok(())
+    }
 
-                                            self.callback_queue.push(
-                                                CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_added});
+    fn handle_tor_event(&mut self, event: TorEvent) -> Result<()> {
+        match event {
+            TorEvent::BootstrapStatus {
+                progress,
+                tag,
+                summary: _,
+            } => {
+                log_trace!();
+                self.callback_queue
+                    .push(CallbackData::TorBootstrapStatusChanged { progress, tag });
+            }
+            TorEvent::BootstrapComplete => {
+                self.callback_queue.push(CallbackData::TorBootstrapComplete);
+            }
+            TorEvent::LogReceived { line } => {
+                self.callback_queue
+                    .push(CallbackData::TorLogReceived { line });
+            }
+            TorEvent::OnionServicePublished { service_id: _ } => {
+                log_info!("Onion service published");
+                // self.callback_queue.push(
+                //     CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
+            }
+            TorEvent::ConnectComplete { handle, stream } => {
+                let session_handle = self
+                    .connect_handles
+                    .remove(&handle)
+                    .context("Received ConnectComplete event for unknown ConnectHandle")?;
+                if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    session.on_connect_complete(handle, stream)?;
+                }
+            }
+            TorEvent::ConnectFailed {
+                handle: connection_handle,
+                ..
+            } => {
+                let session_handle = self
+                    .connect_handles
+                    .remove(&connection_handle)
+                    .context("Received ConnectFailed event for unknown ConnectHandle")?;
 
-                                            // start onion service
-                                            let listener = tor_client.listener(&self.private_key, RICOCHET_PORT, None)?;
-                                            std::thread::Builder::new()
-                                                .name("listener-loop".to_string())
-                                                .spawn({
-                                                    let command_queue = self.command_queue.downgrade();
-                                                    move || {
-                                                        let task = ListenerTask::new(listener, command_queue);
-                                                        let _ = task.run();
-                                                    }
-                                                })?;
-
-                                            // try to connect to contacts
-                                            for (user_id, user_data) in self.users.iter() {
-                                                use tego_user_type::*;
-                                                match user_data.user_type {
-                                                    tego_user_type_allowed | tego_user_type_pending => {
-                                                        self.command_queue.push(
-                                                            CommandData::ConnectContact {
-                                                                service_id: user_id.clone(),
-                                                                contact_request_message: None,
-                                                            },
-                                                            Duration::ZERO,
-                                                        );
-                                                    }
-                                                    _ => (),
-                                                }
-                                            }
-                        */
-                    }
-                    TorEvent::LogReceived { line } => {
-                        // if let Some(tor_logs) = self.tor_logs.upgrade() {
-                        //     let mut tor_logs = tor_logs.lock().expect("tor_logs mutex poisoned");
-                        //     if !tor_logs.is_empty() {
-                        //         tor_logs.push('\n');
-                        //     }
-                        //     tor_logs.push_str(line.as_str());
-                        // }
-                        self.callback_queue
-                            .push(CallbackData::TorLogReceived { line });
-                    }
-                    TorEvent::OnionServicePublished { service_id: _ } => {
-                        // self.callback_queue.push(
-                        //     CallbackData::HostOnionServiceStateChanged{state: tego_host_onion_service_state::tego_host_onion_service_state_service_published});
-                    }
-                    TorEvent::ConnectComplete { handle, stream } => {
-                        let mut handle_connect_complete = || -> Result<()> {
-                            if let Some(pending_connection) =
-                                self.pending_connections.remove(&handle)
-                            {
-                                // todo schedule a new connedct attempt if this fails?
-                                stream
-                                    .set_nonblocking(true)
-                                    .expect("failed to set_nonblockinsg");
-
-                                let service_id = pending_connection.service_id;
-                                let message_text = pending_connection.message_text;
-                                /*
-                                                            if !self.packet_handler.has_verified_connection(&service_id) {
-                                                                log_info!("connected to {service_id:?}");
-                                                                let mut replies: Vec<Packet> = Default::default();
-                                                                let handle = self.packet_handler.new_outgoing_connection(
-                                                                    service_id.clone(),
-                                                                    message_text,
-                                                                    &mut replies,
-                                                                )?;
-
-                                                                let connection = Connection {
-                                                                    service_id: Some(service_id),
-                                                                    stream,
-                                                                    read_bytes: Default::default(),
-                                                                    read_packets: Default::default(),
-                                                                    write_packets: replies,
-                                                                    file_downloads: Default::default(),
-                                                                    file_uploads: Default::default(),
-                                                                };
-
-                                                                self.connections.insert(handle, connection);
-                                                            } else {
-                                                                log_info!("connected to {service_id:?} but verified connection already exists, dropping");
-                                                            }
-                                */
-                            }
-                            Ok(())
-                        };
-                        let _ = handle_connect_complete();
-                    }
-                    TorEvent::ConnectFailed { handle, error: _ } => {
-                        if let Some(pending_connection) = self.pending_connections.remove(&handle) {
-                            let service_id = pending_connection.service_id;
-                            /*
-                                                    if let Some(user_data) = self.users.get_mut(&service_id) {
-                                                        user_data.connection_failures += 1;
-
-                                                        let failure_count = user_data.connection_failures;
-                                                        // delay before trying to connect in seconds
-                                                        let delay = Self::retry_delay(failure_count);
-
-                                                        log_info!("connect attempt {failure_count} to {service_id:?} failed; try again in {delay:?}");
-
-                                                        let contact_request_message = pending_connection.message_text;
-                                                        let command_data = CommandData::ConnectContact {
-                                                            service_id,
-                                                            contact_request_message,
-                                                        };
-
-                                                        self.command_queue.push(command_data, delay);
-                                                    }
-                            */
-                        }
-                    }
+                if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    session.on_connect_failed(connection_handle, &mut self.command_queue)?;
                 }
             }
         }
@@ -289,453 +197,9 @@ impl EventLoopTask {
                 .pop()
                 .expect("command_queue should not be empty");
 
-            match cmd.data() {
-                CommandData::EndEventLoop => self.task_complete = true,
-                CommandData::BeginLegacyTorBootstrap {
-                    legacy_tor_client_config,
-                } => {
-                    log_trace!();
-                    // todo: surface this error to the user
-                    let mut tor_provider = LegacyTorClient::new(legacy_tor_client_config)?;
-                    self.callback_queue
-                        .push(CallbackData::TorProviderInitialized {
-                            tor_config_type: tego_tor_config_type::tego_tor_config_type_bundled_tor,
-                            version: Some(tor_provider.version().to_string()),
-                        });
-                    tor_provider.bootstrap()?;
-                    self.tor_provider = Some(Box::new(tor_provider));
-                }
-                CommandData::CancelTorBootstrap => {
-                    self.tor_provider = None;
-                }
-                CommandData::BeginSession { session, result } => {
-                    let handle_begin_session = || -> Result<SessionHandle> {
-                        let users: Vec<(UserHandle, UserType, String)> = session
-                            .get_users()
-                            .into_iter()
-                            .map(|(user_handle, user)| {
-                                let display_name =
-                                    if let Some(pet_name) = &user.user_profile.pet_name {
-                                        pet_name.clone()
-                                    } else {
-                                        user.user_profile.nickname.clone()
-                                    };
-                                (*user_handle, user.user_type, display_name)
-                            })
-                            .collect();
-
-                        let session_handle = self.next_session_handle;
-                        self.next_session_handle += 1;
-
-                        self.session_map.insert(session_handle, session);
-
-                        self.callback_queue.push(CallbackData::SessionBegan {
-                            session_handle,
-                            users,
-                        });
-                        Ok(session_handle)
-                    };
-
-                    result.resolve(handle_begin_session());
-                }
-                _ => (),
+            if let Err(err) = self.handle_command(cmd.data()) {
+                log_error!("{err}");
             }
-            //     CommandData::ForgetUser { service_id, result } => {
-            //         let mut handle_forget_user = || -> Result<()> {
-            //             // remove from our set of users
-            //             if let Some(user_data) = self.users.remove(&service_id) {
-            //                 // kill open connection
-            //                 if let Some(connection_handle) = user_data.connection_handle {
-            //                     self.connections.remove(&connection_handle);
-            //                 }
-            //             }
-            //             // remove from packet handler
-            //             self.packet_handler.forget_user(&service_id);
-
-            //             Ok(())
-            //         };
-            //         result.resolve(handle_forget_user());
-            //     }
-            //     CommandData::BeginServerHandshake { stream } => {
-            //         let handle_begin_server_handshake = || -> Result<()> {
-            //             let handle = self.packet_handler.new_incoming_connection()?;
-
-            //             let connection = Connection {
-            //                 service_id: None,
-            //                 stream,
-            //                 read_bytes: Default::default(),
-            //                 read_packets: Default::default(),
-            //                 write_packets: Default::default(),
-            //                 file_downloads: Default::default(),
-            //                 file_uploads: Default::default(),
-            //             };
-
-            //             log_info!("begin server handshake: {connection:?}");
-
-            //             self.connections.insert(handle, connection);
-            //             Ok(())
-            //         };
-            //         let _ = handle_begin_server_handshake();
-            //     }
-            //     CommandData::AcknowledgeContactRequest {
-            //         service_id,
-            //         response,
-            //     } => {
-            //         let mut replies: Vec<Packet> = Default::default();
-            //         use tego_chat_acknowledge::*;
-            //         let (result, remove) = match response {
-            //             tego_chat_acknowledge_accept => (
-            //                 self.packet_handler
-            //                     .accept_contact_request(service_id.clone(), &mut replies),
-            //                 false,
-            //             ),
-            //             tego_chat_acknowledge_reject => (
-            //                 self.packet_handler
-            //                     .reject_contact_request(service_id.clone(), &mut replies),
-            //                 true,
-            //             ),
-            //             tego_chat_acknowledge_block => todo!(),
-            //         };
-
-            //         match result {
-            //             Ok(connection_handle) => {
-            //                 if let Some(connection) = self.connections.get_mut(&connection_handle) {
-            //                     connection.write_packets.append(&mut replies);
-            //                     if let tego_chat_acknowledge_accept = response {
-            //                         self.users.insert(
-            //                             service_id,
-            //                             UserData::new(tego_user_type::tego_user_type_allowed),
-            //                         );
-            //                     } else if remove {
-            //                         self.to_remove.insert(connection_handle);
-            //                     }
-            //                 }
-            //             }
-            //             Err(_err) => log_error!("failure ack'ing contact request: {_err}"),
-            //         }
-            //     }
-            //     CommandData::ConnectContact {
-            //         service_id,
-            //         contact_request_message: message_text,
-            //     } => {
-            //         if !self.users.contains_key(&service_id) {
-            //             self.users.insert(
-            //                 service_id.clone(),
-            //                 UserData::new(tego_user_type::tego_user_type_pending),
-            //             );
-            //         }
-
-            //         // only open new connection if there is no existing verified
-            //         // connection already
-            //         if !self.packet_handler.has_verified_connection(&service_id) {
-            //             log_info!("connecting to {service_id}");
-            //             let target_addr: tor_interface::tor_provider::TargetAddr =
-            //                 (service_id.clone(), RICOCHET_PORT).into();
-
-            //             if let Ok(connect_handle) = tor_client.connect_async(target_addr, None) {
-            //                 let pending_connection = PendingConnection {
-            //                     service_id,
-            //                     message_text,
-            //                 };
-            //                 self.pending_connections
-            //                     .insert(connect_handle, pending_connection);
-            //             } else if let Some(user_data) = self.users.get_mut(&service_id) {
-            //                 user_data.connection_failures += 1;
-
-            //                 let command_data = CommandData::ConnectContact {
-            //                     service_id: service_id.clone(),
-            //                     contact_request_message: None,
-            //                 };
-            //                 let delay = Self::retry_delay(user_data.connection_failures);
-            //                 log_info!("retry connecting to {service_id} in {delay:?}");
-            //                 self.command_queue.push(command_data, delay);
-            //             }
-            //         } else {
-            //             log_info!("skipping connection attempt, verified connection already exists to {service_id}");
-            //         }
-            //     }
-            //     CommandData::SendMessage {
-            //         service_id,
-            //         message_text,
-            //         message_id,
-            //     } => {
-            //         let handle_send_message = || -> Result<tego_message_id> {
-            //             let mut replies: Vec<Packet> = Default::default();
-            //             match self.packet_handler.send_message(
-            //                 service_id.clone(),
-            //                 message_text.clone(),
-            //                 None,
-            //                 &mut replies,
-            //             ) {
-            //                 Ok((connection_handle, message_handle)) => {
-            //                     let connection = self.connections.get_mut(&connection_handle).context(format!("no connection associated with connection handle {connection_handle}"))?;
-            //                     connection.write_packets.append(&mut replies);
-
-            //                     // queue copies of messages to resend in event of reconnect
-            //                     let user_data = self
-            //                         .users
-            //                         .get_mut(&service_id)
-            //                         .context(format!("no user data for service id {service_id}"))?;
-            //                     let message_id = user_data.next_message_id();
-            //                     user_data
-            //                         .queued_messages
-            //                         .push_back(UnAckedMessage::ChatMessage {
-            //                             gui_id: message_id,
-            //                             network_handle: message_handle,
-            //                             timestamp: std::time::Instant::now(),
-            //                             text: message_text,
-            //                         });
-            //                     Ok(message_id)
-            //                 }
-            //                 Err(err) => Err(err.into()),
-            //             }
-            //         };
-            //         message_id.resolve(handle_send_message());
-            //     }
-            //     CommandData::SendFileTransferRequest {
-            //         service_id,
-            //         file_path,
-            //         result,
-            //     } => {
-            //         let handle_send_file_transfer_request =
-            //             || -> Result<(tego_file_transfer_id, tego_file_size)> {
-            //                 // we only deal in absolute paths
-            //                 bail_if!(!file_path.is_absolute());
-
-            //                 let file_upload = FileUpload::new(file_path)?;
-            //                 let file_name = file_upload.name();
-            //                 let file_size = file_upload.size();
-
-            //                 let file_hash = file_upload.hash();
-
-            //                 //construct reply packets
-            //                 let mut replies: Vec<Packet> = Vec::with_capacity(1);
-            //                 let (connection_handle, file_transfer_handle) =
-            //                     self.packet_handler.send_file_transfer_request(
-            //                         service_id.clone(),
-            //                         file_name.clone(),
-            //                         file_size,
-            //                         file_hash,
-            //                         &mut replies,
-            //                     )?;
-            //                 let connection = self
-            //                     .connections
-            //                     .get_mut(&connection_handle)
-            //                     .context("missing Connection struct")?;
-
-            //                 // queue packets for writing
-            //                 connection.write_packets.append(&mut replies);
-
-            //                 // queue copies of requests to resend in event of reconnect
-            //                 let user_data = self
-            //                     .users
-            //                     .get_mut(&service_id)
-            //                     .context(format!("no user data for service id {service_id}"))?;
-            //                 let file_transfer_id = user_data.next_message_id();
-            //                 user_data
-            //                     .file_transfer_id_to_handle
-            //                     .insert(file_transfer_id, file_transfer_handle);
-            //                 user_data
-            //                     .file_transfer_handle_to_id
-            //                     .insert(file_transfer_handle, file_transfer_id);
-            //                 user_data.queued_messages.push_back(
-            //                     UnAckedMessage::FileTransferRequest {
-            //                         gui_id: file_transfer_id,
-            //                         network_handle: file_transfer_handle,
-            //                         file_upload,
-            //                     },
-            //                 );
-            //                 Ok((file_transfer_id, file_size))
-            //             };
-            //         result.resolve(handle_send_file_transfer_request());
-            //     }
-            //     CommandData::AcceptFileTransferRequest {
-            //         service_id,
-            //         file_transfer_id,
-            //         dest_path,
-            //         result,
-            //     } => {
-            //         let handle_accept_file_transfer_request = || -> Result<()> {
-            //             let user_data = self
-            //                 .users
-            //                 .get_mut(&service_id)
-            //                 .context(format!("no user data for service id {service_id}"))?;
-            //             let file_transfer_handle = *user_data
-            //                 .file_transfer_id_to_handle
-            //                 .get(&file_transfer_id)
-            //                 .context(format!(
-            //                     "no file transfer associated with id {file_transfer_id}"
-            //                 ))?;
-
-            //             // construct reply packets
-            //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
-            //             let connection_handle = self.packet_handler.accept_file_transfer_request(
-            //                 &service_id,
-            //                 file_transfer_handle,
-            //                 &mut replies,
-            //             )?;
-
-            //             // setup file download
-            //             let connection = self
-            //                 .connections
-            //                 .get_mut(&connection_handle)
-            //                 .context("missing Connection struct")?;
-
-            //             let file_download = connection
-            //                 .file_downloads
-            //                 .get_mut(&file_transfer_handle)
-            //                 .context("missing FileDownload struct")?;
-            //             file_download.start(dest_path)?;
-
-            //             // queue packets for writing
-            //             connection.write_packets.append(&mut replies);
-
-            //             Ok(())
-            //         };
-
-            //         result.resolve(handle_accept_file_transfer_request());
-            //     }
-            //     CommandData::RejectFileTransferRequest {
-            //         service_id,
-            //         file_transfer_id,
-            //         result,
-            //     } => {
-            //         let handle_reject_file_transfer_request = || -> Result<()> {
-            //             let user_data = self
-            //                 .users
-            //                 .get_mut(&service_id)
-            //                 .context(format!("no user data for service id {service_id}"))?;
-            //             let file_transfer_handle = *user_data
-            //                 .file_transfer_id_to_handle
-            //                 .get(&file_transfer_id)
-            //                 .context(format!(
-            //                     "no file transfer associated with id {file_transfer_id}"
-            //                 ))?;
-
-            //             // construct reply packets
-            //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
-            //             let connection_handle = self.packet_handler.reject_file_transfer_request(
-            //                 &service_id,
-            //                 file_transfer_handle,
-            //                 &mut replies,
-            //             )?;
-
-            //             // remove our file download struct
-            //             let connection = self
-            //                 .connections
-            //                 .get_mut(&connection_handle)
-            //                 .context("missing Connection struct")?;
-            //             connection
-            //                 .file_downloads
-            //                 .remove(&file_transfer_handle)
-            //                 .context("missing FileDownload struct")?;
-
-            //             // queue packets for writing
-            //             connection.write_packets.append(&mut replies);
-
-            //             // fire callback
-            //             let direction =
-            //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving;
-            //             self.callback_queue
-            //                 .push(CallbackData::FileTransferComplete {
-            //                     user_id: service_id,
-            //                     file_transfer_id,
-            //                     direction,
-            //                     result:
-            //                         tego_file_transfer_result::tego_file_transfer_result_rejected,
-            //                 });
-
-            //             Ok(())
-            //         };
-
-            //         result.resolve(handle_reject_file_transfer_request());
-            //     }
-            //     CommandData::CancelFileTransfer {
-            //         service_id,
-            //         file_transfer_id,
-            //         result,
-            //     } => {
-            //         let handle_cancel_file_transfer = || -> Result<()> {
-            //             let user_data = self
-            //                 .users
-            //                 .get_mut(&service_id)
-            //                 .context(format!("no user data for service id {service_id}"))?;
-
-            //             let file_transfer_handle = *user_data
-            //                 .file_transfer_id_to_handle
-            //                 .get(&file_transfer_id)
-            //                 .context(format!(
-            //                     "no file transfer associated with id {file_transfer_id}"
-            //                 ))?;
-
-            //             // construct reply packets
-            //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
-            //             let connection_handle = self.packet_handler.cancel_file_transfer(
-            //                 &service_id,
-            //                 file_transfer_handle,
-            //                 false,
-            //                 &mut replies,
-            //             )?;
-
-            //             // remove our file download/upload struct
-            //             let connection = self
-            //                 .connections
-            //                 .get_mut(&connection_handle)
-            //                 .context("missing Connection struct")?;
-
-            //             // remove our handle <-> id mappings
-            //             let _ = user_data
-            //                 .file_transfer_handle_to_id
-            //                 .remove(&file_transfer_handle);
-            //             let _ = user_data
-            //                 .file_transfer_id_to_handle
-            //                 .remove(&file_transfer_id);
-
-            //             // remove un'ackd request if present
-            //             for i in 0..user_data.queued_messages.len() {
-            //                 if let UnAckedMessage::FileTransferRequest { gui_id, .. } =
-            //                     user_data.queued_messages[i]
-            //                 {
-            //                     if gui_id == file_transfer_id {
-            //                         let _ = user_data.queued_messages.remove(i);
-            //                         break;
-            //                     }
-            //                 }
-            //             }
-
-            //             let direction = if connection
-            //                 .file_downloads
-            //                 .remove(&file_transfer_handle)
-            //                 .is_some()
-            //             {
-            //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving
-            //             } else {
-            //                 // it's possible an upload never made it to the file_uploads list
-            //                 // if local user cancels before remote user accepts, so missing
-            //                 // file_upload is not an error
-            //                 let _ = connection.file_uploads.remove(&file_transfer_handle);
-            //                 tego_file_transfer_direction::tego_file_transfer_direction_sending
-            //             };
-
-            //             // queue packets for writing
-            //             connection.write_packets.append(&mut replies);
-
-            //             // fire callback
-            //             self.callback_queue
-            //                 .push(CallbackData::FileTransferComplete {
-            //                     user_id: service_id,
-            //                     file_transfer_id,
-            //                     direction,
-            //                     result:
-            //                         tego_file_transfer_result::tego_file_transfer_result_cancelled,
-            //                 });
-
-            //             Ok(())
-            //         };
-
-            //         result.resolve(handle_cancel_file_transfer());
-            //     }
-            // }
         }
 
         // merge remainng commands
@@ -744,6 +208,485 @@ impl EventLoopTask {
         }
 
         Ok(())
+    }
+
+    fn handle_command(&mut self, cmd: CommandData) -> Result<()> {
+        match cmd {
+            CommandData::EndEventLoop => self.task_complete = true,
+            CommandData::BeginLegacyTorBootstrap {
+                legacy_tor_client_config,
+            } => {
+                log_trace!();
+                // todo: surface this error to the user
+                let mut tor_provider = LegacyTorClient::new(legacy_tor_client_config)?;
+                self.callback_queue
+                    .push(CallbackData::TorProviderInitialized {
+                        tor_config_type: tego_tor_config_type::tego_tor_config_type_bundled_tor,
+                        version: Some(tor_provider.version().to_string()),
+                    });
+                tor_provider.bootstrap()?;
+                self.tor_provider = Some(Box::new(tor_provider));
+            }
+            CommandData::CancelTorBootstrap => {
+                self.tor_provider = None;
+            }
+            CommandData::BeginSession { profile, result } => {
+                //
+                // Create Session
+                //
+                let session_handle = self.next_session_handle;
+                self.next_session_handle += 1;
+
+                let mut session = Session::new(session_handle, profile)?;
+
+                let tor_client = Self::unwrap_tor_provider(&mut self.tor_provider)?;
+
+                // TODO: in future starting onions service and connecting to contacts
+                // will be directly requested by user setting the Visibility Level in
+                // the application
+
+                //
+                // Start Onion Services
+                //
+
+                // TODO: schedule creating a new onion listener in the future?
+                log_info!("Starting onion service");
+                session.start_onion_listener(tor_client)?;
+
+                //
+                // Start connecting to Allowed and Pending Contacts
+                //
+
+                log_info!("Connecting to contacts");
+                for user_handle in session
+                    .get_allowed_user_handles()
+                    .into_iter()
+                    .chain(session.get_pending_user_handles().into_iter())
+                {
+                    self.command_queue.push(
+                        CommandData::ConnectContact {
+                            session_handle,
+                            user_handle,
+                            contact_request_message: None,
+                        },
+                        Duration::ZERO,
+                    );
+                }
+
+                //
+                // Prepare Contacts list for the UI
+                //
+
+                let users: Vec<(UserHandle, UserType, String)> = session
+                    .get_users()
+                    .iter()
+                    .map(|(user_handle, user)| {
+                        let pet_name = user.pet_name.clone();
+                        (*user_handle, user.user_type, pet_name)
+                    })
+                    .collect();
+
+                //
+                // Trigger callback
+                //
+
+                self.callback_queue.push(CallbackData::SessionBegan {
+                    session_handle,
+                    users,
+                });
+
+                self.session_map.insert(session_handle, session);
+
+                result.resolve(Ok(session_handle));
+            }
+            CommandData::ConnectContact {
+                session_handle,
+                user_handle,
+                contact_request_message,
+            } => {
+                // TODO: a new user should be added to the profile *first* before we make an attempt to connect to a contact
+                // if !self.users.contains_key(&service_id) {
+                //     self.users.insert(
+                //         service_id.clone(),
+                //         UserData::new(tego_user_type::tego_user_type_pending),
+                //     );
+                // }
+
+                let tor_client = Self::unwrap_tor_provider(&mut self.tor_provider)?;
+
+                if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    if let Some(connect_handle) = session.connect_contact(
+                        user_handle,
+                        tor_client,
+                        contact_request_message,
+                        &mut self.command_queue,
+                    )? {
+                        self.connect_handles.insert(connect_handle, session_handle);
+                    }
+                }
+            }
+            _ => unimplemented!(),
+        }
+        Ok(())
+        // TODO: migrate command match statement here
+
+        //     CommandData::ForgetUser { service_id, result } => {
+        //         let mut handle_forget_user = || -> Result<()> {
+        //             // remove from our set of users
+        //             if let Some(user_data) = self.users.remove(&service_id) {
+        //                 // kill open connection
+        //                 if let Some(connection_handle) = user_data.connection_handle {
+        //                     self.connections.remove(&connection_handle);
+        //                 }
+        //             }
+        //             // remove from packet handler
+        //             self.packet_handler.forget_user(&service_id);
+
+        //             Ok(())
+        //         };
+        //         result.resolve(handle_forget_user());
+        //     }
+        //     CommandData::BeginServerHandshake { stream } => {
+        //         let handle_begin_server_handshake = || -> Result<()> {
+        //             let handle = self.packet_handler.new_incoming_connection()?;
+
+        //             let connection = Connection {
+        //                 service_id: None,
+        //                 stream,
+        //                 read_bytes: Default::default(),
+        //                 read_packets: Default::default(),
+        //                 write_packets: Default::default(),
+        //                 file_downloads: Default::default(),
+        //                 file_uploads: Default::default(),
+        //             };
+
+        //             log_info!("begin server handshake: {connection:?}");
+
+        //             self.connections.insert(handle, connection);
+        //             Ok(())
+        //         };
+        //         let _ = handle_begin_server_handshake();
+        //     }
+        //     CommandData::AcknowledgeContactRequest {
+        //         service_id,
+        //         response,
+        //     } => {
+        //         let mut replies: Vec<Packet> = Default::default();
+        //         use tego_chat_acknowledge::*;
+        //         let (result, remove) = match response {
+        //             tego_chat_acknowledge_accept => (
+        //                 self.packet_handler
+        //                     .accept_contact_request(service_id.clone(), &mut replies),
+        //                 false,
+        //             ),
+        //             tego_chat_acknowledge_reject => (
+        //                 self.packet_handler
+        //                     .reject_contact_request(service_id.clone(), &mut replies),
+        //                 true,
+        //             ),
+        //             tego_chat_acknowledge_block => todo!(),
+        //         };
+
+        //         match result {
+        //             Ok(connection_handle) => {
+        //                 if let Some(connection) = self.connections.get_mut(&connection_handle) {
+        //                     connection.write_packets.append(&mut replies);
+        //                     if let tego_chat_acknowledge_accept = response {
+        //                         self.users.insert(
+        //                             service_id,
+        //                             UserData::new(tego_user_type::tego_user_type_allowed),
+        //                         );
+        //                     } else if remove {
+        //                         self.to_remove.insert(connection_handle);
+        //                     }
+        //                 }
+        //             }
+        //             Err(_err) => log_error!("failure ack'ing contact request: {_err}"),
+        //         }
+        //     }
+
+        //     CommandData::SendMessage {
+        //         service_id,
+        //         message_text,
+        //         message_id,
+        //     } => {
+        //         let handle_send_message = || -> Result<tego_message_id> {
+        //             let mut replies: Vec<Packet> = Default::default();
+        //             match self.packet_handler.send_message(
+        //                 service_id.clone(),
+        //                 message_text.clone(),
+        //                 None,
+        //                 &mut replies,
+        //             ) {
+        //                 Ok((connection_handle, message_handle)) => {
+        //                     let connection = self.connections.get_mut(&connection_handle).context(format!("no connection associated with connection handle {connection_handle}"))?;
+        //                     connection.write_packets.append(&mut replies);
+
+        //                     // queue copies of messages to resend in event of reconnect
+        //                     let user_data = self
+        //                         .users
+        //                         .get_mut(&service_id)
+        //                         .context(format!("no user data for service id {service_id}"))?;
+        //                     let message_id = user_data.next_message_id();
+        //                     user_data
+        //                         .queued_messages
+        //                         .push_back(UnAckedMessage::ChatMessage {
+        //                             gui_id: message_id,
+        //                             network_handle: message_handle,
+        //                             timestamp: std::time::Instant::now(),
+        //                             text: message_text,
+        //                         });
+        //                     Ok(message_id)
+        //                 }
+        //                 Err(err) => Err(err.into()),
+        //             }
+        //         };
+        //         message_id.resolve(handle_send_message());
+        //     }
+        //     CommandData::SendFileTransferRequest {
+        //         service_id,
+        //         file_path,
+        //         result,
+        //     } => {
+        //         let handle_send_file_transfer_request =
+        //             || -> Result<(tego_file_transfer_id, tego_file_size)> {
+        //                 // we only deal in absolute paths
+        //                 bail_if!(!file_path.is_absolute());
+
+        //                 let file_upload = FileUpload::new(file_path)?;
+        //                 let file_name = file_upload.name();
+        //                 let file_size = file_upload.size();
+
+        //                 let file_hash = file_upload.hash();
+
+        //                 //construct reply packets
+        //                 let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        //                 let (connection_handle, file_transfer_handle) =
+        //                     self.packet_handler.send_file_transfer_request(
+        //                         service_id.clone(),
+        //                         file_name.clone(),
+        //                         file_size,
+        //                         file_hash,
+        //                         &mut replies,
+        //                     )?;
+        //                 let connection = self
+        //                     .connections
+        //                     .get_mut(&connection_handle)
+        //                     .context("missing Connection struct")?;
+
+        //                 // queue packets for writing
+        //                 connection.write_packets.append(&mut replies);
+
+        //                 // queue copies of requests to resend in event of reconnect
+        //                 let user_data = self
+        //                     .users
+        //                     .get_mut(&service_id)
+        //                     .context(format!("no user data for service id {service_id}"))?;
+        //                 let file_transfer_id = user_data.next_message_id();
+        //                 user_data
+        //                     .file_transfer_id_to_handle
+        //                     .insert(file_transfer_id, file_transfer_handle);
+        //                 user_data
+        //                     .file_transfer_handle_to_id
+        //                     .insert(file_transfer_handle, file_transfer_id);
+        //                 user_data.queued_messages.push_back(
+        //                     UnAckedMessage::FileTransferRequest {
+        //                         gui_id: file_transfer_id,
+        //                         network_handle: file_transfer_handle,
+        //                         file_upload,
+        //                     },
+        //                 );
+        //                 Ok((file_transfer_id, file_size))
+        //             };
+        //         result.resolve(handle_send_file_transfer_request());
+        //     }
+        //     CommandData::AcceptFileTransferRequest {
+        //         service_id,
+        //         file_transfer_id,
+        //         dest_path,
+        //         result,
+        //     } => {
+        //         let handle_accept_file_transfer_request = || -> Result<()> {
+        //             let user_data = self
+        //                 .users
+        //                 .get_mut(&service_id)
+        //                 .context(format!("no user data for service id {service_id}"))?;
+        //             let file_transfer_handle = *user_data
+        //                 .file_transfer_id_to_handle
+        //                 .get(&file_transfer_id)
+        //                 .context(format!(
+        //                     "no file transfer associated with id {file_transfer_id}"
+        //                 ))?;
+
+        //             // construct reply packets
+        //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        //             let connection_handle = self.packet_handler.accept_file_transfer_request(
+        //                 &service_id,
+        //                 file_transfer_handle,
+        //                 &mut replies,
+        //             )?;
+
+        //             // setup file download
+        //             let connection = self
+        //                 .connections
+        //                 .get_mut(&connection_handle)
+        //                 .context("missing Connection struct")?;
+
+        //             let file_download = connection
+        //                 .file_downloads
+        //                 .get_mut(&file_transfer_handle)
+        //                 .context("missing FileDownload struct")?;
+        //             file_download.start(dest_path)?;
+
+        //             // queue packets for writing
+        //             connection.write_packets.append(&mut replies);
+
+        //             Ok(())
+        //         };
+
+        //         result.resolve(handle_accept_file_transfer_request());
+        //     }
+        //     CommandData::RejectFileTransferRequest {
+        //         service_id,
+        //         file_transfer_id,
+        //         result,
+        //     } => {
+        //         let handle_reject_file_transfer_request = || -> Result<()> {
+        //             let user_data = self
+        //                 .users
+        //                 .get_mut(&service_id)
+        //                 .context(format!("no user data for service id {service_id}"))?;
+        //             let file_transfer_handle = *user_data
+        //                 .file_transfer_id_to_handle
+        //                 .get(&file_transfer_id)
+        //                 .context(format!(
+        //                     "no file transfer associated with id {file_transfer_id}"
+        //                 ))?;
+
+        //             // construct reply packets
+        //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        //             let connection_handle = self.packet_handler.reject_file_transfer_request(
+        //                 &service_id,
+        //                 file_transfer_handle,
+        //                 &mut replies,
+        //             )?;
+
+        //             // remove our file download struct
+        //             let connection = self
+        //                 .connections
+        //                 .get_mut(&connection_handle)
+        //                 .context("missing Connection struct")?;
+        //             connection
+        //                 .file_downloads
+        //                 .remove(&file_transfer_handle)
+        //                 .context("missing FileDownload struct")?;
+
+        //             // queue packets for writing
+        //             connection.write_packets.append(&mut replies);
+
+        //             // fire callback
+        //             let direction =
+        //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving;
+        //             self.callback_queue
+        //                 .push(CallbackData::FileTransferComplete {
+        //                     user_id: service_id,
+        //                     file_transfer_id,
+        //                     direction,
+        //                     result:
+        //                         tego_file_transfer_result::tego_file_transfer_result_rejected,
+        //                 });
+
+        //             Ok(())
+        //         };
+
+        //         result.resolve(handle_reject_file_transfer_request());
+        //     }
+        //     CommandData::CancelFileTransfer {
+        //         service_id,
+        //         file_transfer_id,
+        //         result,
+        //     } => {
+        //         let handle_cancel_file_transfer = || -> Result<()> {
+        //             let user_data = self
+        //                 .users
+        //                 .get_mut(&service_id)
+        //                 .context(format!("no user data for service id {service_id}"))?;
+
+        //             let file_transfer_handle = *user_data
+        //                 .file_transfer_id_to_handle
+        //                 .get(&file_transfer_id)
+        //                 .context(format!(
+        //                     "no file transfer associated with id {file_transfer_id}"
+        //                 ))?;
+
+        //             // construct reply packets
+        //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        //             let connection_handle = self.packet_handler.cancel_file_transfer(
+        //                 &service_id,
+        //                 file_transfer_handle,
+        //                 false,
+        //                 &mut replies,
+        //             )?;
+
+        //             // remove our file download/upload struct
+        //             let connection = self
+        //                 .connections
+        //                 .get_mut(&connection_handle)
+        //                 .context("missing Connection struct")?;
+
+        //             // remove our handle <-> id mappings
+        //             let _ = user_data
+        //                 .file_transfer_handle_to_id
+        //                 .remove(&file_transfer_handle);
+        //             let _ = user_data
+        //                 .file_transfer_id_to_handle
+        //                 .remove(&file_transfer_id);
+
+        //             // remove un'ackd request if present
+        //             for i in 0..user_data.queued_messages.len() {
+        //                 if let UnAckedMessage::FileTransferRequest { gui_id, .. } =
+        //                     user_data.queued_messages[i]
+        //                 {
+        //                     if gui_id == file_transfer_id {
+        //                         let _ = user_data.queued_messages.remove(i);
+        //                         break;
+        //                     }
+        //                 }
+        //             }
+
+        //             let direction = if connection
+        //                 .file_downloads
+        //                 .remove(&file_transfer_handle)
+        //                 .is_some()
+        //             {
+        //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving
+        //             } else {
+        //                 // it's possible an upload never made it to the file_uploads list
+        //                 // if local user cancels before remote user accepts, so missing
+        //                 // file_upload is not an error
+        //                 let _ = connection.file_uploads.remove(&file_transfer_handle);
+        //                 tego_file_transfer_direction::tego_file_transfer_direction_sending
+        //             };
+
+        //             // queue packets for writing
+        //             connection.write_packets.append(&mut replies);
+
+        //             // fire callback
+        //             self.callback_queue
+        //                 .push(CallbackData::FileTransferComplete {
+        //                     user_id: service_id,
+        //                     file_transfer_id,
+        //                     direction,
+        //                     result:
+        //                         tego_file_transfer_result::tego_file_transfer_result_cancelled,
+        //                 });
+
+        //             Ok(())
+        //         };
+
+        //         result.resolve(handle_cancel_file_transfer());
+        //     }
+        // }
     }
 
     fn handle_connections(&mut self) -> Result<()> {
@@ -1591,6 +1534,17 @@ impl EventLoopTask {
         Ok(())
     }
 
+    fn handle_sessions(&mut self) -> Result<()> {
+        if let Some(tor_provider) = self.tor_provider.as_mut() {
+            for session in self.session_map.values_mut() {
+                if let Err(err) = session.update_v3(tor_provider, &mut self.command_queue) {
+                    log_error!("{err}")
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn handle_callbacks(&mut self) -> Result<()> {
         let context: *mut tego_context = self.context_handle.into();
 
@@ -1621,6 +1575,7 @@ enum UnAckedMessage {
     },
 }
 
+// TODO kill this/fully move to session module
 struct UserData {
     user_type: tego_user_type,
     connection_handle: Option<ConnectionHandle>,
@@ -1650,30 +1605,6 @@ impl UserData {
         self.next_message_id += 1;
         result
     }
-}
-
-#[derive(Debug)]
-struct PendingConnection {
-    pub service_id: V3OnionServiceId,
-    pub message_text: Option<rico_protocol::v3::message::contact_request_channel::MessageText>,
-}
-
-#[derive(Debug)]
-struct Connection {
-    pub service_id: Option<V3OnionServiceId>,
-    pub stream: OnionStream,
-    // buffer of unhandled read bytes
-    pub read_bytes: Vec<u8>,
-    // buffer of read Packets to handle
-    pub read_packets: Vec<Packet>,
-    // buffer of packets to write
-    pub write_packets: Vec<Packet>,
-    // todo: maybe these should also just be a single FileTransfer
-    // pending and in-progress file downloads
-    pub file_downloads:
-        BTreeMap<rico_protocol::v3::packet_handler::FileTransferHandle, FileDownload>,
-    // pending and in-process file uploads
-    pub file_uploads: BTreeMap<rico_protocol::v3::packet_handler::FileTransferHandle, FileUpload>,
 }
 
 #[derive(Debug)]

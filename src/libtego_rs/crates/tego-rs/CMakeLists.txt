@@ -23,7 +23,6 @@ set(tego_rs_sources
     src/ffi/tor_config.rs
     src/ffi/v3_onion_service_id.rs
     src/lib.rs
-    src/listener_task.rs
     src/macros.rs
     src/promise.rs
     src/session.rs
