@@ -53,6 +53,21 @@ fn test_deserialize_profile() -> anyhow::Result<()> {
                 (V3OnionServiceId::from_string("zdqen2zfqcx25fcf4youogtlfjodwq6vx2u44pfr2vtjpktwbirm44yd").unwrap(), User{nickname: "evelyn".to_string(), user_type: UserType::Rejected}),
             ].into(),
         }),
+        // missing user's nickname is replaced with the service id
+        (json!({
+            "identity" : {
+                "privateKey" : "ED25519-V3:YLj7W9DouVzO4a1yPY1a3yIT7Hv3FYVwg/d3sE/h0F9oFE0vGhXtE61kFNjq6MhstvxaNGCRXmVm+mta2nwfgg=="
+            },
+            "users" : {
+                "um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid" : {"type" : "allowed"},
+            },
+        }),
+        Profile{
+            private_key: Ed25519PrivateKey::from_key_blob_legacy("ED25519-V3:YLj7W9DouVzO4a1yPY1a3yIT7Hv3FYVwg/d3sE/h0F9oFE0vGhXtE61kFNjq6MhstvxaNGCRXmVm+mta2nwfgg==").unwrap(),
+            users: [
+                (V3OnionServiceId::from_string("um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid").unwrap(), User{nickname: "um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid".to_string(), user_type: UserType::Allowed}),
+            ].into()
+        }),
     ];
 
     for (json, expected) in valid_json {
@@ -88,14 +103,6 @@ fn test_deserialize_profile() -> anyhow::Result<()> {
             },
             "users" : {
                 "um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid" : {"nickname" : "alice"},
-            },
-        }),
-        json!({
-            "identity" : {
-                "privateKey" : "ED25519-V3:YLj7W9DouVzO4a1yPY1a3yIT7Hv3FYVwg/d3sE/h0F9oFE0vGhXtE61kFNjq6MhstvxaNGCRXmVm+mta2nwfgg=="
-            },
-            "users" : {
-                "um7kahbtdqiijlohv3cfsbi7iqo4bvidngshr6zshi6rxseu3bbiriid" : {"type" : "allowed"},
             },
         }),
         json!({

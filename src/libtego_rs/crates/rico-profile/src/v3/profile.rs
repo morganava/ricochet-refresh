@@ -27,7 +27,7 @@ struct IdentityRaw {
 
 #[derive(Deserialize)]
 struct UserRaw {
-    nickname: String,
+    nickname: Option<String>,
     #[serde(rename = "type")]
     user_type: UserType,
 }
@@ -71,8 +71,12 @@ impl TryFrom<ProfileRaw> for Profile {
         let mut users: BTreeMap<V3OnionServiceId, User> = BTreeMap::new();
         if let Some(raw_users) = value.users {
             for (service_id, user) in raw_users.into_iter() {
+                let nickname = if let Some(nickname) = user.nickname {
+                    nickname
+                } else {
+                    service_id.clone()
+                };
                 let service_id = V3OnionServiceId::from_string(service_id.as_str())?;
-                let nickname = user.nickname;
                 let user_type = user.user_type;
                 users.insert(
                     service_id,
