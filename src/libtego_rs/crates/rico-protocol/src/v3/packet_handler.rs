@@ -407,6 +407,10 @@ impl PacketHandler {
         }
     }
 
+    pub fn get_private_key(&self) -> &Ed25519PrivateKey {
+        &self.private_key
+    }
+
     fn connection(&self, connection_handle: ConnectionHandle) -> Result<&Connection, Error> {
         self.connections.get(&connection_handle).ok_or(
             Error::ConnectionHandleToConnectionMappingFailure(connection_handle),
