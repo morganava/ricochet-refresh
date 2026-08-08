@@ -4,6 +4,9 @@ pub mod message;
 pub mod packet_handler;
 pub(crate) mod protos;
 
+// The VirtPort v3 Ricochet-Refresh clients listen on
+pub const RICOCHET_PORT: u16 = 9878u16;
+
 /// The error type for the [`Message`] type.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
