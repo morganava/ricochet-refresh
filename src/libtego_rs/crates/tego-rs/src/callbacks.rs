@@ -33,63 +33,70 @@ pub(crate) enum CallbackData {
         // list of user handles and their display name
         users: Vec<(UserHandle, UserType, String)>,
     },
-    /*
-        HostOnionServiceStateChanged {
-            state: tego_host_onion_service_state,
-        },
-        ChatRequestReceived {
-            service_id: V3OnionServiceId,
-            message: String,
-        },
-        ChatRequestResponseReceived {
-            service_id: V3OnionServiceId,
-            accepted_request: bool,
-        },
-        MessageReceived {
-            service_id: V3OnionServiceId,
-            timestamp: std::time::SystemTime,
-            message_id: tego_message_id,
-            message: String,
-        },
-        MessageAcknowledged {
-            service_id: V3OnionServiceId,
-            message_id: tego_message_id,
-            accepted: bool,
-        },
-        FileTransferRequestReceived {
-            sender: V3OnionServiceId,
-            file_transfer_id: tego_file_transfer_id,
-            file_name: String,
-            file_size: u64,
-        },
-        FileTransferRequestAcknowledged {
-            service_id: V3OnionServiceId,
-            file_transfer_id: tego_file_transfer_id,
-            accepted: bool,
-        },
-        FileTransferRequestResponseReceived {
-            service_id: V3OnionServiceId,
-            file_transfer_id: tego_file_transfer_id,
-            response: tego_file_transfer_response,
-        },
-        FileTransferProgress {
-            user_id: V3OnionServiceId,
-            file_transfer_id: tego_file_transfer_id,
-            direction: tego_file_transfer_direction,
-            bytes_complete: u64,
-            bytes_total: u64,
-        },
-        FileTransferComplete {
-            user_id: V3OnionServiceId,
-            file_transfer_id: tego_file_transfer_id,
-            direction: tego_file_transfer_direction,
-            result: tego_file_transfer_result,
-        },
-        UserStatusChanged {
-            service_id: V3OnionServiceId,
-            status: tego_user_status,
-        },
-    */
+    // HostOnionServiceStateChanged {
+    //     state: tego_host_onion_service_state,
+    // },
+    UserAdded {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        user_type: UserType,
+    },
+    UserRemoved {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+    },
+    ChatRequestReceived {
+        user_handle: UserHandle,
+        message: String,
+    },
+    // ChatRequestResponseReceived {
+    //     service_id: V3OnionServiceId,
+    //     accepted_request: bool,
+    // },
+    // MessageReceived {
+    //     service_id: V3OnionServiceId,
+    //     timestamp: std::time::SystemTime,
+    //     message_id: tego_message_id,
+    //     message: String,
+    // },
+    // MessageAcknowledged {
+    //     service_id: V3OnionServiceId,
+    //     message_id: tego_message_id,
+    //     accepted: bool,
+    // },
+    // FileTransferRequestReceived {
+    //     sender: V3OnionServiceId,
+    //     file_transfer_id: tego_file_transfer_id,
+    //     file_name: String,
+    //     file_size: u64,
+    // },
+    // FileTransferRequestAcknowledged {
+    //     service_id: V3OnionServiceId,
+    //     file_transfer_id: tego_file_transfer_id,
+    //     accepted: bool,
+    // },
+    // FileTransferRequestResponseReceived {
+    //     service_id: V3OnionServiceId,
+    //     file_transfer_id: tego_file_transfer_id,
+    //     response: tego_file_transfer_response,
+    // },
+    // FileTransferProgress {
+    //     user_id: V3OnionServiceId,
+    //     file_transfer_id: tego_file_transfer_id,
+    //     direction: tego_file_transfer_direction,
+    //     bytes_complete: u64,
+    //     bytes_total: u64,
+    // },
+    // FileTransferComplete {
+    //     user_id: V3OnionServiceId,
+    //     file_transfer_id: tego_file_transfer_id,
+    //     direction: tego_file_transfer_direction,
+    //     result: tego_file_transfer_result,
+    // },
+    UserStatusChanged {
+        user_handle: UserHandle,
+        status: tego_user_status,
+    },
 }
 
 #[derive(Default)]
@@ -101,6 +108,8 @@ pub(crate) struct Callbacks {
     pub on_tor_log_received: tego_tor_log_received_callback,
     pub on_session_began: tego_session_began_callback,
     // pub on_host_onion_service_state_changed: tego_host_onion_service_state_changed_callback,
+    pub on_user_added: tego_user_added_callback,
+    pub on_user_removed: tego_user_removed_callback,
     // pub on_chat_request_received: tego_chat_request_received_callback,
     // pub on_chat_request_response_received: tego_chat_request_response_received_callback,
     // pub on_message_received: tego_message_received_callback,
@@ -216,6 +225,29 @@ impl Callbacks {
 
             //     on_host_onion_service_state_changed(context, state);
             // }
+            UserAdded {
+                session_handle,
+                user_handle,
+                user_type,
+            } => {
+                let on_user_added = self
+                    .on_user_added
+                    .context("missing on_user_added callback")?;
+                log_trace!("invoke on_user_added");
+
+                on_user_added(context, session_handle, user_handle, user_type.into());
+            }
+            UserRemoved {
+                session_handle,
+                user_handle,
+            } => {
+                let on_user_removed = self
+                    .on_user_removed
+                    .context("missing on_user_removed callback")?;
+                log_trace!("invoke on_user_removed");
+
+                on_user_removed(context, session_handle, user_handle);
+            }
             // ChatRequestReceived {
             //     service_id,
             //     message,
@@ -419,7 +451,6 @@ impl Callbacks {
 
             //     tego_user_id_map().remove(&user_id)?;
             // }
-            // UserStatusChanged { service_id, status } => {
             //     let on_user_status_changed = self
             //         .on_user_status_changed
             //         .context("missing on_user_status_changed callback")?;

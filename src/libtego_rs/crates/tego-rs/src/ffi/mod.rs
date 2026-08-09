@@ -683,6 +683,33 @@ pub type tego_session_began_callback = Option<
 //     ) -> (),
 // >;
 
+/// Callback fired when a new user is added (e.g. via contact request)
+///
+/// @param context : the current tego context
+/// @param session_handle : the session the user was added to
+/// @param user_handle : the new user's handle
+pub type tego_user_added_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        user_type: tego_user_type,
+    ) -> (),
+>;
+
+/// Callback fired when a new user is removed (e.g. via forget user)
+///
+/// @param context : the current tego context
+/// @param session_handle : the session the user removed from
+/// @param user_handle : the user's old handle
+pub type tego_user_removed_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+    ) -> (),
+>;
+
 /// Callback fired when a user's status changes
 ///
 /// @param context : the current tego context
@@ -860,6 +887,24 @@ pub extern "C" fn tego_context_set_session_began_callback(
 // }
 
 // #[no_mangle]
+pub extern "C" fn tego_context_set_user_added_callback(
+    context: *mut tego_context,
+    callback: tego_user_added_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_user_added, context, callback, error);
+}
+
+#[no_mangle]
+pub extern "C" fn tego_context_set_user_removed_callback(
+    context: *mut tego_context,
+    callback: tego_user_removed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_user_removed, context, callback, error);
+}
+
+#[no_mangle]
 // pub extern "C" fn tego_context_set_user_status_changed_callback(
 //     context: *mut tego_context,
 //     callback: tego_user_status_changed_callback,
