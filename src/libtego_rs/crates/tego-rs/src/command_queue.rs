@@ -80,6 +80,20 @@ pub(crate) enum CommandData {
         contact_request_message:
             Option<rico_protocol::v3::message::contact_request_channel::MessageText>,
     },
+    SendMessage {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        message_text: rico_protocol::v3::message::chat_channel::MessageText,
+        message_id: Promise<Result<tego_message_id>>,
+    },
+    // accept an incoming file transfer request
+    AcceptFileTransferRequest {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        dest_path: PathBuf,
+        result: Promise<Result<()>>,
+    },
 
     //
     // Not Used Yet
@@ -90,30 +104,14 @@ pub(crate) enum CommandData {
         service_id: V3OnionServiceId,
         result: Promise<Result<()>>,
     },
-    // client connects to our listener triggering an incoming handshake
-    BeginServerHandshake {
-        stream: OnionStream,
-    },
     AcknowledgeContactRequest {
         service_id: V3OnionServiceId,
         response: tego_chat_acknowledge,
-    },
-    SendMessage {
-        service_id: V3OnionServiceId,
-        message_text: rico_protocol::v3::message::chat_channel::MessageText,
-        message_id: Promise<Result<tego_message_id>>,
     },
     SendFileTransferRequest {
         service_id: V3OnionServiceId,
         file_path: PathBuf,
         result: Promise<Result<(tego_file_transfer_id, tego_file_size)>>,
-    },
-    // accept an incoming file transfer request
-    AcceptFileTransferRequest {
-        service_id: V3OnionServiceId,
-        file_transfer_id: tego_file_transfer_id,
-        dest_path: PathBuf,
-        result: Promise<Result<()>>,
     },
     // reject an incoming file transfer request
     RejectFileTransferRequest {
@@ -127,6 +125,7 @@ pub(crate) enum CommandData {
         file_transfer_id: tego_file_transfer_id,
         result: Promise<Result<()>>,
     },
+    // TODO: maybe add an enqueue callback data command?
 }
 
 pub(crate) struct CommandQueue {
