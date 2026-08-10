@@ -749,6 +749,22 @@ pub(crate) fn update_user_profile(
     Ok(())
 }
 
+pub(crate) fn update_user_type(
+    tx: &Transaction<'_>,
+    user_handle: profile::UserHandle,
+    user_type: profile::UserType,
+) -> Result<(), Error> {
+    let user_rowid = user_handle;
+
+    // CHECK constraints in db schema prevent us from overwriting UserType::Owner with something else
+    tx.execute(
+        "UPDATE users SET user_type = ?2 WHERE rowid = ?1",
+        params![user_rowid, user_type],
+    )?;
+
+    Ok(())
+}
+
 pub(crate) fn update_remote_endpoint_keys(
     tx: &Transaction<'_>,
     user_handle: profile::UserHandle,

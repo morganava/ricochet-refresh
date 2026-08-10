@@ -342,6 +342,17 @@ impl Profile {
         Ok(())
     }
 
+    pub fn set_user_type(
+        &mut self,
+        user_handle: UserHandle,
+        user_type: UserType,
+    ) -> Result<(), Error> {
+        let tx = self.conn.transaction()?;
+        db::update_user_type(&tx, user_handle, user_type)?;
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn set_user_remote_endpoint_keys(
         &mut self,
         user_handle: UserHandle,
@@ -850,6 +861,24 @@ pub mod test {
 
         let user_handle = profile.add_user(&user)?;
 
+        // Test: Verify we cannot change the owner's user_type from owner
+        assert!(profile
+            .set_user_type(user_handle, UserType::Allowed)
+            .is_err());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Pending)
+            .is_err());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Requesting)
+            .is_err());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Rejected)
+            .is_err());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Blocked)
+            .is_err());
+        assert!(profile.set_user_type(user_handle, UserType::Owner).is_ok());
+
         // Test: Retrieve user profile and verify initial state
         let retrieved_profile = profile.get_user_profile(user_handle)?;
         assert_eq!(retrieved_profile.nickname, "alice");
@@ -950,6 +979,25 @@ pub mod test {
         };
 
         let user_handle = profile.add_user(&user)?;
+
+        // Verify we cannot set an allowed user as an Owner
+        assert!(profile.set_user_type(user_handle, UserType::Owner).is_err());
+        // But other types are ok
+        assert!(profile
+            .set_user_type(user_handle, UserType::Blocked)
+            .is_ok());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Rejected)
+            .is_ok());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Requesting)
+            .is_ok());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Pending)
+            .is_ok());
+        assert!(profile
+            .set_user_type(user_handle, UserType::Allowed)
+            .is_ok());
 
         // Verify initial state: no endpoint keys
         let users = profile.get_users()?;
