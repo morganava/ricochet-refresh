@@ -1,0 +1,12 @@
+{
+    "identity": {
+        "privateKey": "ED25519-V3:4Lsa4UUIm1tmFvKH9fYdJkrBGKxC0VfXWAJRq+b2J0D5cYe6bJf8NXuh1Pc5vbOX5XxwBkyg3Tqak1misHtnZQ=="
+    },
+    "tor": {
+        "bootstrappedSuccessfully": true
+    },
+    "ui": {
+        "combinedChatWindow": true,
+        "language": ""
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "identity": {
+        "privateKey": "ED25519-V3:iJGBg9j6RoiBXNULD3Az7tBvSYnUFYfU4c4ErJAScnlsxQ3eudXAFr4sj54eUiKQrXY0aETRvaJtLN7ZQSlKgA=="
+    },
+    "tor": {
+        "bootstrappedSuccessfully": true
+    },
+    "ui": {
+        "combinedChatWindow": true,
+        "language": "",
+        "notificationVolume": 0.75
+    },
+    "users": {
+        "qmmttqp6vstcsdyeg6dkfbqxkhlj6cmqdxh3fksf77jaourjid7o4oid": {
+            "nickname": "morgan",
+            "type": "pending"
+        }
+    }
+}

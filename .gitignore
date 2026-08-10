@@ -6,6 +6,9 @@ build/
 dist/
 debug
 release
+test-profiles/*/tor/
+test-profiles/*/pluggable_transports
+test-profiles/*/ricochet.json.lock
 
 # Build artifacts
 *.exe
