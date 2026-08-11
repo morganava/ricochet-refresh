@@ -34,6 +34,18 @@ macro_rules! impl_rowid_traits {
                 <$inner_type>::column_result(value).map(|v| $wrapper_type(v))
             }
         }
+
+        impl From<$inner_type> for $wrapper_type {
+            fn from(value: $inner_type) -> Self {
+                Self(value)
+            }
+        }
+
+        impl From<$wrapper_type> for $inner_type {
+            fn from(value: $wrapper_type) -> Self {
+                value.0
+            }
+        }
     };
 }
 
