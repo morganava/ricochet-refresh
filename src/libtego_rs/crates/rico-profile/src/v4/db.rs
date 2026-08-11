@@ -15,7 +15,7 @@ use crate::v4::error::Error;
 use crate::v4::profile;
 
 /// Implements ToSql, FromSql for a wrapper struct around a single value.
-macro_rules! impl_sql_wrapper_type {
+macro_rules! impl_rowid_traits {
     // struct case
     ($vis:vis struct $wrapper_type:ident($inner_vis:vis $inner_type:ty)) => {
         #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -41,23 +41,23 @@ macro_rules! impl_sql_wrapper_type {
 // RowID types
 //
 
-impl_sql_wrapper_type!(pub(crate) struct DBVersionRowID(pub i64));
-impl_sql_wrapper_type!(pub struct UserProfileRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct AvatarRowID(pub i64));
-impl_sql_wrapper_type!(pub struct UserRowID(pub i64));
-impl_sql_wrapper_type!(pub struct ConversationRowID(pub i64));
-impl_sql_wrapper_type!(pub struct MessageRecordRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct MessageContentRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct TombstoneMessageRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct TextMessageRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct FileShareMessageRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct SaltRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct Sha256HashRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct Ed25519PrivateKeyRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct Ed25519SignatureRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
-impl_sql_wrapper_type!(pub(crate) struct X25519PublicKeyRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct DBVersionRowID(pub i64));
+impl_rowid_traits!(pub struct UserProfileRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct AvatarRowID(pub i64));
+impl_rowid_traits!(pub struct UserRowID(pub i64));
+impl_rowid_traits!(pub struct ConversationRowID(pub i64));
+impl_rowid_traits!(pub struct MessageRecordRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct MessageContentRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct TombstoneMessageRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct TextMessageRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct FileShareMessageRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct SaltRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct Sha256HashRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct Ed25519PrivateKeyRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct Ed25519PublicKeyRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct Ed25519SignatureRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct X25519PrivateKeyRowID(pub i64));
+impl_rowid_traits!(pub(crate) struct X25519PublicKeyRowID(pub i64));
 type Timestamp = rico_protocol::v4::Timestamp;
 
 type MessageType = rico_protocol::v4::MessageType;
