@@ -45,57 +45,67 @@ pub(crate) enum CallbackData {
         session_handle: SessionHandle,
         user_handle: UserHandle,
     },
+    UserStatusChanged {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        status: tego_user_status,
+    },
     ChatRequestReceived {
+        session_handle: SessionHandle,
         user_handle: UserHandle,
         message: String,
     },
-    // ChatRequestResponseReceived {
-    //     service_id: V3OnionServiceId,
-    //     accepted_request: bool,
-    // },
-    // MessageReceived {
-    //     service_id: V3OnionServiceId,
-    //     timestamp: std::time::SystemTime,
-    //     message_id: tego_message_id,
-    //     message: String,
-    // },
-    // MessageAcknowledged {
-    //     service_id: V3OnionServiceId,
-    //     message_id: tego_message_id,
-    //     accepted: bool,
-    // },
-    // FileTransferRequestReceived {
-    //     sender: V3OnionServiceId,
-    //     file_transfer_id: tego_file_transfer_id,
-    //     file_name: String,
-    //     file_size: u64,
-    // },
-    // FileTransferRequestAcknowledged {
-    //     service_id: V3OnionServiceId,
-    //     file_transfer_id: tego_file_transfer_id,
-    //     accepted: bool,
-    // },
-    // FileTransferRequestResponseReceived {
-    //     service_id: V3OnionServiceId,
-    //     file_transfer_id: tego_file_transfer_id,
-    //     response: tego_file_transfer_response,
-    // },
-    // FileTransferProgress {
-    //     user_id: V3OnionServiceId,
-    //     file_transfer_id: tego_file_transfer_id,
-    //     direction: tego_file_transfer_direction,
-    //     bytes_complete: u64,
-    //     bytes_total: u64,
-    // },
-    // FileTransferComplete {
-    //     user_id: V3OnionServiceId,
-    //     file_transfer_id: tego_file_transfer_id,
-    //     direction: tego_file_transfer_direction,
-    //     result: tego_file_transfer_result,
-    // },
-    UserStatusChanged {
+    ChatRequestResponseReceived {
+        session_handle: SessionHandle,
         user_handle: UserHandle,
-        status: tego_user_status,
+        accepted_request: bool,
+    },
+    MessageReceived {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        timestamp: std::time::SystemTime,
+        message_id: tego_message_id,
+        message: String,
+    },
+    MessageAcknowledged {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        message_id: tego_message_id,
+        accepted: bool,
+    },
+    FileTransferRequestReceived {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        file_name: String,
+        file_size: u64,
+    },
+    FileTransferRequestAcknowledged {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        accepted: bool,
+    },
+    FileTransferRequestResponseReceived {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        response: tego_file_transfer_response,
+    },
+    FileTransferProgress {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        bytes_complete: u64,
+        bytes_total: u64,
+    },
+    FileTransferComplete {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        result: tego_file_transfer_result,
     },
 }
 
@@ -110,17 +120,17 @@ pub(crate) struct Callbacks {
     // pub on_host_onion_service_state_changed: tego_host_onion_service_state_changed_callback,
     pub on_user_added: tego_user_added_callback,
     pub on_user_removed: tego_user_removed_callback,
-    // pub on_chat_request_received: tego_chat_request_received_callback,
-    // pub on_chat_request_response_received: tego_chat_request_response_received_callback,
-    // pub on_message_received: tego_message_received_callback,
-    // pub on_message_acknowledged: tego_message_acknowledged_callback,
-    // pub on_file_transfer_request_received: tego_file_transfer_request_received_callback,
-    // pub on_file_transfer_request_acknowledged: tego_file_transfer_request_acknowledged_callback,
-    // pub on_file_transfer_request_response_received:
-    //     tego_file_transfer_request_response_received_callback,
-    // pub on_file_transfer_progress: tego_file_transfer_progress_callback,
-    // pub on_file_transfer_complete: tego_file_transfer_complete_callback,
-    // pub on_user_status_changed: tego_user_status_changed_callback,
+    pub on_user_status_changed: tego_user_status_changed_callback,
+    pub on_chat_request_received: tego_chat_request_received_callback,
+    pub on_chat_request_response_received: tego_chat_request_response_received_callback,
+    pub on_message_received: tego_message_received_callback,
+    pub on_message_acknowledged: tego_message_acknowledged_callback,
+    pub on_file_transfer_request_received: tego_file_transfer_request_received_callback,
+    pub on_file_transfer_request_acknowledged: tego_file_transfer_request_acknowledged_callback,
+    pub on_file_transfer_request_response_received:
+        tego_file_transfer_request_response_received_callback,
+    pub on_file_transfer_progress: tego_file_transfer_progress_callback,
+    pub on_file_transfer_complete: tego_file_transfer_complete_callback,
 }
 
 impl Callbacks {
@@ -187,7 +197,7 @@ impl Callbacks {
             } => {
                 let on_session_began = self
                     .on_session_began
-                    .context("missing on_session_begain callback")?;
+                    .context("missing on_session_began callback")?;
                 log_trace!("invoke on_session_began");
 
                 let user_count = users.len();
@@ -248,220 +258,214 @@ impl Callbacks {
 
                 on_user_removed(context, session_handle, user_handle);
             }
-            // ChatRequestReceived {
-            //     service_id,
-            //     message,
-            // } => {
-            //     let on_chat_request_received = self
-            //         .on_chat_request_received
-            //         .context("missing on_chat_request_received callback")?;
-            //     log_trace!("invoke on_chat_request_received");
+            UserStatusChanged {
+                session_handle,
+                user_handle,
+                status,
+            } => {
+                let on_user_status_changed = self
+                    .on_user_status_changed
+                    .context("missing on_user_status_changed callback")?;
+                log_trace!("invoke on_user_status_changed");
 
-            //     let sender = tego_user_id_map().insert(service_id);
-            //     let message = CString::new(message.replace("\0", ""))
-            //         .expect("chat request message contains null-byte");
-            //     let message_len = message.as_bytes().len();
+                on_user_status_changed(context, session_handle, user_handle, status);
+            }
+            ChatRequestReceived {
+                session_handle,
+                user_handle,
+                message,
+            } => {
+                let on_chat_request_received = self
+                    .on_chat_request_received
+                    .context("missing on_chat_request_received callback")?;
+                log_trace!("invoke on_chat_request_received");
 
-            //     on_chat_request_received(
-            //         context,
-            //         sender.into(),
-            //         message.as_c_str().as_ptr(),
-            //         message_len,
-            //     );
+                let sender_user_handle = user_handle;
+                let message = CString::new(message.replace("\0", ""))
+                    .expect("chat request message contains null-byte");
+                let message_handle = tego_string_map().insert(message);
 
-            //     tego_user_id_map().remove(&sender)?;
-            // }
-            // ChatRequestResponseReceived {
-            //     service_id,
-            //     accepted_request,
-            // } => {
-            //     let on_chat_request_response_received = self
-            //         .on_chat_request_response_received
-            //         .context("missing on_chat_request_response_received callback")?;
-            //     log_trace!("invoke on_chat_request_response_received");
+                on_chat_request_received(
+                    context,
+                    session_handle,
+                    sender_user_handle,
+                    message_handle.into(),
+                );
 
-            //     let sender = tego_user_id_map().insert(service_id);
+                tego_string_map().remove(&message_handle)?;
+            }
+            ChatRequestResponseReceived {
+                session_handle,
+                user_handle,
+                accepted_request,
+            } => {
+                let on_chat_request_response_received = self
+                    .on_chat_request_response_received
+                    .context("missing on_chat_request_response_received callback")?;
+                log_trace!("invoke on_chat_request_response_received");
 
-            //     on_chat_request_response_received(context, sender.into(), accepted_request);
+                on_chat_request_response_received(
+                    context,
+                    session_handle,
+                    user_handle,
+                    accepted_request,
+                );
+            }
+            MessageReceived {
+                session_handle,
+                user_handle,
+                timestamp,
+                message_id,
+                message,
+            } => {
+                let on_message_received = self
+                    .on_message_received
+                    .context("missing on_message_received callback")?;
+                log_trace!("Invoke on_message_received");
 
-            //     tego_user_id_map().remove(&sender)?;
-            // }
-            // MessageReceived {
-            //     service_id,
-            //     timestamp,
-            //     message_id,
-            //     message,
-            // } => {
-            //     let on_message_received = self
-            //         .on_message_received
-            //         .context("missing on_message_received callback")?;
-            //     log_trace!("invoke on_message_received");
+                let timestamp = timestamp
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or(std::time::Duration::ZERO);
+                let timestamp = timestamp.as_millis() as tego_time;
+                assert!(timestamp > 0);
+                let message = CString::new(message.replace("\0", ""))
+                    .expect("Chat message contains null-byte");
+                let message = tego_string_map().insert(message);
 
-            //     let user = tego_user_id_map().insert(service_id);
-            //     let timestamp = timestamp
-            //         .duration_since(std::time::UNIX_EPOCH)
-            //         .unwrap_or(std::time::Duration::ZERO);
-            //     let timestamp = timestamp.as_millis() as tego_time;
-            //     assert!(timestamp > 0);
-            //     let message = CString::new(message.replace("\0", ""))
-            //         .expect("chat message contains null-byte");
-            //     let message_len = message.as_bytes().len();
+                on_message_received(
+                    context,
+                    session_handle,
+                    user_handle,
+                    timestamp,
+                    message_id,
+                    message.into(),
+                );
 
-            //     on_message_received(
-            //         context,
-            //         user.into(),
-            //         timestamp,
-            //         message_id,
-            //         message.as_c_str().as_ptr(),
-            //         message_len,
-            //     );
+                tego_string_map().remove(&message)?;
+            }
+            MessageAcknowledged {
+                session_handle,
+                user_handle,
+                message_id,
+                accepted,
+            } => {
+                let on_message_acknowledged = self
+                    .on_message_acknowledged
+                    .context("missing on_message_acknowledged callback")?;
+                log_trace!("Invoke on_message_acknowledged");
 
-            //     tego_user_id_map().remove(&user)?;
-            // }
-            // MessageAcknowledged {
-            //     service_id,
-            //     message_id,
-            //     accepted,
-            // } => {
-            //     let on_message_acknowledged = self
-            //         .on_message_acknowledged
-            //         .context("missing on_message_acknowledged callback")?;
-            //     log_trace!("invoke on_message_acknowledged");
+                on_message_acknowledged(context, session_handle, user_handle, message_id, accepted);
+            }
+            FileTransferRequestReceived {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                file_name,
+                file_size,
+            } => {
+                let on_file_transfer_request_received = self
+                    .on_file_transfer_request_received
+                    .context("missing on_file_transfer_request_received callback")?;
+                log_trace!("invoke on_file_transfer_request_received");
 
-            //     let user = tego_user_id_map().insert(service_id);
+                let file_name = CString::new(file_name.replace("\0", ""))
+                    .expect("file name contains null-byte");
+                let file_name = tego_string_map().insert(file_name);
 
-            //     on_message_acknowledged(context, user.into(), message_id, accepted);
+                on_file_transfer_request_received(
+                    context,
+                    session_handle,
+                    user_handle,
+                    file_transfer_id,
+                    file_name.into(),
+                    file_size,
+                );
 
-            //     tego_user_id_map().remove(&user)?;
-            // }
-            // FileTransferRequestReceived {
-            //     sender,
-            //     file_transfer_id,
-            //     file_name,
-            //     file_size,
-            // } => {
-            //     let on_file_transfer_request_received = self
-            //         .on_file_transfer_request_received
-            //         .context("missing on_file_transfer_request_received callback")?;
-            //     log_trace!("invoke on_file_transfer_request_received");
+                tego_string_map().remove(&file_name)?;
+            }
+            FileTransferRequestAcknowledged {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                accepted,
+            } => {
+                let on_file_transfer_request_acknowledged = self
+                    .on_file_transfer_request_acknowledged
+                    .context("missing on_file_transfer_request_acknowledged callback")?;
+                log_trace!("invoke on_file_transfer_request_acknowledged");
 
-            //     let sender = tego_user_id_map().insert(sender);
-            //     let file_name = CString::new(file_name.replace("\0", ""))
-            //         .expect("file name contains null-byte");
-            //     let file_name_length = file_name.as_bytes().len();
-            //     let file_name = file_name.as_c_str().as_ptr();
+                on_file_transfer_request_acknowledged(
+                    context,
+                    session_handle,
+                    user_handle,
+                    file_transfer_id,
+                    accepted,
+                );
+            }
+            FileTransferRequestResponseReceived {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                response,
+            } => {
+                let on_file_transfer_request_response_received = self
+                    .on_file_transfer_request_response_received
+                    .context("missing on_file_transfer_request_response_received callback")?;
+                log_trace!("invoke on_file_transfer_request_response_received");
 
-            //     on_file_transfer_request_received(
-            //         context,
-            //         sender.into(),
-            //         file_transfer_id,
-            //         file_name,
-            //         file_name_length,
-            //         file_size,
-            //     );
+                on_file_transfer_request_response_received(
+                    context,
+                    session_handle,
+                    user_handle,
+                    file_transfer_id,
+                    response,
+                );
+            }
+            FileTransferProgress {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                direction,
+                bytes_complete,
+                bytes_total,
+            } => {
+                let on_file_transfer_progress = self
+                    .on_file_transfer_progress
+                    .context("missing on_file_transfer_progress callback")?;
+                log_trace!("invoke on_file_transfer_progress");
 
-            //     tego_user_id_map().remove(&sender)?;
-            // }
-            // FileTransferRequestAcknowledged {
-            //     service_id,
-            //     file_transfer_id,
-            //     accepted,
-            // } => {
-            //     let on_file_transfer_request_acknowledged = self
-            //         .on_file_transfer_request_acknowledged
-            //         .context("missing on_file_transfer_request_acknowledged callback")?;
-            //     log_trace!("invoke on_file_transfer_request_acknowledged");
+                on_file_transfer_progress(
+                    context,
+                    session_handle,
+                    user_handle,
+                    file_transfer_id,
+                    direction,
+                    bytes_complete,
+                    bytes_total,
+                );
+            }
+            FileTransferComplete {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                direction,
+                result,
+            } => {
+                let on_file_transfer_complete = self
+                    .on_file_transfer_complete
+                    .context("missing on_file_transfer_complete callback")?;
+                log_trace!("invoke on_file_transfer_complete");
 
-            //     let user = tego_user_id_map().insert(service_id);
-
-            //     on_file_transfer_request_acknowledged(
-            //         context,
-            //         user.into(),
-            //         file_transfer_id,
-            //         accepted,
-            //     );
-
-            //     tego_user_id_map().remove(&user)?;
-            // }
-            // FileTransferRequestResponseReceived {
-            //     service_id,
-            //     file_transfer_id,
-            //     response,
-            // } => {
-            //     let on_file_transfer_request_response_received = self
-            //         .on_file_transfer_request_response_received
-            //         .context("missing on_file_transfer_request_response_received callback")?;
-            //     log_trace!("invoke on_file_transfer_request_response_received");
-
-            //     let user = tego_user_id_map().insert(service_id);
-
-            //     on_file_transfer_request_response_received(
-            //         context,
-            //         user.into(),
-            //         file_transfer_id,
-            //         response,
-            //     );
-            //     tego_user_id_map().remove(&user)?;
-            // }
-            // FileTransferProgress {
-            //     user_id,
-            //     file_transfer_id,
-            //     direction,
-            //     bytes_complete,
-            //     bytes_total,
-            // } => {
-            //     let on_file_transfer_progress = self
-            //         .on_file_transfer_progress
-            //         .context("missing on_file_transfer_progress callback")?;
-            //     log_trace!("invoke on_file_transfer_progress");
-
-            //     let user_id = tego_user_id_map().insert(user_id);
-
-            //     on_file_transfer_progress(
-            //         context,
-            //         user_id.into(),
-            //         file_transfer_id,
-            //         direction,
-            //         bytes_complete,
-            //         bytes_total,
-            //     );
-
-            //     tego_user_id_map().remove(&user_id)?;
-            // }
-            // FileTransferComplete {
-            //     user_id,
-            //     file_transfer_id,
-            //     direction,
-            //     result,
-            // } => {
-            //     let on_file_transfer_complete = self
-            //         .on_file_transfer_complete
-            //         .context("missing on_file_transfer_complete callback")?;
-            //     log_trace!("invoke on_file_transfer_complete");
-
-            //     let user_id = tego_user_id_map().insert(user_id);
-
-            //     on_file_transfer_complete(
-            //         context,
-            //         user_id.into(),
-            //         file_transfer_id,
-            //         direction,
-            //         result,
-            //     );
-
-            //     tego_user_id_map().remove(&user_id)?;
-            // }
-            //     let on_user_status_changed = self
-            //         .on_user_status_changed
-            //         .context("missing on_user_status_changed callback")?;
-            //     log_trace!("invoke on_user_status_changed");
-
-            //     let user = tego_user_id_map().insert(service_id);
-
-            //     on_user_status_changed(context, user.into(), status);
-
-            //     tego_user_id_map().remove(&user)?;
-            // }
+                on_file_transfer_complete(
+                    context,
+                    session_handle,
+                    user_handle,
+                    file_transfer_id,
+                    direction,
+                    result,
+                );
+            }
+            // todo: remove me
             _ => {
                 log_trace!("unhandled callback");
             }
