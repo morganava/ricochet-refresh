@@ -75,13 +75,24 @@ void ConversationsPanel::add_user(
     message_entry_panel->Bind(wxEVT_SEND_MESSAGE, [=, this](const SendMessageEvent& evt) {
         const auto& timestamp = evt.get_timestamp();
         const auto& text = evt.get_text();
-        chat_panel->add_chat_message(timestamp, wxString("Me"), text);
-        // todo: remove, this is just test plumbing
-        this->receive_message(
+
+        auto text_ts = into_tego_string(text);
+        std::unique_ptr<tego_error> err;
+        tego_message_id message_id;
+        tego_context_send_message(
+            &wxGetApp().get_context_mut(),
+            this->session_handle,
             user_handle,
-            timestamp + wxTimeSpan(0, 0, 1),
-            "auto-reply: I've received your message"
+            text_ts.get(),
+            &message_id,
+            tego::out(err)
         );
+        if (err) {
+            // todo: on failure we should NOT erase the text in the chat box
+            LOG_ERROR(err.get());
+        } else {
+            chat_panel->add_chat_message(timestamp, wxString("Me"), text);
+        }
     });
 
     auto v_sizer = new wxBoxSizer(wxVERTICAL);
@@ -91,7 +102,16 @@ void ConversationsPanel::add_user(
     this->right_v_sizer->Add(v_sizer, 1, wxEXPAND);
     this->right_v_sizer->Show(v_sizer, false);
 
-    this->contact_widgets.insert({user_handle, {v_sizer, chat_panel, message_entry_panel}});
+    this->contact_widgets.insert(
+        {user_handle, {display_name, v_sizer, chat_panel, message_entry_panel}}
+    );
+}
+
+void ConversationsPanel::change_user_contact_group(
+    const tego_user_handle user_handle,
+    const ContactGroup contact_group
+) {
+    this->contact_list_panel->move_contact(user_handle, contact_group);
 }
 
 void ConversationsPanel::receive_message(
@@ -102,7 +122,8 @@ void ConversationsPanel::receive_message(
     if (auto it = this->contact_widgets.find(recipient); it != this->contact_widgets.end()) {
         auto& contact_widgets = it->second;
 
-        contact_widgets.chat_panel->add_chat_message(timestamp, "reply-bot", message);
+        contact_widgets.chat_panel
+            ->add_chat_message(timestamp, contact_widgets.display_name, message);
     }
 }
 

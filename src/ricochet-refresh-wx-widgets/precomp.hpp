@@ -48,6 +48,11 @@ inline auto format_as(const wxColour& col) {
     return fmt::format("#{:02X}{:02X}{:02X}", col.Red(), col.Green(), col.Blue());
 }
 
+// enable wxDateTime usage with fmt
+inline auto format_as(const wxDateTime& date_time) {
+    return format_as(date_time.FormatISOCombined(' '));
+}
+
 #endif // RICOCHET_REFRESH_LOGGING
 
 // tego-rs

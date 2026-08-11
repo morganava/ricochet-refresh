@@ -15,13 +15,13 @@ public:
         const ContactGroup contact_group
     );
     void remove_contact(tego_user_handle contact_handle);
+    void move_contact(tego_user_handle contact_handle, ContactGroup contact_group);
 
 private:
     // event handlers
     void on_char(wxKeyEvent&);
 
     // setters/getters
-
     void
     set_selected_contact_group_heading_panel(ContactGroupHeadingPanel* contact_group_heading_panel);
     void set_selected_contact_panel(ContactPanel* contact_panel);

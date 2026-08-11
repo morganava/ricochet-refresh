@@ -92,6 +92,7 @@ void ContactListPanel::add_contact(
         v_sizer->Add(contact_panel, 0, wxEXPAND);
     }
     v_sizer->Show(contact_panel, expanded);
+    this->SendSizeEvent();
     this->Layout();
 }
 
@@ -107,6 +108,52 @@ void ContactListPanel::remove_contact(tego_user_handle contact_handle) {
         auto sizer = contact_panel->GetContainingSizer();
         sizer->Detach(contact_panel);
         contact_panel->Destroy();
+        this->SendSizeEvent();
+        this->Layout();
+    }
+}
+
+void ContactListPanel::move_contact(tego_user_handle contact_handle, ContactGroup contact_group) {
+    if (auto it = this->contact_map.find(contact_handle); it != this->contact_map.end()) {
+        auto contact_panel = it->second;
+        const auto nickname = contact_panel->get_nickname();
+
+        // Remove this contact panel from starting group
+        {
+            ContactPanel::remove(contact_panel);
+            auto v_sizer = contact_panel->GetContainingSizer();
+            v_sizer->Detach(contact_panel);
+        }
+
+        // Insert contact panel in right place in new group
+        {
+            const auto cg = static_cast<int>(contact_group);
+            auto v_sizer = this->group_v_sizer[cg];
+
+            const auto item_count = v_sizer->GetItemCount();
+            if (item_count > 0) {
+                // insert contact alphabetically
+                size_t i = 0;
+                for (auto item : v_sizer->GetChildren()) {
+                    auto window = item->GetWindow();
+                    auto cp = dynamic_cast<ContactPanel*>(window);
+                    assert(cp != nullptr);
+                    if (Locale::string_compare(nickname, cp->get_nickname()) == Ordering::Less) {
+                        v_sizer->Insert(i, contact_panel, 0, wxEXPAND);
+                        ContactPanel::insert_before(contact_panel, cp);
+                        break;
+                    } else if (i == item_count - 1) {
+                        v_sizer->Add(contact_panel, 0, wxEXPAND);
+                        ContactPanel::add_after(contact_panel, cp);
+                        break;
+                    }
+                    ++i;
+                }
+            } else {
+                v_sizer->Add(contact_panel, 0, wxEXPAND);
+            }
+        }
+        this->SendSizeEvent();
         this->Layout();
     }
 }

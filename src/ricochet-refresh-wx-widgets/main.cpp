@@ -257,4 +257,259 @@ void RicochetRefresh::init_callbacks() {
         },
         tego::panic_on_error()
     );
+    // chat request received
+    tego_context_set_chat_request_received_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           const tego_string* message) {
+            auto message_wxstring = into_wxString(message);
+
+            wxGetApp().CallAfter([=]() {
+                auto& sessions_notebook =
+                    wxGetApp().get_main_frame().get_sessions_notebook_panel_mut();
+
+                auto session_panel =
+                    sessions_notebook.get_session_panel_by_session_handle(session_handle);
+                if (!session_panel) {
+                    return;
+                }
+
+                LOG_INFO(fmt::format(
+                    "Chat Request Received; SessionHandle: {}, UserHandle: {}, Message: {}",
+                    session_handle,
+                    user_handle,
+                    message_wxstring
+                ));
+
+                auto conversation_panel = session_panel->get_conversations_panel_mut();
+                conversation_panel->change_user_contact_group(
+                    user_handle,
+                    ContactGroup::Requesting
+                );
+                conversation_panel
+                    ->receive_message(user_handle, wxDateTime::Now(), message_wxstring);
+            });
+        },
+        tego::panic_on_error()
+    );
+    // chat request response received
+    tego_context_set_chat_request_response_received_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           bool accepted_request) {
+            LOG_INFO(fmt::format(
+                "Chat Request Response Receeived; SessionHandle: {}, UserHandle: {} Accepted: {}",
+                session_handle,
+                user_handle,
+                accepted_request
+            ));
+            if (!accepted_request) {
+                wxGetApp().CallAfter([=]() {
+                    auto& sessions_notebook =
+                        wxGetApp().get_main_frame().get_sessions_notebook_panel_mut();
+
+                    auto session_panel =
+                        sessions_notebook.get_session_panel_by_session_handle(session_handle);
+                    if (!session_panel) {
+                        return;
+                    }
+
+                    auto conversation_panel = session_panel->get_conversations_panel_mut();
+                    conversation_panel->change_user_contact_group(
+                        user_handle,
+                        ContactGroup::Rejected
+                    );
+                });
+            }
+        },
+        tego::panic_on_error()
+    );
+    // user status changed callback
+    tego_context_set_user_status_changed_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_user_status user_status) {
+            wxGetApp().CallAfter([=]() {
+                auto& sessions_notebook =
+                    wxGetApp().get_main_frame().get_sessions_notebook_panel_mut();
+
+                auto session_panel =
+                    sessions_notebook.get_session_panel_by_session_handle(session_handle);
+                if (!session_panel) {
+                    return;
+                }
+
+                assert(
+                    user_status == tego_user_status_online
+                    || user_status == tego_user_status_offline
+                );
+
+                auto conversation_panel = session_panel->get_conversations_panel_mut();
+                conversation_panel->change_user_contact_group(
+                    user_handle,
+                    user_status == tego_user_status_online ? ContactGroup::Connected
+                                                           : ContactGroup::Disconnected
+                );
+            });
+        },
+        tego::panic_on_error()
+    );
+    // message received callback
+    tego_context_set_message_received_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle sender_user_handle,
+           tego_time timestamp,
+           tego_message_id message_id,
+           const tego_string* message) {
+            auto timestamp_wxdatetime = into_wxDateTime(timestamp);
+            auto message_wxstring = into_wxString(message);
+            wxGetApp().CallAfter([=]() {
+                auto& sessions_notebook =
+                    wxGetApp().get_main_frame().get_sessions_notebook_panel_mut();
+
+                auto session_panel =
+                    sessions_notebook.get_session_panel_by_session_handle(session_handle);
+                if (!session_panel) {
+                    return;
+                }
+
+                auto conversation_panel = session_panel->get_conversations_panel_mut();
+                conversation_panel
+                    ->receive_message(sender_user_handle, timestamp_wxdatetime, message_wxstring);
+            });
+        },
+        tego::panic_on_error()
+    );
+    // message ack received callback
+    tego_context_set_message_acknowledged_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_message_id message_id,
+           bool message_accepted) {
+            if (message_accepted) {
+                LOG_INFO(fmt::format(
+                    "Message accepted; SessionHandle: {}, UserHandle: {}, MessageId: {}",
+                    session_handle,
+                    user_handle,
+                    message_id
+                ));
+            } else {
+                LOG_ERROR(fmt::format(
+                    "Message not accepted; SessionHandle: {}, UserHandle: {}, MessageId: {}",
+                    session_handle,
+                    user_handle,
+                    message_id
+                ));
+            }
+        },
+        tego::panic_on_error()
+    );
+    // file transfer request received callback
+    tego_context_set_file_transfer_request_received_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_file_transfer_id file_transfer_id,
+           const tego_string* file_name,
+           tego_file_size file_size) {
+            LOG_INFO(fmt::format(
+                "File transfer request received; SessionHandle: {}, UserHandle: {}, FileTransferId: {}, FileName: {}, FileSize: {}",
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                into_wxString(file_name),
+                file_size
+            ));
+        },
+        tego::panic_on_error()
+    );
+    tego_context_set_file_transfer_progress_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_file_transfer_id file_transfer_id,
+           tego_file_transfer_direction direction,
+           tego_file_size bytes_complete,
+           tego_file_size bytes_total) {
+            LOG_INFO(fmt::format(
+                "File transfer progress: SessionHandle: {}, UserHandle: {}, FileTransferId: {}, Direction: {}, BytesComplete: {}, BytesTotal: {}",
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                static_cast<int>(direction),
+                bytes_complete,
+                bytes_total
+            ));
+        },
+        tego::panic_on_error()
+    );
+
+    // file transfer request received callback
+    tego_context_set_file_transfer_complete_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_file_transfer_id file_transfer_id,
+           tego_file_transfer_direction file_transfer_direction,
+           tego_file_transfer_result result) {
+            LOG_INFO(fmt::format(
+                "File transfer complete; SessionHandle: {}, UserHandle: {}, FileTransferId: {}, Direction: {}, Result: {}",
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                static_cast<int>(file_transfer_direction),
+                static_cast<int>(result)
+            ));
+        },
+        tego::panic_on_error()
+    );
+    // file transfer request ack'd callback
+    tego_context_set_file_transfer_request_acknowledged_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_file_transfer_id file_transfer_id,
+           bool request_acked) {
+            LOG_INFO(fmt::format(
+                "File transfer request ack'd: SessionHandle {}, UserHandle: {}, FileTransferId: {}, RequestAcked: {}",
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                request_acked
+            ));
+        },
+        tego::panic_on_error()
+    );
+    // callback on received response
+    tego_context_set_file_transfer_request_response_received_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_file_transfer_id file_transfer_id,
+           tego_file_transfer_response response) {
+            LOG_INFO(fmt::format(
+                "File transfer request response received: SessionHandle {}, UserHandle: {}, FileTransferId: {}, Response: {}",
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                static_cast<int>(response)
+            ));
+        },
+        tego::panic_on_error()
+    );
 }
