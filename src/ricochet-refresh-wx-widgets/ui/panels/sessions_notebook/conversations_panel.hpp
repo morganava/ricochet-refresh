@@ -17,6 +17,9 @@ public:
         const ContactGroup contact_group
     );
 
+    void
+    change_user_contact_group(const tego_user_handle user_handle, const ContactGroup contact_group);
+
     void receive_message(
         const tego_user_handle recipient,
         const wxDateTime& timestamp,
@@ -35,8 +38,10 @@ private:
     wxBoxSizer* right_v_sizer = nullptr;
 
     struct ContactWidgets {
-        wxBoxSizer* v_sizer;
+        // Data
+        wxString display_name;
         // Chat Widgets
+        wxBoxSizer* v_sizer;
         ChatPanel* chat_panel;
         MessageEntryPanel* message_entry_panel;
     };
