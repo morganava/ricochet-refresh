@@ -436,13 +436,6 @@ pub enum tego_chat_acknowledge {
 //  callback is invoked, so duplicate/marshall data as necessary
 //
 
-/// Callback fired when the tor daemon's network status changes
-///
-/// @param context : the current tego context
-/// @param status : the new network status
-// pub type tego_tor_network_status_changed_callback =
-//     Option<extern "C" fn(context: *mut tego_context, status: tego_tor_network_status) -> ()>;
-
 /// Callback fired when a tor provider has been initialized
 ///
 /// @param context: the current tego context
@@ -498,59 +491,54 @@ pub type tego_session_began_callback = Option<
     ),
 >;
 
-/// Callback fired when the host user state changes
-///
-/// @param context : the current tego context
-/// @param state : the current host user state
-// pub type tego_host_onion_service_state_changed_callback =
-//     Option<extern "C" fn(context: *mut tego_context, state: tego_host_onion_service_state) -> ()>;
-
 /// Callback fired when the host receives a chat request from another user
 ///
 /// @param context : the current tego context
-/// @param sender : the user that wants to chat
-/// @param message : null-terminated message string received from the requesting user
-/// @param message_length : length of the message not including null-terminator
-// pub type tego_chat_request_received_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         sender: tego_user_handle,
-//         message: *const c_char,
-//         message_length: usize,
-//     ) -> (),
-// >;
+/// @param session_handle : the session this chat request came from
+/// @param sender_user_handle : the user that wants to chat
+/// @param message : message string received from the requesting user
+pub type tego_chat_request_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        sender_user_handle: tego_user_handle,
+        message: *const tego_string,
+    ) -> (),
+>;
 
 /// Callback fired when the host receives a response to their sent chat request
 ///
 /// @param context : the current tego context
-/// @param sender : the user responding to our chat request
+/// @param session_handle : the session this chat response comes from
+/// @param user_handle : the user responding to our chat request
 /// @param accepted_request : true if request accepted, false if rejected
-// pub type tego_chat_request_response_received_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         sender: tego_user_handle,
-//         accepted_request: bool,
-//     ) -> (),
-// >;
+pub type tego_chat_request_response_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        accepted_request: bool,
+    ) -> (),
+>;
 
 /// Callback fired when the host receives a message from another user
 ///
 /// @param context : the current tego context
-/// @param sender : the user that sent host the message
+/// @param session_handle : the session this chat request came from
+/// @param sender_user_handle : the user that wants to chat
 /// @param timestamp : the time the message was sent
 /// @param message_id : id of the message received
-/// @param message : null-terminated message string
-/// @param message_length : length of the message not including null-terminator
-// pub type tego_message_received_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         sender: tego_user_handle,
-//         timestamp: tego_time,
-//         message_id: tego_message_id,
-//         message: *const c_char,
-//         message_length: usize,
-//     ) -> (),
-// >;
+/// @param message : received message string
+pub type tego_message_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        sender_user_handle: tego_user_handle,
+        timestamp: tego_time,
+        message_id: tego_message_id,
+        message: *const tego_string,
+    ) -> (),
+>;
 
 /// Callback fired when a chat message is received and acknowledge
 /// by the recipient
@@ -558,130 +546,139 @@ pub type tego_session_began_callback = Option<
 /// @param context : the current tego context
 /// @param user_id : the user the message was sent to
 /// @param message_id : id of the message being acknowledged
-/// @param message_acked : true if acknowledged, false if error
-// pub type tego_message_acknowledged_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         user_id: tego_user_handle,
-//         message_id: tego_message_id,
-//         message_acked: bool,
-//     ) -> (),
-// >;
+/// @param message_accepted : true if accepted, false if error
+pub type tego_message_acknowledged_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_id: tego_user_handle,
+        message_id: tego_message_id,
+        message_accepted: bool,
+    ) -> (),
+>;
 
 /// Callback fired when a user wants to send recipient a file
 ///
 /// @param context : the current tego context
-/// @param sender : the user sending the request
+/// @param session_handle: the session this request is from
+/// @param user_handle : the user sending the request
 /// @param id : id of the file transfer received
 /// @param file_name : name of the file user wants to send
-/// @param file_name_length : length of file_name not including the null-terminator
 /// @param file_size : size of the file in bytes
 /// @param file_hash : hash of the file
-// pub type tego_file_transfer_request_received_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         sender: tego_user_handle,
-//         id: tego_file_transfer_id,
-//         file_name: *const c_char,
-//         file_name_length: usize,
-//         file_size: tego_file_size,
-//     ) -> (),
-// >;
+pub type tego_file_transfer_request_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        sender: tego_user_handle,
+        id: tego_file_transfer_id,
+        file_name: *const tego_string,
+        file_size: tego_file_size,
+    ) -> (),
+>;
 
 /// Callback fired when a file transfer request message is received and
 /// acknowledged by the recipient (not whether the recipient wishes to start
 /// the file transfer)
 ///
-/// @param context : the current tego cotext
-/// @param receiver : the user acknowledging our request
+/// @param context : the current tego context
+/// @param session_handle: the session the ack has come in on
+/// @param user_handle : the user acknowledging our request
 /// @param id : the id of the file transfer that is being acknowledged
 /// @param request_acked : true if acknowledged, false if error
-// pub type tego_file_transfer_request_acknowledged_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         receiver: tego_user_handle,
-//         id: tego_file_transfer_id,
-//         request_acked: bool,
-//     ) -> (),
-// >;
+pub type tego_file_transfer_request_acknowledged_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        id: tego_file_transfer_id,
+        request_acked: bool,
+    ) -> (),
+>;
 
 /// Callback fired when the user responds to an file transfer request
 ///
 /// @param context : the current tego context
-/// @param receiver : the user accepting or rejecting our request
+/// @param session_hande : the session the response has come in on
+/// @param user_handle : the user accepting or rejecting our request
 /// @param id : the id of the file transfer that is being accepted
 /// @param response : true if the recipients wants to recevie
 ///  our file, false otherwise
-// pub type tego_file_transfer_request_response_received_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         receiver: tego_user_handle,
-//         id: tego_file_transfer_id,
-//         response: tego_file_transfer_response,
-//     ) -> (),
-// >;
+pub type tego_file_transfer_request_response_received_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        id: tego_file_transfer_id,
+        response: tego_file_transfer_response,
+    ) -> (),
+>;
 
-// #[repr(C)]
-// pub enum tego_file_transfer_direction {
-//     tego_file_transfer_direction_sending,
-//     tego_file_transfer_direction_receiving,
-// }
+#[repr(C)]
+pub enum tego_file_transfer_direction {
+    tego_file_transfer_direction_sending,
+    tego_file_transfer_direction_receiving,
+}
 
 /// Callback fired when file transfer send or receive progress has changed
 /// This callback is fired for both the sender and the receiver
 ///
 /// @param context : the current tego context
-/// @param user_id : the user sending/receiving the file
+/// @param session_handle: the sesssion this file transfer is from
+/// @param user_handle : the user sending/receiving the file
 /// @param id : the file transfer associated with this callback
 /// @param direction : the direction this file is going
 /// @param bytes_complete : number of bytes sent/received
 /// @param bytes_total : the total size of the file
-// pub type tego_file_transfer_progress_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         user_id: tego_user_handle,
-//         id: tego_file_transfer_id,
-//         direction: tego_file_transfer_direction,
-//         bytes_complete: tego_file_size,
-//         bytes_total: tego_file_size,
-//     ) -> (),
-// >;
+pub type tego_file_transfer_progress_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        bytes_complete: tego_file_size,
+        bytes_total: tego_file_size,
+    ) -> (),
+>;
 
-// #[repr(C)]
-// pub enum tego_file_transfer_result {
-//     /// file transfer completed successfully
-//     tego_file_transfer_result_success,
-//     /// file transfer failed for unknown reason
-//     tego_file_transfer_result_failure,
-//     /// file transfer was cancelled by one of the participants after it had started
-//     tego_file_transfer_result_cancelled,
-//     /// file transfer request was rejected by the receiver
-//     tego_file_transfer_result_rejected,
-//     /// file transfer completed but final file's hash did not match the one advertised
-//     tego_file_transfer_result_bad_hash,
-//     /// file transfer failed due to connectivity problem
-//     tego_file_transfer_result_network_error,
-//     /// file transfer failed due to a file system error
-//     tego_file_transfer_result_filesystem_error,
-// }
+#[repr(C)]
+pub enum tego_file_transfer_result {
+    /// file transfer completed successfully
+    tego_file_transfer_result_success,
+    /// file transfer failed for unknown reason
+    tego_file_transfer_result_failure,
+    /// file transfer was cancelled by one of the participants after it had started
+    tego_file_transfer_result_cancelled,
+    /// file transfer request was rejected by the receiver
+    tego_file_transfer_result_rejected,
+    /// file transfer completed but final file's hash did not match the one advertised
+    tego_file_transfer_result_bad_hash,
+    /// file transfer failed due to connectivity problem
+    tego_file_transfer_result_network_error,
+    /// file transfer failed due to a file system error
+    tego_file_transfer_result_filesystem_error,
+}
 
 /// Callback fired when a file transfer has completed
 /// either successfully or in error
 ///
 /// @param context : the current tego context
-/// @param user_id : the user sending/receivintg the file
+/// @param session_handle: the session the file transfer is from
+/// @param user_handle : the user sending/receivintg the file
 /// @param id : the file transfer associated with this callback
 /// @param direction : the direction this file was going
 /// @param result : how the transfer completed
-// pub type tego_file_transfer_complete_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         user_id: tego_user_handle,
-//         id: tego_file_transfer_id,
-//         direction: tego_file_transfer_direction,
-//         result: tego_file_transfer_result,
-//     ) -> (),
-// >;
+pub type tego_file_transfer_complete_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session_handle: tego_session_handle,
+        user_handle: tego_user_handle,
+        id: tego_file_transfer_id,
+        direction: tego_file_transfer_direction,
+        result: tego_file_transfer_result,
+    ) -> (),
+>;
 
 /// Callback fired when a new user is added (e.g. via contact request)
 ///
@@ -713,15 +710,17 @@ pub type tego_user_removed_callback = Option<
 /// Callback fired when a user's status changes
 ///
 /// @param context : the current tego context
+/// @param session : the session the user is in
 /// @param user : the user whose status has changed
 /// @param status: the user's new status
-// pub type tego_user_status_changed_callback = Option<
-//     extern "C" fn(
-//         context: *mut tego_context,
-//         user: tego_user_handle,
-//         status: tego_user_status,
-//     ) -> (),
-// >;
+pub type tego_user_status_changed_callback = Option<
+    extern "C" fn(
+        context: *mut tego_context,
+        session: tego_session_handle,
+        user: tego_user_handle,
+        status: tego_user_status,
+    ) -> (),
+>;
 
 //
 // Setters for various callbacks
@@ -795,98 +794,98 @@ pub extern "C" fn tego_context_set_session_began_callback(
 //     );
 // }
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_chat_request_received_callback(
-//     context: *mut tego_context,
-//     callback: tego_chat_request_received_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_chat_request_received, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_chat_request_received_callback(
+    context: *mut tego_context,
+    callback: tego_chat_request_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_chat_request_received, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_chat_request_response_received_callback(
-//     context: *mut tego_context,
-//     callback: tego_chat_request_response_received_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_chat_request_response_received, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_chat_request_response_received_callback(
+    context: *mut tego_context,
+    callback: tego_chat_request_response_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_chat_request_response_received, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_message_received_callback(
-//     context: *mut tego_context,
-//     callback: tego_message_received_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_message_received, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_message_received_callback(
+    context: *mut tego_context,
+    callback: tego_message_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_message_received, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_message_acknowledged_callback(
-//     context: *mut tego_context,
-//     callback: tego_message_acknowledged_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_message_acknowledged, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_message_acknowledged_callback(
+    context: *mut tego_context,
+    callback: tego_message_acknowledged_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_message_acknowledged, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_file_transfer_request_received_callback(
-//     context: *mut tego_context,
-//     callback: tego_file_transfer_request_received_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_file_transfer_request_received, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_received_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_request_received, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_file_transfer_request_acknowledged_callback(
-//     context: *mut tego_context,
-//     callback: tego_file_transfer_request_acknowledged_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(
-//         on_file_transfer_request_acknowledged,
-//         context,
-//         callback,
-//         error
-//     );
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_acknowledged_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_acknowledged_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(
+        on_file_transfer_request_acknowledged,
+        context,
+        callback,
+        error
+    );
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_file_transfer_request_response_received_callback(
-//     context: *mut tego_context,
-//     callback: tego_file_transfer_request_response_received_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(
-//         on_file_transfer_request_response_received,
-//         context,
-//         callback,
-//         error
-//     );
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_request_response_received_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_request_response_received_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(
+        on_file_transfer_request_response_received,
+        context,
+        callback,
+        error
+    );
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_file_transfer_progress_callback(
-//     context: *mut tego_context,
-//     callback: tego_file_transfer_progress_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_file_transfer_progress, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_progress_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_progress_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_progress, context, callback, error);
+}
 
-// #[no_mangle]
-// pub extern "C" fn tego_context_set_file_transfer_complete_callback(
-//     context: *mut tego_context,
-//     callback: tego_file_transfer_complete_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_file_transfer_complete, context, callback, error);
-// }
+#[no_mangle]
+pub extern "C" fn tego_context_set_file_transfer_complete_callback(
+    context: *mut tego_context,
+    callback: tego_file_transfer_complete_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_file_transfer_complete, context, callback, error);
+}
 
-// #[no_mangle]
+#[no_mangle]
 pub extern "C" fn tego_context_set_user_added_callback(
     context: *mut tego_context,
     callback: tego_user_added_callback,
@@ -905,13 +904,13 @@ pub extern "C" fn tego_context_set_user_removed_callback(
 }
 
 #[no_mangle]
-// pub extern "C" fn tego_context_set_user_status_changed_callback(
-//     context: *mut tego_context,
-//     callback: tego_user_status_changed_callback,
-//     error: *mut *mut tego_error,
-// ) {
-//     impl_callback_setter!(on_user_status_changed, context, callback, error);
-// }
+pub extern "C" fn tego_context_set_user_status_changed_callback(
+    context: *mut tego_context,
+    callback: tego_user_status_changed_callback,
+    error: *mut *mut tego_error,
+) {
+    impl_callback_setter!(on_user_status_changed, context, callback, error);
+}
 
 //
 // Destructors for various tego types

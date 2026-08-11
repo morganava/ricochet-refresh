@@ -619,6 +619,7 @@ impl Session {
                         }) => {
                             log_info!("Contact request received, peer: {service_id:?}, message_text: \"{message_text}\"");
 
+                            let session_handle = self.session_handle;
                             // check to see if this user has been previously rejected, in which case we migrate them back to requesting
                             if let Some(&user_handle) =
                                 self.service_id_to_user_handle.get(&service_id)
