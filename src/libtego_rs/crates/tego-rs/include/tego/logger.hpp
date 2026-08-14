@@ -11,6 +11,13 @@ namespace tego {
     inline void log_error(std::string msg) {
         tego_log_error(msg.data(), msg.size());
     }
+    inline void log_error(const tego_error *error) {
+        auto message = std::string(tego_error_get_message(error));
+        tego::log_error(message);
+    }
+    inline void log_error(const std::unique_ptr<tego_error>& error) {
+        tego::log_error(error.get());
+    }
     inline void log_info(std::string msg) {
         tego_log_info(msg.data(), msg.size());
     }

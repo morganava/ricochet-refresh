@@ -13,6 +13,28 @@
 #include <memory>
 #include <type_traits>
 
+// define deleters for using unique_ptr and shared_ptr with tego types
+
+#define TEGO_DEFAULT_DELETE_IMPL(TYPE)\
+namespace std {\
+    template<> class default_delete<TYPE> {\
+    public:\
+        void operator()(TYPE* val) { TYPE##_delete(val); }\
+    };\
+}
+
+TEGO_DEFAULT_DELETE_IMPL(tego_error)
+TEGO_DEFAULT_DELETE_IMPL(tego_string)
+TEGO_DEFAULT_DELETE_IMPL(tego_context)
+TEGO_DEFAULT_DELETE_IMPL(tego_settings)
+TEGO_DEFAULT_DELETE_IMPL(tego_profile)
+TEGO_DEFAULT_DELETE_IMPL(tego_ed25519_private_key)
+TEGO_DEFAULT_DELETE_IMPL(tego_v3_onion_service_id)
+TEGO_DEFAULT_DELETE_IMPL(tego_tor_config)
+TEGO_DEFAULT_DELETE_IMPL(tego_bridge_config)
+TEGO_DEFAULT_DELETE_IMPL(tego_proxy_config)
+TEGO_DEFAULT_DELETE_IMPL(tego_firewall_config)
+
 // libtego
 #include <tego/utilities.hpp>
 #include <tego/logger.hpp>
@@ -84,26 +106,3 @@ namespace tego
         }
     };
 }
-
-
-// define deleters for using unique_ptr and shared_ptr with tego types
-
-#define TEGO_DEFAULT_DELETE_IMPL(TYPE)\
-namespace std {\
-    template<> class default_delete<TYPE> {\
-    public:\
-        void operator()(TYPE* val) { TYPE##_delete(val); }\
-    };\
-}
-
-TEGO_DEFAULT_DELETE_IMPL(tego_error)
-TEGO_DEFAULT_DELETE_IMPL(tego_string)
-TEGO_DEFAULT_DELETE_IMPL(tego_context)
-TEGO_DEFAULT_DELETE_IMPL(tego_settings)
-TEGO_DEFAULT_DELETE_IMPL(tego_profile)
-TEGO_DEFAULT_DELETE_IMPL(tego_ed25519_private_key)
-TEGO_DEFAULT_DELETE_IMPL(tego_v3_onion_service_id)
-TEGO_DEFAULT_DELETE_IMPL(tego_tor_config)
-TEGO_DEFAULT_DELETE_IMPL(tego_bridge_config)
-TEGO_DEFAULT_DELETE_IMPL(tego_proxy_config)
-TEGO_DEFAULT_DELETE_IMPL(tego_firewall_config)
