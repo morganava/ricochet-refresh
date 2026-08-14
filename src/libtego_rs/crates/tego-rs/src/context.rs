@@ -141,98 +141,90 @@ impl Context {
     }
 
     pub fn end_session(&mut self, session_handle: SessionHandle) -> Result<()> {
-        self.push_command(CommandData::EndSession { session_handle });
-        Ok(())
+        let result: Promise<Result<()>> = Default::default();
+        let result_future = result.get_future();
+
+        self.push_command(CommandData::EndSession {
+            session_handle,
+            result,
+        });
+
+        result_future.wait()
     }
 
-    fn get_session(&self, session_handle: SessionHandle) -> Result<&Session> {
-        bail_not_implemented!();
-    }
-
-    pub fn get_user_count(&self, session_handle: SessionHandle) -> Result<usize> {
-        Ok(self.get_session(session_handle)?.get_user_count())
-    }
-
-    pub fn get_user_handles(&self, session_handle: SessionHandle) -> Result<Vec<UserHandle>> {
-        Ok(self.get_session(session_handle)?.get_user_handles())
-    }
-
-    pub fn get_user_type(
-        &self,
+    pub fn forget_user(
+        &mut self,
         session_handle: SessionHandle,
         user_handle: UserHandle,
-    ) -> Result<UserType> {
-        Ok(self
-            .get_session(session_handle)?
-            .get_user_type(user_handle)?)
-    }
+    ) -> Result<()> {
+        let result: Promise<Result<()>> = Default::default();
+        let result_future = result.get_future();
+        self.push_command(CommandData::ForgetUser {
+            session_handle,
+            user_handle,
+            result,
+        });
 
-    pub fn get_user_nickname(
-        &self,
-        session_handle: SessionHandle,
-        user_handle: UserHandle,
-    ) -> Result<String> {
-        bail_not_implemented!();
-        // Ok(self
-        //     .get_session(session_handle)?
-        //     .get_user_nickname(user_handle)?)
-    }
-
-    pub fn get_user_pet_name(
-        &self,
-        session_handle: SessionHandle,
-        user_handle: UserHandle,
-    ) -> Result<Option<String>> {
-        bail_not_implemented!();
-        // Ok(self
-        //     .get_session(session_handle)?
-        //     .get_user_pet_name(user_handle)?)
-    }
-
-    pub fn forget_user(&mut self, service_id: V3OnionServiceId) -> Result<()> {
-        log_trace!();
-
-        // self.users.remove(&service_id);
-        // let result: Promise<Result<()>> = Default::default();
-        // let result_future = result.get_future();
-        // self.push_command(CommandData::ForgetUser { service_id, result });
-
-        // result_future.wait()
-
-        Ok(())
+        result_future.wait()
     }
 
     pub fn send_contact_request(
         &self,
+        session_handle: SessionHandle,
         service_id: V3OnionServiceId,
+        pet_name: String,
         message: rico_protocol::v3::message::contact_request_channel::MessageText,
-    ) {
+    ) -> Result<UserHandle> {
         log_trace!();
 
-        // let contact_request_message = Some(message);
-        // self.push_command(CommandData::ConnectContact {
-        //     service_id,
-        //     contact_request_message,
-        // });
-        unimplemented!();
+        let result: Promise<Result<UserHandle>> = Default::default();
+        let result_future = result.get_future();
+
+        self.push_command(CommandData::AddPendingContact {
+            session_handle,
+            service_id,
+            pet_name,
+            result,
+        });
+
+        // todo: maybe this is weird and should be handled in the event loop task
+        let result = result_future.wait();
+        if let Ok(user_handle) = result {
+            let contact_request_message = Some(message);
+            self.push_command(CommandData::ConnectContact {
+                session_handle,
+                user_handle,
+                contact_request_message,
+            });
+        }
+        result
     }
 
     pub fn acknowledge_contact_request(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         response: tego_chat_acknowledge,
-    ) {
+    ) -> Result<()> {
         log_trace!();
 
+        let result: Promise<Result<()>> = Default::default();
+        let result_future = result.get_future();
+
         self.push_command(CommandData::AcknowledgeContactRequest {
-            service_id,
+            session_handle,
+            user_handle,
             response,
+            result,
         });
+
+        result_future.wait()
     }
 
     pub fn send_message(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         message_text: rico_protocol::v3::message::chat_channel::MessageText,
     ) -> Result<tego_message_id> {
         log_trace!();
@@ -240,7 +232,8 @@ impl Context {
         let message_id: Promise<Result<tego_message_id>> = Default::default();
         let message_id_future = message_id.get_future();
         let cmd = CommandData::SendMessage {
-            service_id,
+            session_handle,
+            user_handle,
             message_text,
             message_id,
         };
@@ -251,15 +244,23 @@ impl Context {
 
     pub fn send_file_transfer_request(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_path: PathBuf,
     ) -> Result<(tego_file_transfer_id, tego_file_size)> {
         log_trace!();
 
+        // verify absolute path
+        bail_if!(!file_path.is_absolute());
+
+        // verify path is NOT a directory
+        bail_if!(file_path.is_dir());
+
         let result: Promise<Result<(tego_file_transfer_id, tego_file_size)>> = Default::default();
         let result_future = result.get_future();
         let cmd = CommandData::SendFileTransferRequest {
-            service_id,
+            session_handle,
+            user_handle,
             file_path,
             result,
         };
@@ -270,7 +271,8 @@ impl Context {
 
     pub fn accept_file_transfer_request(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_transfer_id: tego_file_transfer_id,
         dest_path: PathBuf,
     ) -> Result<()> {
@@ -290,7 +292,8 @@ impl Context {
         let result_future = result.get_future();
 
         let cmd = CommandData::AcceptFileTransferRequest {
-            service_id,
+            session_handle,
+            user_handle,
             file_transfer_id,
             dest_path,
             result,
@@ -302,7 +305,8 @@ impl Context {
 
     pub fn reject_file_transfer_request(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_transfer_id: tego_file_transfer_id,
     ) -> Result<()> {
         log_trace!();
@@ -311,7 +315,8 @@ impl Context {
         let result_future = result.get_future();
 
         let cmd = CommandData::RejectFileTransferRequest {
-            service_id,
+            session_handle,
+            user_handle,
             file_transfer_id,
             result,
         };
@@ -322,7 +327,8 @@ impl Context {
 
     pub fn cancel_file_transfer(
         &self,
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_transfer_id: tego_file_transfer_id,
     ) -> Result<()> {
         log_trace!();
@@ -331,7 +337,8 @@ impl Context {
         let result_future = result.get_future();
 
         let cmd = CommandData::CancelFileTransfer {
-            service_id,
+            session_handle,
+            user_handle,
             file_transfer_id,
             result,
         };

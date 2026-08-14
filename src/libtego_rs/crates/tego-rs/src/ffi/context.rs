@@ -161,208 +161,12 @@ pub extern "C" fn tego_context_end_session(
     })
 }
 
-/// Get the total number of users known to this session
-///
-/// @param context : the current tego context
-/// @param session_handle : the session to get user number of
-/// @param out_user_count : numbe of users is stored here
-/// @param error : filled on eror
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub extern "C" fn tego_context_get_user_count(
-    context: *const tego_context,
-    session_handle: tego_session_handle,
-    out_user_count: *mut usize,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
-        bail_if_null!(out_user_count);
-
-        let context = Handle::try_from(context)?;
-        let user_count = tego_context_map()
-            .get(&context)?
-            .get_user_count(session_handle)?;
-
-        unsafe {
-            *out_user_count = user_count;
-        }
-
-        Ok(())
-    })
-}
-
-/// Get the user handles for al users in this session
-///
-/// @param context : the current tego context
-/// @param session_handle : the session to get the user handles from
-/// @param out_user_handles_buffer : buffer to store all the user handles
-/// @param user_handles_buffer_length : the number of handles which can be stored in
-///  out_user_handles_buffer
-/// @param error : filled on error
-///
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub extern "C" fn tego_context_get_user_handles(
-    context: *const tego_context,
-    session_handle: tego_session_handle,
-    out_user_handles_buffer: *mut tego_user_handle,
-    user_handles_buffer_length: usize,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
-        bail_if!(out_user_handles_buffer.is_null() || user_handles_buffer_length == 0usize);
-
-        let context = Handle::try_from(context)?;
-        let user_handles = match tego_context_map().get(&context) {
-            Ok(context) => context.get_user_handles(session_handle)?,
-            Err(err) => return Err(err),
-        };
-        bail_if!(user_handles.len() != user_handles_buffer_length);
-        let out_user_handles_buffer = unsafe {
-            std::slice::from_raw_parts_mut(out_user_handles_buffer, user_handles_buffer_length)
-        };
-        out_user_handles_buffer.copy_from_slice(user_handles.as_slice());
-
-        Ok(())
-    })
-}
-
-/// Get a particular user's type
-///
-/// @param context : the current tego context
-/// @param session_handle : the session to the user is in
-/// @param user_handle : the user to get the type of
-/// @param out_user_type : user type stored here
-/// @param error : filled on error
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_context_get_user_type(
-    context: *const tego_context,
-    session_handle: tego_session_handle,
-    user_handle: tego_user_handle,
-    out_user_type: *mut tego_user_type,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
-        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
-        bail_if_null!(out_user_type);
-
-        let context = Handle::try_from(context)?;
-        let user_type = tego_context_map()
-            .get(&context)?
-            .get_user_type(session_handle, user_handle)?;
-
-        unsafe {
-            *out_user_type = user_type.into();
-        }
-        Ok(())
-    })
-}
-
-/// Get a particular user's nickname
-///
-/// @param context : the current tego context
-/// @param session_handle : the session to the user is in
-/// @param user_handle : the user to get the type of
-/// @param out_user_nickname : user nickname stored here
-/// @param error : filled on error
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_context_get_user_nickname(
-    context: *const tego_context,
-    session_handle: tego_session_handle,
-    user_handle: tego_user_handle,
-    out_user_nickname: *mut *mut tego_string,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
-        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
-        bail_if_null!(out_user_nickname);
-
-        let context = Handle::try_from(context)?;
-        let user_nickname = tego_context_map()
-            .get(&context)?
-            .get_user_nickname(session_handle, user_handle)?;
-        let user_nickname = CString::new(user_nickname)?;
-        let user_nickname = tego_string_map().insert(user_nickname);
-        unsafe {
-            *out_user_nickname = user_nickname.into();
-        }
-        Ok(())
-    })
-}
-
-/// Get a particular user's pet name
-///
-/// @param context : the current tego context
-/// @param session_handle : the session to the user is in
-/// @param user_handle : the user to get the pet name of
-/// @param out_user_type : user pet name stored here
-/// @param error : filled on error
-///
-/// # Safety
-///
-/// All pointers must be properly initialised or NULL
-#[no_mangle]
-pub unsafe extern "C" fn tego_context_get_user_pet_name(
-    context: *const tego_context,
-    session_handle: tego_session_handle,
-    user_handle: tego_user_handle,
-    out_user_pet_name: *mut *mut tego_string,
-    error: *mut *mut tego_error,
-) {
-    translate_failures((), error, || -> Result<()> {
-        bail_if_null!(context);
-        bail_if_equal!(session_handle, TEGO_INVALID_SESSION_HANDLE);
-        bail_if_equal!(user_handle, TEGO_INVALID_USER_HANDLE);
-        bail_if_null!(out_user_pet_name);
-
-        let context = Handle::try_from(context)?;
-        let user_pet_name = tego_context_map()
-            .get(&context)?
-            .get_user_pet_name(session_handle, user_handle)?;
-        let user_pet_name = if let Some(user_pet_name) = user_pet_name {
-            let user_pet_name = CString::new(user_pet_name)?;
-            let user_pet_name = tego_string_map().insert(user_pet_name);
-            user_pet_name.into()
-        } else {
-            std::ptr::null_mut()
-        };
-
-        unsafe {
-            *out_user_pet_name = user_pet_name;
-        }
-        Ok(())
-    })
-}
-
-/*
 /// Send a text message from the host to the given user
 ///
 /// @param context : the current tego context
-/// @param user : the user to send a message to
-/// @param message : utf8 text message to send
-/// @param message_length : length of message not including null-terminator
+/// @param session_handle : the sesion the recipient user belongs to
+/// @param user_handle : the user to send a message to
+/// @param message : message to send
 /// @param out_id : filled with assigned message id for callbacks
 /// @param error : filled on error
 ///
@@ -372,31 +176,29 @@ pub unsafe extern "C" fn tego_context_get_user_pet_name(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_send_message(
     context: *mut tego_context,
-    user: *const tego_user_id,
-    message: *const c_char,
-    message_length: usize,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    message: *const tego_string,
     out_id: *mut tego_message_id,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(context);
-        bail_if_null!(user);
         bail_if_null!(message);
-        bail_if_equal!(message_length, 0usize);
         bail_if_null!(out_id);
 
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
+        let message = message.try_into()?;
+        let message = tego_string_map().get(&message)?.clone();
+        let message = message.into_string()?;
 
-        let message = raw_to_str!(message, message_length)?;
-        let message = message.to_string();
         use rico_protocol::v3::message::chat_channel::MessageText;
         let message: MessageText = message.try_into()?;
 
         let context = Handle::try_from(context)?;
-        let message_id = tego_context_map()
-            .get(&context)?
-            .send_message(user, message)?;
+        let message_id =
+            tego_context_map()
+                .get(&context)?
+                .send_message(session_handle, user_handle, message)?;
         unsafe { *out_id = message_id };
 
         Ok(())
@@ -419,29 +221,25 @@ pub unsafe extern "C" fn tego_context_send_message(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_send_file_transfer_request(
     context: *mut tego_context,
-    user: *const tego_user_id,
-    file_path: *const c_char,
-    file_path_length: usize,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    file_path: *const tego_string,
     out_id: *mut tego_file_transfer_id,
     out_file_size: *mut tego_file_size,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(context);
-        bail_if_null!(user);
         bail_if_null!(file_path);
-        bail_if_equal!(file_path_length, 0usize);
 
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
-
-        let file_path = raw_to_str!(file_path, file_path_length)?;
+        let file_path = file_path.try_into()?;
+        let file_path = tego_string_map().get(&file_path)?.clone().into_string()?;
         let file_path = PathBuf::from(file_path);
 
         let context = Handle::try_from(context)?;
         let (id, file_size) = tego_context_map()
             .get(&context)?
-            .send_file_transfer_request(user, file_path)?;
+            .send_file_transfer_request(session_handle, user_handle, file_path)?;
 
         // write out results
         unsafe {
@@ -460,11 +258,11 @@ pub unsafe extern "C" fn tego_context_send_file_transfer_request(
 /// Acknowledges a request to send an file_transfer
 ///
 /// @param context : the current tego context
-/// @param user : the user that sent the file transfer request
+/// @param session_handle : the session the user belongs to
+/// @param user_handle : the user that sent the file transfer request
 /// @param id : which file transfer to respond to
 /// @param response : how to respond to the request
 /// @param dest_path : optional, destination to save the file
-/// @param dest_path_length : length of dest_path not including the null-terminator
 /// @param error : filled on error
 ///
 /// # Safety
@@ -473,40 +271,34 @@ pub unsafe extern "C" fn tego_context_send_file_transfer_request(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_respond_file_transfer_request(
     context: *mut tego_context,
-    user: *const tego_user_id,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
     id: tego_file_transfer_id,
     response: tego_file_transfer_response,
-    dest_path: *const c_char,
-    dest_path_length: usize,
+    dest_path: *const tego_string,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(context);
-        bail_if_null!(user);
 
         let context = Handle::try_from(context)?;
-
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
-
         match response {
             tego_file_transfer_response::tego_file_transfer_response_accept => {
                 bail_if_null!(dest_path);
-                bail_if_equal!(dest_path_length, 0usize);
-                let dest_path = raw_to_str!(dest_path, dest_path_length)?;
-                let dest_path = PathBuf::from(dest_path);
 
+                let dest_path = Handle::try_from(dest_path)?;
+                let dest_path = tego_string_map().get(&dest_path)?.clone().into_string()?;
+                let dest_path = PathBuf::from(dest_path);
                 tego_context_map()
                     .get(&context)?
-                    .accept_file_transfer_request(user, id, dest_path)?;
+                    .accept_file_transfer_request(session_handle, user_handle, id, dest_path)?;
             }
             tego_file_transfer_response::tego_file_transfer_response_reject => {
                 bail_if_not_null!(dest_path);
-                bail_if_not_equal!(dest_path_length, 0usize);
 
                 tego_context_map()
                     .get(&context)?
-                    .reject_file_transfer_request(user, id)?;
+                    .reject_file_transfer_request(session_handle, user_handle, id)?;
             }
         }
 
@@ -517,8 +309,9 @@ pub unsafe extern "C" fn tego_context_respond_file_transfer_request(
 /// Cancel an in-progress file transfer
 ///
 /// @param context : the current tego context
-/// @param user : the user that is sending/receiving the transfer
-/// @param id : the file transfer to cancel
+/// @param session_handle : the session the file transfer is on
+/// @param user_handle : the user that is sending/receiving the transfer
+/// @param file_transfer_id : the file transfer to cancel
 /// @param error: filled on error
 ///
 /// # Safety
@@ -527,21 +320,20 @@ pub unsafe extern "C" fn tego_context_respond_file_transfer_request(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_cancel_file_transfer(
     context: *mut tego_context,
-    user: *const tego_user_id,
-    id: tego_file_transfer_id,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
+    file_transfer_id: tego_file_transfer_id,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(context);
-        bail_if_null!(user);
-
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
 
         let context = Handle::try_from(context)?;
-        tego_context_map()
-            .get(&context)?
-            .cancel_file_transfer(user, id)?;
+        tego_context_map().get(&context)?.cancel_file_transfer(
+            session_handle,
+            user_handle,
+            file_transfer_id,
+        )?;
 
         Ok(())
     })
@@ -550,9 +342,11 @@ pub unsafe extern "C" fn tego_context_cancel_file_transfer(
 /// Sends a request to chat to a user
 ///
 /// @param context : the current tego context
-/// @param user : the user we want to chat with
-/// @param mesage : utf8 text greeting message to send
-/// @param message_length : length of message not including null-terminator
+/// @param session_handle : the session to send chat  request on
+/// @param service_id : the service id of the user we want to chat with
+/// @param pet_name : the pet name to give this pending contact
+/// @param mesage : text greeting message to send
+/// @param out_user_handle : the new user handle for this user
 /// @param error : filled on error
 ///
 /// # Safety
@@ -561,24 +355,42 @@ pub unsafe extern "C" fn tego_context_cancel_file_transfer(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_send_chat_request(
     context: *mut tego_context,
-    user: *const tego_user_id,
-    message: *const c_char,
-    message_length: usize,
+    session_handle: tego_session_handle,
+    service_id: *const tego_v3_onion_service_id,
+    pet_name: *const tego_string,
+    message: *const tego_string,
+    out_user_handle: *mut tego_user_handle,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
+        bail_if_null!(context);
+        bail_if_null!(service_id);
+        bail_if_null!(pet_name);
+        bail_if_null!(message);
+        bail_if_null!(out_user_handle);
 
-        let message = raw_to_str!(message, message_length)?;
-        let message = message.to_string();
+        let service_id = Handle::try_from(service_id)?;
+        let service_id = tego_v3_onion_service_id_map().get(&service_id)?.clone();
+
+        let pet_name = Handle::try_from(pet_name)?;
+        let pet_name = tego_string_map().get(&pet_name)?.clone().into_string()?;
+
+        let message = Handle::try_from(message)?;
+        let message = tego_string_map().get(&message)?.clone().into_string()?;
         use rico_protocol::v3::message::contact_request_channel::MessageText;
         let message: MessageText = message.try_into()?;
 
         let context = Handle::try_from(context)?;
-        tego_context_map()
-            .get(&context)?
-            .send_contact_request(user, message);
+        let user_handle = tego_context_map().get(&context)?.send_contact_request(
+            session_handle,
+            service_id,
+            pet_name,
+            message,
+        )?;
+
+        unsafe {
+            *out_user_handle = user_handle;
+        }
 
         Ok(())
     })
@@ -588,7 +400,8 @@ pub unsafe extern "C" fn tego_context_send_chat_request(
 /// a chat_request_received callback.
 ///
 /// @param context : the current tego context
-/// @param user : the user that sent the chat request
+/// @param session_handle : the session to ack on
+/// @param user_handle : the user that sent the chat request
 /// @param response : how to respond to the request
 /// @param error : filled on error
 ///
@@ -598,18 +411,16 @@ pub unsafe extern "C" fn tego_context_send_chat_request(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_acknowledge_chat_request(
     context: *mut tego_context,
-    user: *const tego_user_id,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
     response: tego_chat_acknowledge,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
-
         let context = Handle::try_from(context)?;
         tego_context_map()
             .get(&context)?
-            .acknowledge_contact_request(user, response);
+            .acknowledge_contact_request(session_handle, user_handle, response)?;
 
         Ok(())
     })
@@ -620,7 +431,8 @@ pub unsafe extern "C" fn tego_context_acknowledge_chat_request(
 /// to chat
 ///
 /// @param context : the current tego context
-/// @param user : the user to forget
+/// @param session_handle : the session the user is in
+/// @param user_handle : the user to forget
 /// @param error : filled on error
 ///
 /// # Safety
@@ -629,17 +441,16 @@ pub unsafe extern "C" fn tego_context_acknowledge_chat_request(
 #[no_mangle]
 pub unsafe extern "C" fn tego_context_forget_user(
     context: *mut tego_context,
-    user: *const tego_user_id,
+    session_handle: tego_session_handle,
+    user_handle: tego_user_handle,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
-        let user = Handle::try_from(user)?;
-        let user = tego_user_id_map().get(&user)?.clone();
-
         let context = Handle::try_from(context)?;
-        tego_context_map().get_mut(&context)?.forget_user(user)?;
+        tego_context_map()
+            .get_mut(&context)?
+            .forget_user(session_handle, user_handle)?;
 
         Ok(())
     })
 }
-*/

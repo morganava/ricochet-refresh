@@ -50,6 +50,7 @@ pub(crate) struct Session {
 // todo: make these members private?
 pub(crate) struct UserData {
     // data from the profile,
+    // todo: should we just pull these from the profile as needed rather than mirroring
     pub(crate) user_type: UserType,
     pub(crate) pet_name: String,
     pub(crate) service_id: V3OnionServiceId,
@@ -1504,6 +1505,46 @@ impl Session {
         self.v3.to_retry.clear();
     }
 
+    //
+    // Our direct methods for user-directed actions
+    //
+
+    pub fn add_pending_contact(
+        &mut self,
+        service_id: V3OnionServiceId,
+        pet_name: String,
+    ) -> Result<UserHandle> {
+        log_trace!();
+        bail_if!(self.service_id_to_user_handle.get(&service_id).is_some());
+
+        let user = User {
+            user_type: UserType::Pending,
+            user_profile: UserProfile {
+                nickname: service_id.to_string(),
+                pet_name: Some(pet_name.clone()),
+                pronouns: None,
+                avatar: None,
+                status: None,
+                description: None,
+            },
+            identity_ed25519_public_key: Ed25519PublicKey::from_service_id(&service_id).unwrap(),
+            identity_ed25519_private_key: None,
+            remote_endpoint_ed25519_public_key: None,
+            remote_endpoint_x25519_private_key: None,
+            local_endpoint_ed25519_private_key: None,
+            local_endpoint_x25519_public_key: None,
+        };
+        let user_handle: UserHandle = self.profile.add_user(&user)?.into();
+        self.service_id_to_user_handle
+            .insert(service_id.clone(), user_handle.into());
+        self.users.insert(
+            user_handle,
+            UserData::new(UserType::Pending, pet_name, service_id),
+        );
+
+        Ok(user_handle)
+    }
+
     pub fn start_onion_listener(&mut self, tor_provider: &mut Box<dyn TorProvider>) -> Result<()> {
         let listener = tor_provider.listener(
             self.v3.packet_handler.get_private_key(),
@@ -1515,6 +1556,9 @@ impl Session {
         Ok(())
     }
 
+    // todo: we should just provide a way to get a list of all our known contacts and then call connect_contact individually
+    // as it is this function is called from event loop task, and just enqueues future work for the event loop task to do
+    // via Self::connect_contact()
     pub fn connect_all_known_contacts(&self, command_queue: &mut CommandQueue) {
         for (&user_handle, user_data) in self.users.iter() {
             match user_data.user_type {
@@ -1595,6 +1639,342 @@ impl Session {
             );
             Ok(None)
         }
+    }
+
+    pub fn forget_user(&mut self, user_handle: UserHandle) -> Result<()> {
+        assert!(user_handle != self.owner);
+        match self.profile.remove_user(user_handle.into()) {
+            Ok(()) => {
+                if let Some(user_data) = self.users.remove(&user_handle) {
+                    let _ = self.service_id_to_user_handle.remove(&user_data.service_id);
+                    if let Some(connection_handle) =
+                        self.v3.packet_handler.forget_user(&user_data.service_id)
+                    {
+                        self.v3.to_remove.insert(connection_handle);
+                    }
+                    let _ = self.v3.to_retry.remove(&user_handle);
+                }
+                Ok(())
+            }
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub fn accept_contact_request(&mut self, user_handle: UserHandle) -> Result<()> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+        self.profile
+            .set_user_type(user_handle.into(), UserType::Allowed)
+            .expect("Converting Requesting user to Allowed user should not fail");
+        user_data.user_type = UserType::Allowed;
+
+        let service_id = &user_data.service_id;
+
+        let mut replies: Vec<Packet> = Default::default();
+        let connection_handle = self
+            .v3
+            .packet_handler
+            .accept_contact_request(service_id.clone(), &mut replies)?;
+
+        // todo: these need to trigger a user online/offline callback
+        if let Some(connection) = self.v3.open_connections.get_mut(&connection_handle) {
+            connection.write_packets.append(&mut replies);
+        }
+
+        Ok(())
+    }
+
+    pub fn reject_contact_request(&mut self, user_handle: UserHandle) -> Result<()> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+        self.profile
+            .set_user_type(user_handle.into(), UserType::Allowed)
+            .expect("Converting Requesting user to Rejected user should not fail");
+        user_data.user_type = UserType::Rejected;
+
+        let service_id = &user_data.service_id;
+
+        let mut replies: Vec<Packet> = Default::default();
+        let connection_handle = self
+            .v3
+            .packet_handler
+            .reject_contact_request(service_id.clone(), &mut replies)?;
+
+        if let Some(connection) = self.v3.open_connections.get_mut(&connection_handle) {
+            connection.write_packets.append(&mut replies);
+            self.v3.to_remove.insert(connection_handle);
+        }
+
+        Ok(())
+    }
+
+    pub fn send_message(
+        &mut self,
+        user_handle: UserHandle,
+        message_text: rico_protocol::v3::message::chat_channel::MessageText,
+    ) -> Result<tego_message_id> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+
+        let service_id = &user_data.service_id;
+
+        let mut replies: Vec<Packet> = Default::default();
+        let (connection_handle, message_handle) = self.v3.packet_handler.send_message(
+            service_id.clone(),
+            message_text.clone(),
+            None,
+            &mut replies,
+        )?;
+
+        let connection = self
+            .v3
+            .open_connections
+            .get_mut(&connection_handle)
+            .context(format!(
+                "No connection for Connectionhandle {connection_handle}"
+            ))?;
+        connection.write_packets.append(&mut replies);
+
+        let message_id = user_data.next_message_id();
+        user_data
+            .queued_messages
+            .push_back(UnAckedMessage::ChatMessage {
+                message_id,
+                message_handle,
+                timestamp: std::time::Instant::now(),
+                message_text,
+            });
+        Ok(message_id)
+    }
+
+    pub fn send_file_transfer_request(
+        &mut self,
+        user_handle: UserHandle,
+        file_path: PathBuf,
+    ) -> Result<(tego_file_transfer_id, tego_file_size)> {
+        // we only deal in absolute paths
+        bail_if!(!file_path.is_absolute());
+
+        bail_if!(file_path.is_dir());
+
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+
+        let service_id = &user_data.service_id;
+
+        let file_upload = FileUpload::new(file_path)?;
+        let file_name = &file_upload.name;
+        let file_size = file_upload.size;
+        let file_hash = &file_upload.hash;
+
+        //construct reply packets
+        let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        let (connection_handle, file_transfer_handle) =
+            self.v3.packet_handler.send_file_transfer_request(
+                service_id.clone(),
+                file_name.clone(),
+                file_size,
+                file_hash.clone(),
+                &mut replies,
+            )?;
+        let connection = self
+            .v3
+            .open_connections
+            .get_mut(&connection_handle)
+            .context("missing Connection struct")?;
+
+        // queue packets for writing
+        connection.write_packets.append(&mut replies);
+
+        // queue copies of requests to resend in event of reconnect
+        let file_transfer_id = user_data.next_message_id();
+        user_data
+            .file_transfer_id_to_handle
+            .insert(file_transfer_id, file_transfer_handle);
+        user_data
+            .file_transfer_handle_to_id
+            .insert(file_transfer_handle, file_transfer_id);
+        user_data
+            .queued_messages
+            .push_back(UnAckedMessage::FileTransferRequest {
+                file_transfer_id,
+                file_transfer_handle,
+                file_upload,
+            });
+        Ok((file_transfer_id, file_size))
+    }
+
+    pub fn accept_file_transfer_request(
+        &mut self,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+        dest_path: PathBuf,
+    ) -> Result<()> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+
+        let service_id = &user_data.service_id;
+        let file_transfer_handle = *user_data
+            .file_transfer_id_to_handle
+            .get(&file_transfer_id)
+            .context(format!(
+                "no file transfer associated with id {file_transfer_id}"
+            ))?;
+
+        // construct reply packets
+        let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        let connection_handle = self.v3.packet_handler.accept_file_transfer_request(
+            &service_id,
+            file_transfer_handle,
+            &mut replies,
+        )?;
+
+        // setup file download
+        let connection = self
+            .v3
+            .open_connections
+            .get_mut(&connection_handle)
+            .context("missing Connection struct")?;
+
+        let file_download = connection
+            .file_downloads
+            .get_mut(&file_transfer_handle)
+            .context("missing FileDownload struct")?;
+        file_download.start(dest_path)?;
+
+        // queue packets for writing
+        connection.write_packets.append(&mut replies);
+
+        Ok(())
+    }
+
+    pub fn reject_file_transfer_request(
+        &mut self,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+    ) -> Result<()> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+
+        let service_id = &user_data.service_id;
+        let file_transfer_handle = *user_data
+            .file_transfer_id_to_handle
+            .get(&file_transfer_id)
+            .context(format!(
+                "no file transfer associated with id {file_transfer_id}"
+            ))?;
+
+        // construct reply packets
+        let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        let connection_handle = self.v3.packet_handler.reject_file_transfer_request(
+            &service_id,
+            file_transfer_handle,
+            &mut replies,
+        )?;
+
+        // remove our file download struct
+        let connection = self
+            .v3
+            .open_connections
+            .get_mut(&connection_handle)
+            .context("missing Connection struct")?;
+        connection
+            .file_downloads
+            .remove(&file_transfer_handle)
+            .context("missing FileDownload struct")?;
+
+        // queue packets for writing
+        connection.write_packets.append(&mut replies);
+        Ok(())
+    }
+
+    pub fn cancel_file_transfer_request(
+        &mut self,
+        user_handle: UserHandle,
+        file_transfer_id: tego_file_transfer_id,
+    ) -> Result<tego_file_transfer_direction> {
+        let user_data = self
+            .users
+            .get_mut(&user_handle)
+            .context(format!("Unknown user {user_handle}"))?;
+
+        let service_id = &user_data.service_id;
+        let file_transfer_handle = *user_data
+            .file_transfer_id_to_handle
+            .get(&file_transfer_id)
+            .context(format!(
+                "no file transfer associated with id {file_transfer_id}"
+            ))?;
+
+        // construct reply packets
+        let mut replies: Vec<Packet> = Vec::with_capacity(1);
+        let connection_handle = self.v3.packet_handler.cancel_file_transfer(
+            &service_id,
+            file_transfer_handle,
+            false,
+            &mut replies,
+        )?;
+
+        // remove our file download/upload struct
+        let connection = self
+            .v3
+            .open_connections
+            .get_mut(&connection_handle)
+            .context("missing Connection struct")?;
+
+        // remove our handle <-> id mappings
+        let _ = user_data
+            .file_transfer_handle_to_id
+            .remove(&file_transfer_handle);
+        let _ = user_data
+            .file_transfer_id_to_handle
+            .remove(&file_transfer_id);
+
+        // remove un'ackd request if present
+        // todo: user queued_messagse.iter().position
+        for i in 0..user_data.queued_messages.len() {
+            if let UnAckedMessage::FileTransferRequest {
+                file_transfer_id: candidate_file_transfer_id,
+                ..
+            } = user_data.queued_messages[i]
+            {
+                if candidate_file_transfer_id == file_transfer_id {
+                    let _ = user_data.queued_messages.remove(i);
+                    break;
+                }
+            }
+        }
+
+        let direction = if connection
+            .file_downloads
+            .remove(&file_transfer_handle)
+            .is_some()
+        {
+            tego_file_transfer_direction::tego_file_transfer_direction_receiving
+        } else {
+            // it's possible an upload never made it to the file_uploads list
+            // if local user cancels before remote user accepts, so missing
+            // file_upload is not an error
+            let _ = connection.file_uploads.remove(&file_transfer_handle);
+            tego_file_transfer_direction::tego_file_transfer_direction_sending
+        };
+
+        // queue packets for writing
+        connection.write_packets.append(&mut replies);
+
+        Ok(direction)
     }
 
     //
