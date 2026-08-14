@@ -26,6 +26,8 @@ public:
         const wxString& message
     );
 
+    bool handle_debug_command(const wxString& cmd, const tego_session_handle user_handle);
+
 private:
     void select_contact(const std::optional<tego_user_handle> contact);
     void remove_contact(tego_user_handle contact);

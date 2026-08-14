@@ -328,6 +328,34 @@ void RicochetRefresh::init_callbacks() {
         },
         tego::panic_on_error()
     );
+    // user added callback
+    tego_context_set_user_added_callback(
+        context,
+        [](tego_context*,
+           tego_session_handle session_handle,
+           tego_user_handle user_handle,
+           tego_user_type user_type) {
+            LOG_INFO(fmt::format(
+                "User Added; SessionHandle: {}, UserHandle: {}, UserType: {}",
+                session_handle,
+                user_handle,
+                static_cast<int>(user_type)
+            ));
+        },
+        tego::panic_on_error()
+    );
+    // user removed callback
+    tego_context_set_user_removed_callback(
+        context,
+        [](tego_context*, tego_session_handle session_handle, tego_user_handle user_handle) {
+            LOG_INFO(fmt::format(
+                "User Removed; SessionHandle: {}, UserHandle: {}",
+                session_handle,
+                user_handle
+            ));
+        },
+        tego::panic_on_error()
+    );
     // user status changed callback
     tego_context_set_user_status_changed_callback(
         context,
