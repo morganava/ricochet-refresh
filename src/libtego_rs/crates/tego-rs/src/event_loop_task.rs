@@ -271,24 +271,49 @@ impl EventLoopTask {
 
                 result.resolve(Ok(session_handle));
             }
-            CommandData::EndSession { session_handle } => {
-                unimplemented!();
+            CommandData::EndSession {
+                session_handle,
+                result: result_promise,
+            } => {
+                let result = if self.session_map.remove(&session_handle).is_some() {
+                    self.connect_handles
+                        .retain(|&_key, &mut val| val != session_handle);
+                    Ok(())
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+
+                result_promise.resolve(result);
+            }
+            CommandData::AddPendingContact {
+                session_handle,
+                service_id,
+                pet_name,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    match session.add_pending_contact(service_id, pet_name) {
+                        Ok(user_handle) => {
+                            let user_type = UserType::Pending;
+                            self.callback_queue.push(CallbackData::UserAdded {
+                                session_handle,
+                                user_handle,
+                                user_type,
+                            });
+                            Ok(user_handle)
+                        }
+                        err => err,
+                    }
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
             }
             CommandData::ConnectContact {
                 session_handle,
                 user_handle,
                 contact_request_message,
             } => {
-                // TODO: a new user should be added to the profile *first* before we make an attempt to connect to a contact
-                // if !self.users.contains_key(&service_id) {
-                //     self.users.insert(
-                //         service_id.clone(),
-                //         UserData::new(tego_user_type::tego_user_type_pending),
-                //     );
-                // }
-
-                log_info!("Handle CommandData::ConnectContact");
-
                 let tor_client = Self::unwrap_tor_provider(&mut self.tor_provider)?;
 
                 if let Some(session) = self.session_map.get_mut(&session_handle) {
@@ -302,10 +327,32 @@ impl EventLoopTask {
                     }
                 }
             }
+            CommandData::ForgetUser {
+                session_handle,
+                user_handle,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    match session.forget_user(user_handle) {
+                        Ok(()) => {
+                            self.callback_queue.push(CallbackData::UserRemoved {
+                                session_handle,
+                                user_handle,
+                            });
+                            Ok(())
+                        }
+                        err => err,
+                    }
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
+            }
             CommandData::SendMessage {
                 session_handle,
                 user_handle,
                 message_text,
+                // todo: rename result for consistency
                 message_id,
             } => {
                 let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
@@ -320,293 +367,108 @@ impl EventLoopTask {
                 user_handle,
                 file_transfer_id,
                 dest_path,
-                result,
+                result: result_promise,
             } => {
-                let accept_result = if let Some(session) = self.session_map.get_mut(&session_handle)
-                {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
                     session.accept_file_transfer_request(user_handle, file_transfer_id, dest_path)
                 } else {
                     Err(anyhow!("unknown SessionHandle {session_handle}"))
                 };
-                result.resolve(accept_result);
+                result_promise.resolve(result);
+            }
+            CommandData::SendFileTransferRequest {
+                session_handle,
+                user_handle,
+                file_path,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    session.send_file_transfer_request(user_handle, file_path)
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
+            }
+            CommandData::RejectFileTransferRequest {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    match session.reject_file_transfer_request(user_handle, file_transfer_id) {
+                        Ok(()) => {
+                            let direction = tego_file_transfer_direction::tego_file_transfer_direction_receiving;
+
+                            self.callback_queue
+                                .push(CallbackData::FileTransferComplete {
+                                session_handle,
+                                user_handle,
+                                file_transfer_id,
+                                direction,
+                                result:
+                                    tego_file_transfer_result::tego_file_transfer_result_rejected,
+                            });
+                            Ok(())
+                        }
+                        Err(err) => Err(err),
+                    }
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
+            }
+            CommandData::CancelFileTransfer {
+                session_handle,
+                user_handle,
+                file_transfer_id,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    match session.cancel_file_transfer_request(user_handle, file_transfer_id) {
+                        Ok(direction) => {
+                            self.callback_queue
+                                .push(CallbackData::FileTransferComplete {
+                                session_handle,
+                                user_handle,
+                                file_transfer_id,
+                                direction,
+                                result:
+                                    tego_file_transfer_result::tego_file_transfer_result_cancelled,
+                            });
+                            Ok(())
+                        }
+                        Err(err) => Err(err),
+                    }
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
+            }
+            CommandData::AcknowledgeContactRequest {
+                session_handle,
+                user_handle,
+                response,
+                result: result_promise,
+            } => {
+                let result = if let Some(session) = self.session_map.get_mut(&session_handle) {
+                    // todo: these need to trigger a "user type changed" callback
+                    match response {
+                        tego_chat_acknowledge::tego_chat_acknowledge_accept => {
+                            session.accept_contact_request(user_handle)
+                        }
+                        tego_chat_acknowledge::tego_chat_acknowledge_reject => {
+                            session.reject_contact_request(user_handle)
+                        }
+                        tego_chat_acknowledge::tego_chat_acknowledge_block => todo!(),
+                    }
+                } else {
+                    Err(anyhow!("unknown SessionHandle {session_handle}"))
+                };
+                result_promise.resolve(result);
             }
         }
         Ok(())
-        // TODO: migrate command match statement here
-
-        //     CommandData::ForgetUser { service_id, result } => {
-        //         let mut handle_forget_user = || -> Result<()> {
-        //             // remove from our set of users
-        //             if let Some(user_data) = self.users.remove(&service_id) {
-        //                 // kill open connection
-        //                 if let Some(connection_handle) = user_data.connection_handle {
-        //                     self.connections.remove(&connection_handle);
-        //                 }
-        //             }
-        //             // remove from packet handler
-        //             self.packet_handler.forget_user(&service_id);
-
-        //             Ok(())
-        //         };
-        //         result.resolve(handle_forget_user());
-        //     }
-        //     CommandData::BeginServerHandshake { stream } => {
-        //         let handle_begin_server_handshake = || -> Result<()> {
-        //             let handle = self.packet_handler.new_incoming_connection()?;
-
-        //             let connection = Connection {
-        //                 service_id: None,
-        //                 stream,
-        //                 read_bytes: Default::default(),
-        //                 read_packets: Default::default(),
-        //                 write_packets: Default::default(),
-        //                 file_downloads: Default::default(),
-        //                 file_uploads: Default::default(),
-        //             };
-
-        //             log_info!("begin server handshake: {connection:?}");
-
-        //             self.connections.insert(handle, connection);
-        //             Ok(())
-        //         };
-        //         let _ = handle_begin_server_handshake();
-        //     }
-        //     CommandData::AcknowledgeContactRequest {
-        //         service_id,
-        //         response,
-        //     } => {
-        //         let mut replies: Vec<Packet> = Default::default();
-        //         use tego_chat_acknowledge::*;
-        //         let (result, remove) = match response {
-        //             tego_chat_acknowledge_accept => (
-        //                 self.packet_handler
-        //                     .accept_contact_request(service_id.clone(), &mut replies),
-        //                 false,
-        //             ),
-        //             tego_chat_acknowledge_reject => (
-        //                 self.packet_handler
-        //                     .reject_contact_request(service_id.clone(), &mut replies),
-        //                 true,
-        //             ),
-        //             tego_chat_acknowledge_block => todo!(),
-        //         };
-
-        //         match result {
-        //             Ok(connection_handle) => {
-        //                 if let Some(connection) = self.connections.get_mut(&connection_handle) {
-        //                     connection.write_packets.append(&mut replies);
-        //                     if let tego_chat_acknowledge_accept = response {
-        //                         self.users.insert(
-        //                             service_id,
-        //                             UserData::new(tego_user_type::tego_user_type_allowed),
-        //                         );
-        //                     } else if remove {
-        //                         self.to_remove.insert(connection_handle);
-        //                     }
-        //                 }
-        //             }
-        //             Err(_err) => log_error!("failure ack'ing contact request: {_err}"),
-        //         }
-        //     }
-
-        //     CommandData::SendFileTransferRequest {
-        //         service_id,
-        //         file_path,
-        //         result,
-        //     } => {
-        //         let handle_send_file_transfer_request =
-        //             || -> Result<(tego_file_transfer_id, tego_file_size)> {
-        //                 // we only deal in absolute paths
-        //                 bail_if!(!file_path.is_absolute());
-
-        //                 let file_upload = FileUpload::new(file_path)?;
-        //                 let file_name = file_upload.name();
-        //                 let file_size = file_upload.size();
-
-        //                 let file_hash = file_upload.hash();
-
-        //                 //construct reply packets
-        //                 let mut replies: Vec<Packet> = Vec::with_capacity(1);
-        //                 let (connection_handle, file_transfer_handle) =
-        //                     self.packet_handler.send_file_transfer_request(
-        //                         service_id.clone(),
-        //                         file_name.clone(),
-        //                         file_size,
-        //                         file_hash,
-        //                         &mut replies,
-        //                     )?;
-        //                 let connection = self
-        //                     .connections
-        //                     .get_mut(&connection_handle)
-        //                     .context("missing Connection struct")?;
-
-        //                 // queue packets for writing
-        //                 connection.write_packets.append(&mut replies);
-
-        //                 // queue copies of requests to resend in event of reconnect
-        //                 let user_data = self
-        //                     .users
-        //                     .get_mut(&service_id)
-        //                     .context(format!("no user data for service id {service_id}"))?;
-        //                 let file_transfer_id = user_data.next_message_id();
-        //                 user_data
-        //                     .file_transfer_id_to_handle
-        //                     .insert(file_transfer_id, file_transfer_handle);
-        //                 user_data
-        //                     .file_transfer_handle_to_id
-        //                     .insert(file_transfer_handle, file_transfer_id);
-        //                 user_data.queued_messages.push_back(
-        //                     UnAckedMessage::FileTransferRequest {
-        //                         gui_id: file_transfer_id,
-        //                         network_handle: file_transfer_handle,
-        //                         file_upload,
-        //                     },
-        //                 );
-        //                 Ok((file_transfer_id, file_size))
-        //             };
-        //         result.resolve(handle_send_file_transfer_request());
-        //     }
-        //     CommandData::RejectFileTransferRequest {
-        //         service_id,
-        //         file_transfer_id,
-        //         result,
-        //     } => {
-        //         let handle_reject_file_transfer_request = || -> Result<()> {
-        //             let user_data = self
-        //                 .users
-        //                 .get_mut(&service_id)
-        //                 .context(format!("no user data for service id {service_id}"))?;
-        //             let file_transfer_handle = *user_data
-        //                 .file_transfer_id_to_handle
-        //                 .get(&file_transfer_id)
-        //                 .context(format!(
-        //                     "no file transfer associated with id {file_transfer_id}"
-        //                 ))?;
-
-        //             // construct reply packets
-        //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
-        //             let connection_handle = self.packet_handler.reject_file_transfer_request(
-        //                 &service_id,
-        //                 file_transfer_handle,
-        //                 &mut replies,
-        //             )?;
-
-        //             // remove our file download struct
-        //             let connection = self
-        //                 .connections
-        //                 .get_mut(&connection_handle)
-        //                 .context("missing Connection struct")?;
-        //             connection
-        //                 .file_downloads
-        //                 .remove(&file_transfer_handle)
-        //                 .context("missing FileDownload struct")?;
-
-        //             // queue packets for writing
-        //             connection.write_packets.append(&mut replies);
-
-        //             // fire callback
-        //             let direction =
-        //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving;
-        //             self.callback_queue
-        //                 .push(CallbackData::FileTransferComplete {
-        //                     user_id: service_id,
-        //                     file_transfer_id,
-        //                     direction,
-        //                     result:
-        //                         tego_file_transfer_result::tego_file_transfer_result_rejected,
-        //                 });
-
-        //             Ok(())
-        //         };
-
-        //         result.resolve(handle_reject_file_transfer_request());
-        //     }
-        //     CommandData::CancelFileTransfer {
-        //         service_id,
-        //         file_transfer_id,
-        //         result,
-        //     } => {
-        //         let handle_cancel_file_transfer = || -> Result<()> {
-        //             let user_data = self
-        //                 .users
-        //                 .get_mut(&service_id)
-        //                 .context(format!("no user data for service id {service_id}"))?;
-
-        //             let file_transfer_handle = *user_data
-        //                 .file_transfer_id_to_handle
-        //                 .get(&file_transfer_id)
-        //                 .context(format!(
-        //                     "no file transfer associated with id {file_transfer_id}"
-        //                 ))?;
-
-        //             // construct reply packets
-        //             let mut replies: Vec<Packet> = Vec::with_capacity(1);
-        //             let connection_handle = self.packet_handler.cancel_file_transfer(
-        //                 &service_id,
-        //                 file_transfer_handle,
-        //                 false,
-        //                 &mut replies,
-        //             )?;
-
-        //             // remove our file download/upload struct
-        //             let connection = self
-        //                 .connections
-        //                 .get_mut(&connection_handle)
-        //                 .context("missing Connection struct")?;
-
-        //             // remove our handle <-> id mappings
-        //             let _ = user_data
-        //                 .file_transfer_handle_to_id
-        //                 .remove(&file_transfer_handle);
-        //             let _ = user_data
-        //                 .file_transfer_id_to_handle
-        //                 .remove(&file_transfer_id);
-
-        //             // remove un'ackd request if present
-        //             for i in 0..user_data.queued_messages.len() {
-        //                 if let UnAckedMessage::FileTransferRequest { gui_id, .. } =
-        //                     user_data.queued_messages[i]
-        //                 {
-        //                     if gui_id == file_transfer_id {
-        //                         let _ = user_data.queued_messages.remove(i);
-        //                         break;
-        //                     }
-        //                 }
-        //             }
-
-        //             let direction = if connection
-        //                 .file_downloads
-        //                 .remove(&file_transfer_handle)
-        //                 .is_some()
-        //             {
-        //                 tego_file_transfer_direction::tego_file_transfer_direction_receiving
-        //             } else {
-        //                 // it's possible an upload never made it to the file_uploads list
-        //                 // if local user cancels before remote user accepts, so missing
-        //                 // file_upload is not an error
-        //                 let _ = connection.file_uploads.remove(&file_transfer_handle);
-        //                 tego_file_transfer_direction::tego_file_transfer_direction_sending
-        //             };
-
-        //             // queue packets for writing
-        //             connection.write_packets.append(&mut replies);
-
-        //             // fire callback
-        //             self.callback_queue
-        //                 .push(CallbackData::FileTransferComplete {
-        //                     user_id: service_id,
-        //                     file_transfer_id,
-        //                     direction,
-        //                     result:
-        //                         tego_file_transfer_result::tego_file_transfer_result_cancelled,
-        //                 });
-
-        //             Ok(())
-        //         };
-
-        //         result.resolve(handle_cancel_file_transfer());
-        //     }
-        // }
     }
 
     fn handle_sessions(&mut self) -> Result<()> {

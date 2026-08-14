@@ -71,14 +71,31 @@ pub(crate) enum CommandData {
     },
     EndSession {
         session_handle: SessionHandle,
+        result: Promise<Result<()>>,
     },
-
     //connect to a peer and optionally request to be an allowed contact
+    AddPendingContact {
+        session_handle: SessionHandle,
+        service_id: V3OnionServiceId,
+        pet_name: String,
+        result: Promise<Result<UserHandle>>,
+    },
     ConnectContact {
         session_handle: SessionHandle,
         user_handle: UserHandle,
         contact_request_message:
             Option<rico_protocol::v3::message::contact_request_channel::MessageText>,
+    },
+    ForgetUser {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        result: Promise<Result<()>>,
+    },
+    AcknowledgeContactRequest {
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
+        response: tego_chat_acknowledge,
+        result: Promise<Result<()>>,
     },
     SendMessage {
         session_handle: SessionHandle,
@@ -94,37 +111,31 @@ pub(crate) enum CommandData {
         dest_path: PathBuf,
         result: Promise<Result<()>>,
     },
-
-    //
-    // Not Used Yet
-    //
-
-    // remove a user from our internal lists
-    ForgetUser {
-        service_id: V3OnionServiceId,
-        result: Promise<Result<()>>,
-    },
-    AcknowledgeContactRequest {
-        service_id: V3OnionServiceId,
-        response: tego_chat_acknowledge,
-    },
     SendFileTransferRequest {
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_path: PathBuf,
         result: Promise<Result<(tego_file_transfer_id, tego_file_size)>>,
     },
     // reject an incoming file transfer request
     RejectFileTransferRequest {
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_transfer_id: tego_file_transfer_id,
         result: Promise<Result<()>>,
     },
     // cancel an in-progress file transfer
     CancelFileTransfer {
-        service_id: V3OnionServiceId,
+        session_handle: SessionHandle,
+        user_handle: UserHandle,
         file_transfer_id: tego_file_transfer_id,
         result: Promise<Result<()>>,
     },
+    //
+    // Not Used Yet
+    //
+
+    // remove a user from our internal lists
     // TODO: maybe add an enqueue callback data command?
 }
 
