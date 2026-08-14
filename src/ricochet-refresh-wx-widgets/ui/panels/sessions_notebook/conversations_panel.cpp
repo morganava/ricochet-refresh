@@ -76,20 +76,24 @@ void ConversationsPanel::add_user(
         const auto& timestamp = evt.get_timestamp();
         const auto& text = evt.get_text();
 
-        auto text_ts = into_tego_string(text);
-        std::unique_ptr<tego_error> err;
-        tego_message_id message_id;
-        tego_context_send_message(
-            &wxGetApp().get_context_mut(),
-            this->session_handle,
-            user_handle,
-            text_ts.get(),
-            &message_id,
-            tego::out(err)
-        );
-        if (err) {
-            // todo: on failure we should NOT erase the text in the chat box
-            LOG_ERROR(err.get());
+        if (!this->handle_debug_command(text, user_handle)) {
+            auto text_ts = into_tego_string(text);
+            std::unique_ptr<tego_error> err;
+            tego_message_id message_id;
+            tego_context_send_message(
+                &wxGetApp().get_context_mut(),
+                this->session_handle,
+                user_handle,
+                text_ts.get(),
+                &message_id,
+                tego::out(err)
+            );
+            if (err) {
+                // todo: on failure we should NOT erase the text in the chat box
+                LOG_ERROR(err.get());
+            } else {
+                chat_panel->add_chat_message(timestamp, wxString("Me"), text);
+            }
         } else {
             chat_panel->add_chat_message(timestamp, wxString("Me"), text);
         }
@@ -105,6 +109,135 @@ void ConversationsPanel::add_user(
     this->contact_widgets.insert(
         {user_handle, {display_name, v_sizer, chat_panel, message_entry_panel}}
     );
+}
+
+bool ConversationsPanel::handle_debug_command(
+    const wxString& cmd,
+    const tego_session_handle user_handle
+) {
+    auto context = &wxGetApp().get_context_mut();
+    auto tokens = wxSplit(wxString(cmd).Trim(true).Trim(false), ' ');
+    if (tokens.IsEmpty()) {
+        return false;
+    } else {
+        auto command = tokens[0];
+        const auto token_count = tokens.GetCount();
+        if (token_count == 1) {
+            if (command == "/accept_contact_request") {
+                tego_context_acknowledge_chat_request(
+                    context,
+                    this->session_handle,
+                    user_handle,
+                    tego_chat_acknowledge_accept,
+                    tego::log_on_error()
+                );
+                return true;
+            } else if (command == "/reject_contact_request") {
+                tego_context_acknowledge_chat_request(
+                    context,
+                    this->session_handle,
+                    user_handle,
+                    tego_chat_acknowledge_reject,
+                    tego::log_on_error()
+                );
+                return true;
+            } else if (command == "/forget_user") {
+                tego_context_forget_user(
+                    context,
+                    this->session_handle,
+                    user_handle,
+                    tego::log_on_error()
+                );
+                return true;
+            }
+        } else if (token_count == 2) {
+            if (command == "/send_transfer") {
+                auto path = into_tego_string(tokens[1]);
+                tego_file_transfer_id file_transfer_id;
+                tego_file_size file_size;
+                tego_context_send_file_transfer_request(
+                    context,
+                    this->session_handle,
+                    user_handle,
+                    path.get(),
+                    &file_transfer_id,
+                    &file_size,
+                    tego::log_on_error()
+                );
+                return true;
+            } else if (command == "/reject_transfer") {
+                wxULongLong_t file_transfer_id;
+                if (tokens[1].ToULongLong(&file_transfer_id)) {
+                    tego_context_respond_file_transfer_request(
+                        context,
+                        this->session_handle,
+                        user_handle,
+                        static_cast<tego_file_transfer_id>(file_transfer_id),
+                        tego_file_transfer_response_reject,
+                        nullptr,
+                        tego::log_on_error()
+                    );
+                    return true;
+                }
+            } else if (command == "/cancel_transfer") {
+                wxULongLong_t file_transfer_id;
+                if (tokens[1].ToULongLong(&file_transfer_id)) {
+                    tego_context_cancel_file_transfer(
+                        context,
+                        this->session_handle,
+                        user_handle,
+                        static_cast<tego_file_transfer_id>(file_transfer_id),
+                        tego::log_on_error()
+                    );
+                    return true;
+                }
+            }
+        } else if (token_count == 3) {
+            if (command == "/accept_transfer") {
+                wxULongLong_t file_transfer_id;
+                if (tokens[1].ToULongLong(&file_transfer_id)) {
+                    auto path = into_tego_string(tokens[2]);
+                    tego_context_respond_file_transfer_request(
+                        context,
+                        this->session_handle,
+                        user_handle,
+                        static_cast<tego_file_transfer_id>(file_transfer_id),
+                        tego_file_transfer_response_accept,
+                        path.get(),
+                        tego::log_on_error()
+                    );
+                    return true;
+                }
+            } else if (command == "/add_contact") {
+                auto service_id_string = tokens[1];
+                std::unique_ptr<tego_v3_onion_service_id> service_id;
+                std::unique_ptr<tego_error> error;
+
+                tego_v3_onion_service_id_from_string(
+                    tego::out(service_id),
+                    into_tego_string(service_id_string).get(),
+                    tego::out(error)
+                );
+                if (error) {
+                    LOG_ERROR(error);
+                } else {
+                    auto pet_name = tokens[2];
+                    tego_user_handle new_user_handle;
+                    tego_context_send_chat_request(
+                        context,
+                        this->session_handle,
+                        service_id.get(),
+                        into_tego_string(pet_name).get(),
+                        into_tego_string("Please add me!").get(),
+                        &new_user_handle,
+                        tego::log_on_error()
+                    );
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void ConversationsPanel::change_user_contact_group(
