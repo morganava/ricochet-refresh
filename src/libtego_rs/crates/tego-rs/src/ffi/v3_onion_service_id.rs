@@ -45,9 +45,7 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_string_is_valid(
 /// https://gitweb.torproject.org/torspec.git/tree/rend-spec-v3.txt
 ///
 /// @param out_service_id : returned v3 onion service id
-/// @param service_id_string : a string beginning with a v3 service id
-/// @param service_id_string_length : length of the service id string not
-///  counting the null terminator
+/// @param service_id_string : a string containing a v3 service id
 /// @param error : filled on error
 ///
 /// # Safety
@@ -56,18 +54,21 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_string_is_valid(
 #[no_mangle]
 pub unsafe extern "C" fn tego_v3_onion_service_id_from_string(
     out_service_id: *mut *mut tego_v3_onion_service_id,
-    service_id_string: *const c_char,
-    service_id_string_length: usize,
+    service_id_string: *const tego_string,
     error: *mut *mut tego_error,
 ) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(out_service_id);
         bail_if_null!(service_id_string);
 
-        let service_id_string = raw_to_str!(service_id_string, service_id_string_length)?;
-
-        let service_id = V3OnionServiceId::from_string(service_id_string)?;
+        let service_id_string = Handle::try_from(service_id_string)?;
+        let service_id_string = tego_string_map()
+            .get(&service_id_string)?
+            .clone()
+            .into_string()?;
+        let service_id = V3OnionServiceId::from_string(&service_id_string)?;
         let service_id = tego_v3_onion_service_id_map().insert(service_id);
+
         unsafe {
             *out_service_id = service_id.into();
         }
