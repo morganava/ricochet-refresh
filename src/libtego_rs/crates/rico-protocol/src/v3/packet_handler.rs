@@ -1902,12 +1902,16 @@ impl PacketHandler {
             .contains_key(service_id)
     }
 
-    pub fn forget_user(&mut self, service_id: &V3OnionServiceId) {
+    pub fn forget_user(&mut self, service_id: &V3OnionServiceId) -> Option<ConnectionHandle> {
+        let _ = self.known_contacts.remove(service_id);
+        let _ = self.blocked_contacts.remove(service_id);
+
         if let Ok(connection_handle) = self.service_id_to_connection_handle(service_id) {
-            self.remove_connection(&connection_handle);
+            let _ = self.remove_connection(&connection_handle);
+            Some(connection_handle)
+        } else {
+            None
         }
-        self.known_contacts.remove(service_id);
-        self.blocked_contacts.remove(service_id);
     }
 
     pub fn accept_contact_request(
