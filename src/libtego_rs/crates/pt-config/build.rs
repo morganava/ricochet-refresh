@@ -105,7 +105,7 @@ fn main() -> Result<(), Error> {
             .collect();
         let supported_transport_count = supported_transports.len();
         let supported_transports = supported_transports.join(",");
-        writeln!(pt_config_rs_src, "pub const SUPPORTED_TRANSPORTS: [&'static str; {supported_transport_count}] = [{supported_transports}];")?;
+        writeln!(pt_config_rs_src, "pub const SUPPORTED_TRANSPORTS: [&str; {supported_transport_count}] = [{supported_transports}];")?;
 
         writeln!(pt_config_rs_src)?;
         writeln!(pt_config_rs_src, "// bridge lines")?;
@@ -133,7 +133,7 @@ fn main() -> Result<(), Error> {
 
                     let bridge_type_upper = bridge_type.to_uppercase();
 
-                    writeln!(pt_config_rs_src, "pub const BUILTIN_{bridge_type_upper}_BRIDGE_LINES: [&'static str; {bridge_lines_count}] = [")?;
+                    writeln!(pt_config_rs_src, "pub const BUILTIN_{bridge_type_upper}_BRIDGE_LINES: [&str; {bridge_lines_count}] = [")?;
 
                     let bridge_lines: Vec<String> = bridge_lines
                         .iter()
