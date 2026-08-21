@@ -6,6 +6,7 @@ pub(crate) mod error;
 pub(crate) mod event_loop_task;
 #[cfg(feature = "logging")]
 pub(crate) mod logger;
+#[allow(unused_macros, unused_imports)]
 pub(crate) mod macros;
 pub(crate) mod promise;
 pub(crate) mod session;
