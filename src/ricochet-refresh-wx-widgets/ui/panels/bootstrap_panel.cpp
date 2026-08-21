@@ -2,6 +2,7 @@
 
 #include "strings.hpp"
 #include "ui/fonts.hpp"
+#include "ui/main_frame.hpp"
 #include "ui/metrics.hpp"
 #include "ui/panels/bootstrap_panel/connected_panel.hpp"
 #include "ui/panels/bootstrap_panel/connecting_panel.hpp"
@@ -54,16 +55,19 @@ void BootstrapPanel::show_disconnected() {
     this->disconnected_panel->Show();
     this->connecting_panel->Hide();
     this->connected_panel->Hide();
+    wxGetApp().get_main_frame().enable_settings_menu_item(true);
 }
 
 void BootstrapPanel::show_connecting() {
     this->disconnected_panel->Hide();
     this->connecting_panel->Show();
     this->connected_panel->Hide();
+    wxGetApp().get_main_frame().enable_settings_menu_item(false);
 }
 
 void BootstrapPanel::show_connected() {
     this->disconnected_panel->Hide();
     this->connecting_panel->Hide();
     this->connected_panel->Show();
+    wxGetApp().get_main_frame().enable_settings_menu_item(true);
 }

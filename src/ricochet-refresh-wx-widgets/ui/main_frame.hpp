@@ -35,6 +35,8 @@ public:
     //misc
     void open_profile(const wxString& profile_path);
 
+    void enable_settings_menu_item(bool enable);
+
 private:
     void setup_menubar();
     void setup_main_panels(wxBoxSizer* sizer);
@@ -48,6 +50,11 @@ private:
     void on_new_profile(wxCommandEvent&);
     void on_import_legacy(wxCommandEvent&);
     void on_close_profile(wxCommandEvent&);
+
+    void on_settings(wxCommandEvent&);
+
+    // menus and menu items
+    wxMenuItem* settings_menu_item = nullptr;
 
     // main panels
     // we only move 'forward' through the main panels (e.g. from the bootstrap panel
