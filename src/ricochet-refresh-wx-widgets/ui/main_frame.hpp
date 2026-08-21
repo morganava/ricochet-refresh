@@ -6,6 +6,8 @@ class MainFrame: public wxFrame {
 public:
     MainFrame();
 
+    void init();
+
     // main panel methods
     void show_bootstrap_panel();
     void show_sessions_notebook_panel();
