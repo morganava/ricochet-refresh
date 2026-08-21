@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/icons">
-        <file>ricochet_refresh.png</file>
-        <file>ricochet_icons.ttf</file>
-        <file>download.png</file>
-        <file>cancel.png</file>
-    </qresource>
-</RCC>
-

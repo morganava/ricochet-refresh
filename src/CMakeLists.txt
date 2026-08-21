@@ -114,12 +114,8 @@ endif()
 
 add_subdirectory(extern)
 add_subdirectory(libtego_rs)
-option(BUILD_QT_FRONTEND "Build the Qt frontend" ON)
-if (BUILD_QT_FRONTEND)
-    add_subdirectory(ricochet-refresh-qt)
-endif()
 
-option(BUILD_WX_WIDGETS_FRONTEND "Build the wxWidgets frontend" OFF)
+option(BUILD_WX_WIDGETS_FRONTEND "Build the wxWidgets frontend" ON)
 if (BUILD_WX_WIDGETS_FRONTEND)
     add_subdirectory(ricochet-refresh-wx-widgets)
 endif()
