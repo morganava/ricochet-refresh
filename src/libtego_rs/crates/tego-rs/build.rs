@@ -35,7 +35,7 @@ fn main() {
     match cbindgen::generate(&crate_dir) {
         Ok(bindings) => bindings.write_to_file(temp_file_path.clone().into_os_string()),
         Err(cbindgen::Error::ParseSyntaxError { .. }) => return, // ignore in favor of cargo's syntax check
-        Err(err) => panic!("{:?}", err),
+        Err(err) => panic!("{err:?}"),
     };
 
     let prev_source = std::fs::read(header_file_path.as_path()).unwrap_or(Default::default());
