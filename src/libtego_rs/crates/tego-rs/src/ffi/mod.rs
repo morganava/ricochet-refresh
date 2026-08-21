@@ -16,12 +16,10 @@ use std::ffi::{c_char, c_int, CString};
 
 // extern
 use anyhow::{bail, Result};
-use rico_profile::v4::profile::{Profile, UserProfile, UserType};
+use rico_profile::v4::profile::{Profile, UserType};
 use rico_settings::common::{BridgeConfig, BuiltInBridge, FirewallConfig};
 use rico_settings::v4::settings::{ButtonStyle, Language, TorConfig};
-use tor_interface::censorship_circumvention::PluggableTransportConfig;
 use tor_interface::censorship_circumvention::*;
-use tor_interface::legacy_tor_client::LegacyTorClientConfig;
 use tor_interface::proxy::ProxyConfig;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
 

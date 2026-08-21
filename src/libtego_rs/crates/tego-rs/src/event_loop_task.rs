@@ -1,31 +1,17 @@
 // standard
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::ffi::OsString;
-use std::fs::File;
-use std::io::{ErrorKind, Read, Seek, Write};
-use std::path::PathBuf;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Mutex, Weak,
-};
-use std::time::{Duration, Instant};
+use std::collections::BTreeMap;
+use std::sync::{Mutex, Weak};
+use std::time::Instant;
 
 // extern
 use anyhow::{anyhow, Context as AnyhowContext, Result};
-use rico_profile::v4::profile::{User, UserType};
-use rico_protocol::v3::file_hasher::*;
-use rico_protocol::v3::packet_handler::*;
-use rico_protocol::v3::Error;
-use tor_interface::legacy_tor_client::LegacyTorClientConfig;
+use rico_profile::v4::profile::UserType;
 use tor_interface::legacy_tor_client::*;
-use tor_interface::legacy_tor_version::LegacyTorVersion;
-use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
-use tor_interface::tor_provider::{OnionStream, TorEvent, TorProvider};
+use tor_interface::tor_provider::{TorEvent, TorProvider};
 
 // internal crates
 use crate::callbacks::*;
 use crate::command_queue::*;
-use crate::context::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::session::*;
@@ -90,17 +76,6 @@ impl EventLoopTask {
         // TODO: we should trigger exit callback here?
 
         Ok(())
-    }
-
-    fn retry_delay(failure_count: usize) -> Duration {
-        let delay = match failure_count {
-            // todo: immediately retry a few times first before 30s delay
-            0..=10 => 30u64,
-            11..=15 => 60u64,
-            16..=20 => 120u64,
-            21.. => 600u64,
-        };
-        Duration::from_secs(delay)
     }
 
     fn unwrap_tor_provider(

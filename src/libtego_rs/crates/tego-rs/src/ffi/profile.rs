@@ -3,8 +3,7 @@ use std::str::FromStr;
 
 // external crates
 use anyhow::Context;
-use rico_profile::v4::profile::{Profile, User, UserType};
-use tor_interface::tor_crypto::{Ed25519PrivateKey, Ed25519PublicKey};
+use rico_profile::v4::profile::Profile;
 
 // internal crates
 use crate::ffi::*;

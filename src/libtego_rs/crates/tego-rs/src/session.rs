@@ -7,10 +7,10 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 // extern
-use anyhow::{bail, Context as AnyhowContext, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use rico_profile::v4::profile::{Profile, User, UserProfile, UserType};
 use rico_protocol::v3::packet_handler;
-use rico_protocol::v3::packet_handler::{Event, Packet, PacketHandler};
+use rico_protocol::v3::packet_handler::{Event, Packet};
 use rico_protocol::v3::Error;
 use rico_protocol::v3::RICOCHET_PORT;
 use tor_interface::tor_crypto::{Ed25519PrivateKey, Ed25519PublicKey, V3OnionServiceId};

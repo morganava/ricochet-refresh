@@ -9,12 +9,11 @@ use std::time::{Duration, Instant};
 // extern
 use anyhow::Result;
 use tor_interface::tor_crypto::V3OnionServiceId;
-use tor_interface::tor_provider::{OnionStream, TorProvider};
 
 // internal
 use crate::ffi::*;
 use crate::promise::Promise;
-use crate::session::{Session, SessionHandle, UserHandle};
+use crate::session::{SessionHandle, UserHandle};
 
 pub(crate) struct Command {
     start_time: Instant,
