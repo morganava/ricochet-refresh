@@ -37,7 +37,7 @@ where
         Ok(Err(err)) => {
             if !out_error.is_null() {
                 // populate error with runtime error message
-                let error = Error::new(format!("{:?}", err).as_str());
+                let error = Error::new(format!("{err:?}").as_str());
                 let handle = tego_error_map().insert(error);
                 unsafe {
                     *out_error = handle.into();

@@ -135,7 +135,7 @@ pub unsafe extern "C" fn tego_ed25519_private_key_from_legacy_profile(
     out_private_key: *mut *mut tego_ed25519_private_key,
     legacy_profile_path: *const tego_string,
     error: *mut *mut tego_error,
-) -> () {
+) {
     translate_failures((), error, || -> Result<()> {
         let legacy_profile_path = Handle::try_from(legacy_profile_path)?;
         let legacy_profile_path =

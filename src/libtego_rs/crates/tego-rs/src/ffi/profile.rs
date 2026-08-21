@@ -194,15 +194,15 @@ pub unsafe extern "C" fn tego_profile_try_open_existing(
                 unsafe {
                     *out_profile = profile.into();
                 }
-                return Ok(true);
+                Ok(true)
             }
             Err(rico_profile::v4::error::Error::InvalidPassword) => {
                 unsafe {
                     *out_profile = std::ptr::null_mut();
                 }
-                return Ok(false);
+                Ok(false)
             }
-            Err(err) => return Err(err.into()),
+            Err(err) => Err(err.into()),
         }
     })
 }
