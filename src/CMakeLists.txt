@@ -77,7 +77,7 @@ if (ENABLE_LINTING)
     add_custom_target(cppcheck_target
         DEPENDS
             ${CMAKE_BINARY_DIR}/compile_commands.json
-        COMMAND cppcheck --enable=all --error-exitcode=1 --inline-suppr --suppressions-list="${CMAKE_CURRENT_SOURCE_DIR}/cppcheck-suppress" --project="${CMAKE_BINARY_DIR}/compile_commands.json" -i${CMAKE_CURRENT_SOURCE_DIR}/extern
+        COMMAND cppcheck --enable=all --error-exitcode=1 --inline-suppr --check-level=exhaustive --suppressions-list="${CMAKE_CURRENT_SOURCE_DIR}/cppcheck-suppress" --project="${CMAKE_BINARY_DIR}/compile_commands.json" -i${CMAKE_CURRENT_SOURCE_DIR}/extern
     )
     add_dependencies(linting cppcheck_target)
 
