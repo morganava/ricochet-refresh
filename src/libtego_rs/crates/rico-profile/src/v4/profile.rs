@@ -542,13 +542,13 @@ impl User {
     pub fn remote_endpoint_v3_onion_service_id(&self) -> Option<V3OnionServiceId> {
         self.remote_endpoint_ed25519_public_key
             .as_ref()
-            .map(|key| V3OnionServiceId::from_public_key(&key))
+            .map(V3OnionServiceId::from_public_key)
     }
 
     pub fn local_endpoint_v3_onion_service_id(&self) -> Option<V3OnionServiceId> {
         self.local_endpoint_ed25519_private_key
             .as_ref()
-            .map(|key| V3OnionServiceId::from_private_key(&key))
+            .map(V3OnionServiceId::from_private_key)
     }
 }
 
