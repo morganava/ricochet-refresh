@@ -52,6 +52,7 @@ private:
     void on_close_profile(wxCommandEvent&);
 
     void on_settings(wxCommandEvent&);
+    void on_tor_logs(wxCommandEvent&);
 
     // menus and menu items
     wxMenuItem* settings_menu_item = nullptr;
