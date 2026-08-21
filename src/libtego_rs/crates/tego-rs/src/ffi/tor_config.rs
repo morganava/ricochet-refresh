@@ -17,6 +17,15 @@ use crate::macros::*;
 // TorConfig
 //
 
+/// Get the type of this tor config variant
+///
+/// @param tor_config : the tor config to get the type of
+/// @param out_tor_config_type : destination to store tor config type
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_tor_config_get_type(
     tor_config: *const tego_tor_config,

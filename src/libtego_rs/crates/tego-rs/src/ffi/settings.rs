@@ -115,6 +115,13 @@ pub unsafe extern "C" fn tego_settings_revert(
 // Getters
 //
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
     settings: *const tego_settings,
@@ -136,6 +143,13 @@ pub unsafe extern "C" fn tego_settings_get_start_only_single_instance(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
     settings: *const tego_settings,
@@ -159,6 +173,13 @@ pub unsafe extern "C" fn tego_settings_get_check_for_updates_automatically(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_language(
     settings: *const tego_settings,
@@ -180,6 +201,13 @@ pub unsafe extern "C" fn tego_settings_get_language(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_toolbar(
     settings: *const tego_settings,
@@ -201,6 +229,13 @@ pub unsafe extern "C" fn tego_settings_get_show_toolbar(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_button_style(
     settings: *const tego_settings,
@@ -222,6 +257,13 @@ pub unsafe extern "C" fn tego_settings_get_button_style(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
     settings: *const tego_settings,
@@ -243,6 +285,13 @@ pub unsafe extern "C" fn tego_settings_get_show_desktop_notifications(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
     settings: *const tego_settings,
@@ -264,6 +313,13 @@ pub unsafe extern "C" fn tego_settings_get_blink_taskbar_icon(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
     settings: *const tego_settings,
@@ -285,6 +341,13 @@ pub unsafe extern "C" fn tego_settings_get_play_audio_notifications(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
     settings: *const tego_settings,
@@ -306,6 +369,13 @@ pub unsafe extern "C" fn tego_settings_get_minimize_instead_of_exit(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
     settings: *const tego_settings,
@@ -327,6 +397,13 @@ pub unsafe extern "C" fn tego_settings_get_show_system_tray_icon(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
     settings: *const tego_settings,
@@ -348,6 +425,13 @@ pub unsafe extern "C" fn tego_settings_get_minimize_to_system_tray(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_connect_automatically(
     settings: *const tego_settings,
@@ -369,6 +453,13 @@ pub unsafe extern "C" fn tego_settings_get_connect_automatically(
     });
 }
 
+/// @param settings : our settings object
+/// @param out_value : destination to save setting
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_get_tor_config(
     settings: *const tego_settings,
@@ -396,6 +487,13 @@ pub unsafe extern "C" fn tego_settings_get_tor_config(
 // Setters
 //
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub extern "C" fn tego_settings_set_start_only_single_instance(
     settings: *mut tego_settings,
@@ -415,6 +513,13 @@ pub extern "C" fn tego_settings_set_start_only_single_instance(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
     settings: *mut tego_settings,
@@ -433,6 +538,13 @@ pub unsafe extern "C" fn tego_settings_set_check_for_updates_automatically(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_language(
     settings: *mut tego_settings,
@@ -450,6 +562,13 @@ pub unsafe extern "C" fn tego_settings_set_language(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_toolbar(
     settings: *mut tego_settings,
@@ -466,6 +585,13 @@ pub unsafe extern "C" fn tego_settings_set_show_toolbar(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_button_style(
     settings: *mut tego_settings,
@@ -483,6 +609,13 @@ pub unsafe extern "C" fn tego_settings_set_button_style(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
     settings: *mut tego_settings,
@@ -501,6 +634,13 @@ pub unsafe extern "C" fn tego_settings_set_show_desktop_notifications(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
     settings: *mut tego_settings,
@@ -517,6 +657,13 @@ pub unsafe extern "C" fn tego_settings_set_blink_taskbar_icon(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
     settings: *mut tego_settings,
@@ -535,6 +682,13 @@ pub unsafe extern "C" fn tego_settings_set_play_audio_notifications(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
     settings: *mut tego_settings,
@@ -553,6 +707,13 @@ pub unsafe extern "C" fn tego_settings_set_minimize_instead_of_exit(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
     settings: *mut tego_settings,
@@ -569,6 +730,13 @@ pub unsafe extern "C" fn tego_settings_set_show_system_tray_icon(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
     settings: *mut tego_settings,
@@ -587,6 +755,13 @@ pub unsafe extern "C" fn tego_settings_set_minimize_to_system_tray(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_connect_automatically(
     settings: *mut tego_settings,
@@ -603,6 +778,13 @@ pub unsafe extern "C" fn tego_settings_set_connect_automatically(
     });
 }
 
+/// @param settings : our settings object
+/// @param value : value to store
+/// @param error : filled on error
+///
+/// # Safety
+///
+/// All pointers must be properly initialised or NULL
 #[no_mangle]
 pub unsafe extern "C" fn tego_settings_set_tor_config(
     settings: *mut tego_settings,
