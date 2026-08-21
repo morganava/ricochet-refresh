@@ -30,9 +30,6 @@ use crate::macros::*;
 use crate::promise::Promise;
 use crate::session::{Session, SessionHandle, UserHandle};
 
-// todo: remove me
-pub(crate) const RICOCHET_PORT: u16 = 9878u16;
-
 #[derive(Default)]
 pub(crate) struct Context {
     // callback struct
