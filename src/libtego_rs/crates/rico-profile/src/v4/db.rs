@@ -362,7 +362,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
         if let Some(identity_ed25519_private_key) = &user.identity_ed25519_private_key {
             Some(insert_ed25519_private_key(
                 tx,
-                &identity_ed25519_private_key,
+                identity_ed25519_private_key,
             )?)
         } else {
             None
@@ -372,7 +372,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
     {
         Some(insert_ed25519_public_key(
             tx,
-            &remote_endpoint_ed25519_public_key,
+            remote_endpoint_ed25519_public_key,
         )?)
     } else {
         None
@@ -382,7 +382,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
     {
         Some(insert_x25519_private_key(
             tx,
-            &remote_endpoint_x25519_private_key,
+            remote_endpoint_x25519_private_key,
         )?)
     } else {
         None
@@ -392,7 +392,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
     {
         Some(insert_ed25519_private_key(
             tx,
-            &local_endpoint_ed25519_private_key,
+            local_endpoint_ed25519_private_key,
         )?)
     } else {
         None
@@ -401,7 +401,7 @@ pub fn insert_user(tx: &Transaction<'_>, user: &profile::User) -> Result<UserRow
         if let Some(local_endpoint_x25519_public_key) = &user.local_endpoint_x25519_public_key {
             Some(insert_x25519_public_key(
                 tx,
-                &local_endpoint_x25519_public_key,
+                local_endpoint_x25519_public_key,
             )?)
         } else {
             None
@@ -441,7 +441,7 @@ pub fn insert_conversation(
     let conversation_type: i64 = conversation.conversation_type.into();
     let conversation_members = &conversation.conversation_members;
     let conversation_key = &conversation.conversation_key;
-    let conversation_key_rowid = insert_sha256_hash(tx, &conversation_key)?;
+    let conversation_key_rowid = insert_sha256_hash(tx, conversation_key)?;
 
     tx.execute(
         "INSERT INTO conversations (conversation_type, conversation_key_rowid) VALUES (?1, ?2)",
@@ -1370,7 +1370,6 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         row.get::<_, [u8; ED25519_SIGNATURE_SIZE]>(15)?,
     );
 
-    let create_timestamp = create_timestamp.into();
     let message_content_salt = profile::Salt(message_content_salt);
     let message_content_data = match (
         message_type,
@@ -1415,10 +1414,7 @@ fn message_record_from_row(row: &rusqlite::Row<'_>) -> Result<profile::MessageRe
         ) => {
             let file_data_salt = profile::Salt(file_data_salt);
             let file_data_hash = profile::Sha256Sum(file_data_hash);
-            let file_path = match file_path {
-                Some(file_path) => Some(file_path.into()),
-                None => None,
-            };
+            let file_path = file_path.map(|file_path| file_path.into());
             profile::MessageContentData::FileShare {
                 file_data_salt,
                 file_size,
