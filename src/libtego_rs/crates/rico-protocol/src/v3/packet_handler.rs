@@ -1907,7 +1907,7 @@ impl PacketHandler {
         let _ = self.blocked_contacts.remove(service_id);
 
         if let Ok(connection_handle) = self.service_id_to_connection_handle(service_id) {
-            let _ = self.remove_connection(&connection_handle);
+            self.remove_connection(&connection_handle);
             Some(connection_handle)
         } else {
             None

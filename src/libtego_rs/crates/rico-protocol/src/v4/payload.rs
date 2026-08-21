@@ -27,12 +27,12 @@ pub fn conversation_key(
     // conversation type
     let conversation_type: i64 = conversation_type.into();
     hasher.update(NULL_BYTE);
-    hasher.update(&conversation_type.to_be_bytes());
+    hasher.update(conversation_type.to_be_bytes());
 
     //  number of members
     let conversation_member_count: i64 = conversation_member_public_keys.len() as i64;
     hasher.update(NULL_BYTE);
-    hasher.update(&conversation_member_count.to_be_bytes());
+    hasher.update(conversation_member_count.to_be_bytes());
     // keys in order
     for public_key in conversation_member_public_keys {
         hasher.update(NULL_BYTE);
@@ -92,16 +92,16 @@ pub fn message_content_hash(
         }) => {
             hasher.update(b"ricochet-refresh-tombstone-message");
             hasher.update(NULL_BYTE);
-            hasher.update(&message_content_salt.0);
+            hasher.update(message_content_salt.0);
             hasher.update(NULL_BYTE);
-            hasher.update(&original_message_content_hash.0);
+            hasher.update(original_message_content_hash.0);
             hasher.update(NULL_BYTE);
-            hasher.update(&original_message_record_signature.to_bytes());
+            hasher.update(original_message_record_signature.to_bytes());
         }
         MessageContentData::Text { text } => {
             hasher.update(b"ricochet-refresh-text-message");
             hasher.update(NULL_BYTE);
-            hasher.update(&message_content_salt.0);
+            hasher.update(message_content_salt.0);
             hasher.update(NULL_BYTE);
             hasher.update(text.as_bytes());
         }
@@ -113,9 +113,9 @@ pub fn message_content_hash(
         } => {
             hasher.update(b"ricochet-refresh-file-share-message");
             hasher.update(NULL_BYTE);
-            hasher.update(&message_content_salt.0);
+            hasher.update(message_content_salt.0);
             hasher.update(NULL_BYTE);
-            hasher.update(&file_data_hash.0);
+            hasher.update(file_data_hash.0);
         }
     }
 
@@ -134,7 +134,7 @@ pub fn file_data_hash(
     hasher.update(NULL_BYTE);
     hasher.update(file_data_salt.0);
     hasher.update(NULL_BYTE);
-    hasher.update(&file_size.0.to_be_bytes());
+    hasher.update(file_size.0.to_be_bytes());
     hasher.update(NULL_BYTE);
 
     // hash file contents
