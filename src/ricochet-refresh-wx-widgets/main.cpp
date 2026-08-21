@@ -24,13 +24,16 @@ bool RicochetRefresh::OnInit() try {
 
     Locale::init();
 
-    auto main_frame = new MainFrame();
-    main_frame->Show(true);
-    this->main_frame = main_frame;
+    this->main_frame = new MainFrame();
 
     tego_context_initialize(tego::out(this->context), tego::throw_on_error());
 
     this->init_callbacks();
+
+    this->CallAfter([this]() {
+        this->main_frame->init();
+        this->main_frame->Show(true);
+    });
 
     return true;
 

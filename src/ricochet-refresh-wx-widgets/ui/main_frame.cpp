@@ -11,7 +11,9 @@
 #include "ui/panels/settings_panel.hpp"
 #include "ui/widgets/wrapped_static_text.hpp"
 
-MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, Strings::MainFrame::title()) {
+MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, Strings::MainFrame::title()) {}
+
+void MainFrame::init() {
     this->setup_menubar();
 
     auto sizer = new wxBoxSizer(wxHORIZONTAL);
