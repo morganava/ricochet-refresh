@@ -487,7 +487,6 @@ impl TryFrom<TorConfigRaw> for TorConfig {
             TorConfigRaw::ExternalTor {} => TorConfig::ExternalTor,
             #[cfg(feature = "arti-client")]
             TorConfigRaw::ArtiClient {} => TorConfig::ArtiClient,
-            _ => unreachable!(),
         };
         Ok(tor_config)
     }
