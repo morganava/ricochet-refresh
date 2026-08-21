@@ -42,6 +42,8 @@ set(RICOCHET_REFRESH_SOURCE
     precomp.hpp
     strings.cpp
     strings.hpp
+    tego_callbacks.cpp
+    tego_callbacks.hpp
     ui/bitmaps.hpp
     ui/bitmaps.cpp
     ui/events.cpp
