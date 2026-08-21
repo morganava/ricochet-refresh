@@ -28,7 +28,6 @@ public:
 
 private:
     void init_settings();
-    void init_callbacks();
 
     class MainFrame* main_frame = nullptr;
 
