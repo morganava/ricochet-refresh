@@ -3,10 +3,8 @@ use std::ffi::CString;
 // extern
 use anyhow::{Context, Result};
 use rico_profile::v4::profile::UserType;
-use tor_interface::tor_crypto::V3OnionServiceId;
 
 // internal crates
-use crate::context::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::session::*;

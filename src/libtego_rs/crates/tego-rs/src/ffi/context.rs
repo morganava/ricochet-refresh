@@ -1,11 +1,8 @@
 // standard
-use std::collections::BTreeMap;
-use std::ffi::c_char;
 use std::path::PathBuf;
 
 // extern
-use anyhow::{bail, Context, Result};
-use tor_interface::tor_crypto::V3OnionServiceId;
+use anyhow::Result;
 
 // internal
 use crate::error::translate_failures;

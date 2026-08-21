@@ -1,25 +1,19 @@
 // standard
-use std::collections::BTreeMap;
-use std::ffi::CString;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
-};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 // extern
 use anyhow::{Context as AnyhowContext, Result};
 #[cfg(feature = "pluggable-transports")]
 use pt_config::pt_config::*;
-use rico_profile::v4::profile::{Profile, UserType};
+use rico_profile::v4::profile::Profile;
 use rico_settings::common::{BridgeConfig, BuiltInBridge};
 use rico_settings::v4::settings::TorConfig;
 use tor_interface::censorship_circumvention::{BridgeLine, PluggableTransportConfig};
-use tor_interface::legacy_tor_client::{LegacyTorClient, LegacyTorClientConfig};
-use tor_interface::legacy_tor_version::LegacyTorVersion;
-use tor_interface::tor_crypto::{Ed25519PrivateKey, V3OnionServiceId};
+use tor_interface::legacy_tor_client::LegacyTorClientConfig;
+use tor_interface::tor_crypto::V3OnionServiceId;
 
 // internal crates
 use crate::callbacks::*;
@@ -28,7 +22,7 @@ use crate::event_loop_task::*;
 use crate::ffi::*;
 use crate::macros::*;
 use crate::promise::Promise;
-use crate::session::{Session, SessionHandle, UserHandle};
+use crate::session::{SessionHandle, UserHandle};
 
 #[derive(Default)]
 pub(crate) struct Context {
