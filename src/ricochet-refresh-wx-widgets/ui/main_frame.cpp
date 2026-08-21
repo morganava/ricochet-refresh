@@ -97,6 +97,10 @@ void MainFrame::open_profile(const wxString& profile_path) {
     this->show_sessions_notebook_panel();
 }
 
+void MainFrame::enable_settings_menu_item(bool enable) {
+    this->settings_menu_item->Enable(enable);
+}
+
 //
 // Widget initialisation
 //
@@ -209,8 +213,9 @@ void MainFrame::setup_menubar() {
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::downloads());
     auto tor_logs_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::tor_logs());
-    auto settings_menu_item =
+    this->settings_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::settings());
+    tools_menu->Bind(wxEVT_MENU, &MainFrame::on_settings, this, this->settings_menu_item->GetId());
 
     // create Help menu
     auto help_menu = new wxMenu();
@@ -306,4 +311,8 @@ void MainFrame::on_import_legacy(wxCommandEvent&) {
 
 void MainFrame::on_close_profile(wxCommandEvent&) {
     this->get_sessions_notebook_panel_mut().close_focused_session();
+}
+
+void MainFrame::on_settings(wxCommandEvent&) {
+    this->show_settings_panel(Settings::General);
 }
