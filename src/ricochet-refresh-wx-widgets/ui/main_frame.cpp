@@ -213,6 +213,7 @@ void MainFrame::setup_menubar() {
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::downloads());
     auto tor_logs_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::tor_logs());
+    tools_menu->Bind(wxEVT_MENU, &MainFrame::on_tor_logs, this, tor_logs_menu_item->GetId());
     this->settings_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::settings());
     tools_menu->Bind(wxEVT_MENU, &MainFrame::on_settings, this, this->settings_menu_item->GetId());
@@ -315,4 +316,8 @@ void MainFrame::on_close_profile(wxCommandEvent&) {
 
 void MainFrame::on_settings(wxCommandEvent&) {
     this->show_settings_panel(Settings::General);
+}
+
+void MainFrame::on_tor_logs(wxCommandEvent&) {
+    this->show_connection_status_panel();
 }
