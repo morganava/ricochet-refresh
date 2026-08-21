@@ -61,10 +61,7 @@ impl<FFI_STRUCT, const TAG_BITS: usize, const TAG: usize> Clone
     for Handle<FFI_STRUCT, TAG_BITS, TAG>
 {
     fn clone(&self) -> Self {
-        Self {
-            raw: self.raw,
-            _ffi_struct: Default::default(),
-        }
+        *self
     }
 }
 

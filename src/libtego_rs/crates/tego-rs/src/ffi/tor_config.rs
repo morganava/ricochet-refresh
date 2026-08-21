@@ -791,7 +791,7 @@ pub unsafe extern "C" fn tego_firewall_config_get_allowed_ports(
         let port_list = tego_firewall_config_map()
             .get(&firewall_config)?
             .allowed_ports()
-            .into_iter()
+            .iter()
             .map(|port| port.to_string())
             .collect::<Vec<String>>()
             .join(",");

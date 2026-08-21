@@ -12,6 +12,7 @@ pub struct ObjectMap<T, FFI_STRUCT, const TAG_BITS: usize, const TAG: usize> {
     counter: usize,
 }
 
+#[allow(clippy::new_without_default)]
 impl<T, FFI_STRUCT, const TAG_BITS: usize, const TAG: usize>
     ObjectMap<T, FFI_STRUCT, TAG_BITS, TAG>
 {
@@ -33,7 +34,7 @@ impl<T, FFI_STRUCT, const TAG_BITS: usize, const TAG: usize>
         let key: Handle<FFI_STRUCT, TAG_BITS, TAG> = Handle::new(key_raw);
         let map = self.map.get_or_insert_default();
 
-        map.insert(key.clone(), value);
+        map.insert(key, value);
         key
     }
 

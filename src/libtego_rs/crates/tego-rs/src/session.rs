@@ -306,7 +306,7 @@ impl Session {
             let user_type = user.user_type;
             let service_id = user.identity_v3_onion_service_id();
 
-            if let Some(_) = service_id_to_user_handle.insert(service_id.clone(), user_handle) {
+            if service_id_to_user_handle.insert(service_id.clone(), user_handle).is_some() {
                 unreachable!("Profile should not have multiple users with identical service_ids");
             }
 
@@ -317,7 +317,7 @@ impl Session {
             };
 
             let user_data = UserData::new(user_type, pet_name, service_id.clone());
-            if let Some(_) = users.insert(user_handle, user_data) {
+            if users.insert(user_handle, user_data).is_some() {
                 unreachable!("Profile should not have duplicate UserHandles in users table");
             }
 
@@ -595,7 +595,7 @@ impl Session {
                                 if let Some(user_handle) =
                                     self.service_id_to_user_handle.get(&service_id)
                                 {
-                                    if let Some(user_data) = self.users.get_mut(&user_handle) {
+                                    if let Some(user_data) = self.users.get_mut(user_handle) {
                                         user_data.connection_failures = 0usize;
                                     }
                                 }
@@ -838,7 +838,7 @@ impl Session {
                                 );
 
                                 // send queued messages
-                                if let Some(user_data) = self.users.get_mut(&user_handle) {
+                                if let Some(user_data) = self.users.get_mut(user_handle) {
                                     log_info!("Re-sending un-acked file transfer requests");
                                     if !user_data.queued_messages.is_empty() {
                                         for message in user_data.queued_messages.iter_mut() {
@@ -1515,7 +1515,7 @@ impl Session {
         pet_name: String,
     ) -> Result<UserHandle> {
         log_trace!();
-        bail_if!(self.service_id_to_user_handle.get(&service_id).is_some());
+        bail_if!(self.service_id_to_user_handle.contains_key(&service_id));
 
         let user = User {
             user_type: UserType::Pending,
@@ -1536,7 +1536,7 @@ impl Session {
         };
         let user_handle: UserHandle = self.profile.add_user(&user)?.into();
         self.service_id_to_user_handle
-            .insert(service_id.clone(), user_handle.into());
+            .insert(service_id.clone(), user_handle);
         self.users.insert(
             user_handle,
             UserData::new(UserType::Pending, pet_name, service_id),
@@ -1782,7 +1782,7 @@ impl Session {
                 service_id.clone(),
                 file_name.clone(),
                 file_size,
-                file_hash.clone(),
+                *file_hash,
                 &mut replies,
             )?;
         let connection = self
@@ -1834,7 +1834,7 @@ impl Session {
         // construct reply packets
         let mut replies: Vec<Packet> = Vec::with_capacity(1);
         let connection_handle = self.v3.packet_handler.accept_file_transfer_request(
-            &service_id,
+            service_id,
             file_transfer_handle,
             &mut replies,
         )?;
@@ -1879,7 +1879,7 @@ impl Session {
         // construct reply packets
         let mut replies: Vec<Packet> = Vec::with_capacity(1);
         let connection_handle = self.v3.packet_handler.reject_file_transfer_request(
-            &service_id,
+            service_id,
             file_transfer_handle,
             &mut replies,
         )?;
@@ -1921,7 +1921,7 @@ impl Session {
         // construct reply packets
         let mut replies: Vec<Packet> = Vec::with_capacity(1);
         let connection_handle = self.v3.packet_handler.cancel_file_transfer(
-            &service_id,
+            service_id,
             file_transfer_handle,
             false,
             &mut replies,
@@ -2002,7 +2002,7 @@ impl Session {
 
         let packet_handler = &mut self.v3.packet_handler;
 
-        if !packet_handler.has_verified_connection(&service_id) {
+        if !packet_handler.has_verified_connection(service_id) {
             log_info!("Connected to {service_id:?}");
             let mut write_packets: Vec<Packet> = Default::default();
             let connection_handle = packet_handler.new_outgoing_connection(

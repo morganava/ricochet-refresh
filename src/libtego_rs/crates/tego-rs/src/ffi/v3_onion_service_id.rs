@@ -123,7 +123,7 @@ pub unsafe extern "C" fn tego_v3_onion_service_id_to_string(
     service_id: *const tego_v3_onion_service_id,
     out_service_id_string: *mut *mut tego_string,
     error: *mut *mut tego_error,
-) -> () {
+) {
     translate_failures((), error, || -> Result<()> {
         bail_if_null!(service_id);
         bail_if_null!(out_service_id_string);
