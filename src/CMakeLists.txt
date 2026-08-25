@@ -140,6 +140,10 @@ option(ENABLE_TOR_EXPERT_BUNDLE "Add pluggable-transport support and include bui
 add_subdirectory(extern)
 add_subdirectory(libtego_rs)
 
+# Compile with ASAN
+option(ENABLE_ASAN "Enabel -fsanitize=address compile+linker flags" OFF)
+
+# wxWidgets frontend
 option(BUILD_WX_WIDGETS_FRONTEND "Build the wxWidgets frontend" ON)
 if (BUILD_WX_WIDGETS_FRONTEND)
     add_subdirectory(ricochet-refresh-wx-widgets)

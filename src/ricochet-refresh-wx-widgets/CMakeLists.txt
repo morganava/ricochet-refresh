@@ -28,6 +28,11 @@ else()
 endif()
 set_target_properties(ricochet-refresh-wx-widgets PROPERTIES OUTPUT_NAME "ricochet-refresh")
 
+if (ENABLE_ASAN)
+    target_compile_options(ricochet-refresh-wx-widgets PRIVATE -fsanitize=address)
+    target_link_options(ricochet-refresh-wx-widgets PRIVATE -fsanitize=address)
+endif()
+
 set(RICOCHET_REFRESH_SOURCE
     build_config.hpp
     enums.hpp
