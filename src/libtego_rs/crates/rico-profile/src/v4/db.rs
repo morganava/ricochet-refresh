@@ -1031,12 +1031,10 @@ pub(crate) fn select_all_users(
 
         let avatar = match avatar_rowid {
             Some(avatar_rowid) => {
-                let rgba_data =
-                    Box::new(select_avatar_stmt.query_one(params![avatar_rowid], |row| {
-                        row.get::<_, [u8; profile::Avatar::BYTES]>(0)
-                    })?);
-                let avatar = profile::Avatar { rgba_data };
-                Some(avatar)
+                let rgba_data = select_avatar_stmt.query_one(params![avatar_rowid], |row| {
+                    Ok(row.get::<_, Box<[u8]>>(0)?.try_into().expect("avatars MUST be 262144 bytes in length"))
+                })?;
+                Some(profile::Avatar { rgba_data })
             }
             None => None,
         };
