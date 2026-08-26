@@ -114,6 +114,7 @@ if (WIN32)
     target_link_libraries(tego_rs INTERFACE ws2_32)
     target_link_libraries(tego_rs INTERFACE userenv)
     target_link_libraries(tego_rs INTERFACE bcrypt)
+    target_link_libraries(tego_rs INTERFACE crypt32)
     target_link_libraries(tego_rs INTERFACE ntdll)
 endif()
 
