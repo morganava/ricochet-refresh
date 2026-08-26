@@ -438,8 +438,8 @@ impl Session {
                         }
                     }
                     Ok(None) => break,
-                    Err(err) => {
-                        log_error!("Error listening for new connections: {err}");
+                    Err(_err) => {
+                        log_error!("Error listening for new connections: {_err}");
                         break;
                     }
                 }
@@ -693,7 +693,7 @@ impl Session {
                                         });
                                     }
                                     // error handling
-                                    Err(err) => log_error!("Failed to add user {user:?}; {err}"),
+                                    Err(_err) => log_error!("Failed to add user {user:?}; {_err}"),
                                 }
                             }
                         }
@@ -1227,7 +1227,7 @@ impl Session {
                                                             .remove(&file_transfer_handle);
                                                     }
                                                 }
-                                                Err(err) => {
+                                                Err(_err) => {
                                                     callback_queue.push(CallbackData::FileTransferComplete{
                                                         session_handle,
                                                         user_handle,
@@ -1235,7 +1235,7 @@ impl Session {
                                                         direction: tego_file_transfer_direction::tego_file_transfer_direction_receiving,
                                                         result: tego_file_transfer_result::tego_file_transfer_result_filesystem_error,
                                                     });
-                                                    log_error!("{err}")
+                                                    log_error!("{_err}")
                                                 }
                                             }
                                         }
@@ -1495,8 +1495,8 @@ impl Session {
                     };
                     let delay = Self::retry_delay(user_data.connection_failures);
 
-                    let service_id = &user_data.service_id;
-                    log_info!("Retry connecting to {service_id} in {delay:?}");
+                    let _service_id = &user_data.service_id;
+                    log_info!("Retry connecting to {_service_id} in {delay:?}");
 
                     command_queue.push(command_data, delay);
                 }
@@ -1616,12 +1616,12 @@ impl Session {
                 user_data.connection_failures += 1;
 
                 let failure_count = user_data.connection_failures;
-                let service_id = &user_data.service_id;
+                let _service_id = &user_data.service_id;
                 // delay before trying to connect in seconds
                 let delay = Self::retry_delay(failure_count);
 
                 log_info!(
-                    "Connect attempt {failure_count} to {service_id:?} failed; try again in {delay:?}"
+                    "Connect attempt {failure_count} to {_service_id:?} failed; try again in {delay:?}"
                 );
 
                 let command_data = CommandData::ConnectContact {
@@ -2061,12 +2061,12 @@ impl Session {
             user_data.connection_failures += 1;
 
             let failure_count = user_data.connection_failures;
-            let service_id = &user_data.service_id;
+            let _service_id = &user_data.service_id;
             // delay before trying to connect in seconds
             let delay = Self::retry_delay(failure_count);
 
             log_info!(
-                "Connect attempt {failure_count} to {service_id:?} failed; try again in {delay:?}"
+                "Connect attempt {failure_count} to {_service_id:?} failed; try again in {delay:?}"
             );
 
             let command_data = CommandData::ConnectContact {

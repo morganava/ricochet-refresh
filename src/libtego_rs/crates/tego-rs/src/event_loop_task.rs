@@ -88,8 +88,8 @@ impl EventLoopTask {
         if let Some(tor_client) = &mut self.tor_provider {
             // handle tor events
             for event in tor_client.update()? {
-                if let Err(err) = self.handle_tor_event(event) {
-                    log_error!("{err}");
+                if let Err(_err) = self.handle_tor_event(event) {
+                    log_error!("{_err}");
                 }
             }
         }
@@ -157,8 +157,8 @@ impl EventLoopTask {
                 .pop()
                 .expect("command_queue should not be empty");
 
-            if let Err(err) = self.handle_command(cmd.data()) {
-                log_error!("{err}");
+            if let Err(_err) = self.handle_command(cmd.data()) {
+                log_error!("{_err}");
             }
         }
 
@@ -449,8 +449,8 @@ impl EventLoopTask {
     fn handle_sessions(&mut self) -> Result<()> {
         // if let Some(tor_provider) = self.tor_provider.as_mut() {
         for session in self.session_map.values_mut() {
-            if let Err(err) = session.update_v3(&mut self.command_queue, &mut self.callback_queue) {
-                log_error!("{err}")
+            if let Err(_err) = session.update_v3(&mut self.command_queue, &mut self.callback_queue) {
+                log_error!("{_err}")
             }
         }
         // }
