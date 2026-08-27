@@ -1,5 +1,6 @@
 #include "main.hpp"
 
+#include "build_config.hpp"
 #include "enums.hpp"
 #include "ffi.hpp"
 #include "locale.hpp"
@@ -20,6 +21,15 @@ bool RicochetRefresh::OnInit() try {
     if (!wxApp::OnInit()) {
         return false;
     }
+
+    #if defined(__WINDOWS__)
+    // attach to parent proces console so we can get terminal output on windows
+    if constexpr (BuildConfig::logging_enabled()) {
+        if (::AttachConsole(ATTACH_PARENT_PROCESS)) {
+            std::freopen("CONOUT$", "w", stdout);
+        }
+    }
+    #endif
 
     this->init_settings();
 
