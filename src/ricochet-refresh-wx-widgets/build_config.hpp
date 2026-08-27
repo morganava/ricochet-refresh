@@ -20,4 +20,12 @@ public:
     #error "Target operating system not known at build-time"
 #endif
     }
+
+    constexpr static bool logging_enabled() {
+#if defined(RICOCHET_REFRESH_LOGGING)
+        return true;
+#else
+        return false;
+#endif
+    }
 };
