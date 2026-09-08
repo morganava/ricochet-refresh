@@ -2,6 +2,7 @@
 use std::str::FromStr;
 
 // external
+#[cfg(feature = "pluggable-transports")]
 use pt_config::pt_config::SUPPORTED_TRANSPORTS;
 use rico_settings::common::{BridgeConfig, FirewallConfig};
 use rico_settings::v4::settings::TorConfig;
@@ -262,6 +263,7 @@ pub unsafe extern "C" fn tego_tor_config_get_firewall_config(
 /// # Safety
 ///
 /// All pointers must be properly initialised or NULL
+#[cfg(feature = "pluggable-transports")]
 #[no_mangle]
 pub unsafe extern "C" fn tego_get_supported_transports(
     out_transports: *mut *mut tego_string,

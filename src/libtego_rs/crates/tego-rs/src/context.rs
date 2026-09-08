@@ -1,5 +1,6 @@
 // standard
 use std::path::PathBuf;
+#[cfg(feature = "pluggable-transports")]
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -9,8 +10,10 @@ use anyhow::{Context as AnyhowContext, Result};
 #[cfg(feature = "pluggable-transports")]
 use pt_config::pt_config::*;
 use rico_profile::v4::profile::Profile;
+#[cfg(feature = "pluggable-transports")]
 use rico_settings::common::{BridgeConfig, BuiltInBridge};
 use rico_settings::v4::settings::TorConfig;
+#[cfg(feature = "pluggable-transports")]
 use tor_interface::censorship_circumvention::{BridgeLine, PluggableTransportConfig};
 use tor_interface::legacy_tor_client::LegacyTorClientConfig;
 use tor_interface::tor_crypto::V3OnionServiceId;
@@ -61,7 +64,7 @@ impl Context {
         match tor_config {
             #[cfg(feature = "bundled-tor")]
             TorConfig::BundledTor {
-                bridge_config,
+                bridge_config : _bridge_config,
                 proxy_config,
                 firewall_config,
             } => {
@@ -70,28 +73,34 @@ impl Context {
 
                 let proxy_settings = proxy_config;
                 let allowed_ports = firewall_config.map(|conf| conf.allowed_ports().clone());
-                let pluggable_transports = Some(Self::pluggable_transports()?);
-                let bridge_lines = match bridge_config {
-                    Some(BridgeConfig::BuiltIn(builtin)) => {
-                        let bridge_lines: &[&str] = match builtin {
-                            BuiltInBridge::Obfs4 => &BUILTIN_OBFS4_BRIDGE_LINES,
-                            BuiltInBridge::Meek => &BUILTIN_MEEK_BRIDGE_LINES,
-                            BuiltInBridge::Snowflake => &BUILTIN_SNOWFLAKE_BRIDGE_LINES,
-                        };
-                        Some(
-                            bridge_lines
-                                .iter()
-                                .map(|bridge| BridgeLine::from_str(bridge).unwrap())
-                                .collect(),
-                        )
+                #[cfg(feature = "pluggable-transports")]
+                let (pluggable_transports, bridge_lines) = (
+                    Some(Self::pluggable_transports()?),
+                    match _bridge_config {
+                        Some(BridgeConfig::BuiltIn(builtin)) => {
+                            let bridge_lines: &[&str] = match builtin {
+                                BuiltInBridge::Obfs4 => &BUILTIN_OBFS4_BRIDGE_LINES,
+                                BuiltInBridge::Meek => &BUILTIN_MEEK_BRIDGE_LINES,
+                                BuiltInBridge::Snowflake => &BUILTIN_SNOWFLAKE_BRIDGE_LINES,
+                            };
+                            Some(
+                                bridge_lines
+                                    .iter()
+                                    .map(|bridge| BridgeLine::from_str(bridge).unwrap())
+                                    .collect(),
+                            )
+                        }
+                        Some(BridgeConfig::Custom(first, bridge_lines)) => {
+                            let mut bridge_lines = bridge_lines;
+                            bridge_lines.insert(0, first);
+                            Some(bridge_lines)
+                        }
+                        None => None,
                     }
-                    Some(BridgeConfig::Custom(first, bridge_lines)) => {
-                        let mut bridge_lines = bridge_lines;
-                        bridge_lines.insert(0, first);
-                        Some(bridge_lines)
-                    }
-                    None => None,
-                };
+                );
+                #[cfg(not(feature = "pluggable-transports"))]
+                let (pluggable_transports, bridge_lines) = (None, None);
+
                 let legacy_tor_client_config = LegacyTorClientConfig::BundledTor {
                     tor_bin_path,
                     data_directory,
@@ -369,7 +378,7 @@ impl Context {
         path
     }
 
-    #[cfg(feature = "bundled-tor")]
+    #[cfg(all(feature = "bundled-tor", feature = "pluggable-transports"))]
     pub fn pluggable_transports() -> Result<Vec<PluggableTransportConfig>> {
         let mut pluggable_transports: Vec<PluggableTransportConfig> =
             Vec::with_capacity(PLUGGABLE_TRANSPORTS.len());
