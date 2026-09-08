@@ -20,10 +20,12 @@ private:
     // setters
     void set_tor_backend(TorBackend);
     void set_connect_automatically(bool);
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void set_use_bridges(bool);
     void set_bridge_type(BridgeType);
     void set_builtin_bridge(BuiltinBridge);
     void set_custom_bridges(wxString);
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void set_use_proxy(bool);
     void set_proxy_type(ProxyType);
     void set_proxy_address(wxString, uint16_t);
@@ -31,15 +33,20 @@ private:
     void set_use_firewall(bool);
     void set_allowed_ports(wxString);
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void enable_bridge_controls();
     void enable_builtin_bridge_controls();
     void enable_custom_bridge_controls();
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void enable_proxy_address_controls();
     void enable_proxy_authentication_controls();
     void enable_firewall_controls();
+
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void disable_bridge_controls();
     void disable_builtin_bridge_controls();
     void disable_custom_bridge_controls();
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     void disable_proxy_address_controls();
     void disable_proxy_authentication_controls();
     void disable_firewall_controls();
@@ -50,6 +57,7 @@ private:
     wxCheckBox* connect_automatically_toggle = nullptr;
 #ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
     wxRadioButton* bundled_legacy_tor_option = nullptr;
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     // Bridges
     wxCheckBox* use_bridges_toggle = nullptr;
     wxRadioButton* builtin_bridge_option = nullptr;
@@ -61,6 +69,7 @@ private:
     WrappedStaticText* meek_bridge_description = nullptr;
     wxRadioButton* custom_bridge_option = nullptr;
     wxTextCtrl* custom_bridge_textbox = nullptr;
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     // Proxy
     wxCheckBox* use_proxy_toggle = nullptr;
     wxStaticText* proxy_type_label = nullptr;
@@ -87,10 +96,12 @@ private:
 
     TorBackend backend;
     bool connect_automatically;
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     bool use_bridges;
     BridgeType bridge_type;
     BuiltinBridge builtin_bridge;
     wxString custom_bridges;
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     uint16_t proxy_port;
     wxString proxy_address;
     wxString proxy_username;

@@ -83,6 +83,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     });
 #endif // ENABLE_RICOCHET_REFRESH_ARTI_CLIENT
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     // Bridges
 
     auto bridges_heading =
@@ -170,6 +171,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
     this->custom_bridge_textbox->SetHint(
         Strings::ConnectionSettingsPanel::custom_bridge_textbox_hint()
     );
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 
     // Network settings
 
@@ -285,6 +287,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
 
     v_sizer->AddSpacer(Metrics::VERTICAL_PADDING_MEDIUM - Metrics::VERTICAL_PADDING_SMALL);
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     v_sizer->Add(bridges_heading, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer->Add(bridges_description, 0, wxEXPAND | wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer
@@ -328,6 +331,7 @@ ConnectionSettingsPanel::ConnectionSettingsPanel(wxWindow* parent) :
         wxEXPAND | wxLEFT,
         Metrics::HORIZONTAL_PADDING_XLARGE
     );
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 
     v_sizer->AddSpacer(Metrics::VERTICAL_PADDING_MEDIUM);
     v_sizer->Add(network_settings_heading, 0, wxBOTTOM, Metrics::VERTICAL_PADDING_MEDIUM);
@@ -430,6 +434,7 @@ void ConnectionSettingsPanel::load_from_settings() {
     switch (tor_config_type) {
 #ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
         case tego_tor_config_type_bundled_tor: {
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
             //
             // Bridge Settings
             //
@@ -475,6 +480,7 @@ void ConnectionSettingsPanel::load_from_settings() {
             } else {
                 this->set_use_bridges(false);
             }
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
             //
             // Proxy Settings
             //
@@ -574,6 +580,7 @@ void ConnectionSettingsPanel::save_to_settings() {
         // Bridge settings
         //
         std::unique_ptr<tego_bridge_config> bridge_config;
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
         if (this->use_bridges_toggle->GetValue()) {
             if (this->builtin_bridge_option->GetValue()) {
                 if (this->obfs4_bridge_option->GetValue()) {
@@ -605,6 +612,7 @@ void ConnectionSettingsPanel::save_to_settings() {
             }
         }
 
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
         //
         // Proxy settings
         //
@@ -705,6 +713,7 @@ void ConnectionSettingsPanel::set_connect_automatically(bool enabled) {
     this->connect_automatically_toggle->SetValue(enabled);
 }
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 void ConnectionSettingsPanel::set_use_bridges(bool enabled) {
     LOG_INFO(fmt::format("Set Use Bridges: : {}", enabled));
     this->use_bridges_toggle->SetValue(enabled);
@@ -765,6 +774,7 @@ void ConnectionSettingsPanel::set_custom_bridges(wxString bridge_lines) {
     this->custom_bridge_textbox->WriteText(bridge_lines);
     this->custom_bridge_textbox->SetInsertionPoint(0);
 }
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 
 void ConnectionSettingsPanel::set_use_proxy(bool enabled) {
     LOG_INFO(fmt::format("Set Use Proxy: : {}", enabled));
@@ -831,6 +841,7 @@ void ConnectionSettingsPanel::set_allowed_ports(wxString allowed_ports) {
     this->allowed_ports_textbox->SetValue(allowed_ports);
 }
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 void ConnectionSettingsPanel::enable_bridge_controls() {
     this->builtin_bridge_option->Enable();
     this->custom_bridge_option->Enable();
@@ -848,6 +859,7 @@ void ConnectionSettingsPanel::enable_builtin_bridge_controls() {
 void ConnectionSettingsPanel::enable_custom_bridge_controls() {
     this->custom_bridge_textbox->Enable();
 }
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 
 void ConnectionSettingsPanel::enable_proxy_address_controls() {
     this->proxy_type_label->Enable();
@@ -870,6 +882,7 @@ void ConnectionSettingsPanel::enable_firewall_controls() {
     this->allowed_ports_textbox->Enable();
 }
 
+#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 void ConnectionSettingsPanel::disable_bridge_controls() {
     this->builtin_bridge_option->Disable();
     this->custom_bridge_option->Disable();
@@ -889,6 +902,7 @@ void ConnectionSettingsPanel::disable_builtin_bridge_controls() {
 void ConnectionSettingsPanel::disable_custom_bridge_controls() {
     this->custom_bridge_textbox->Disable();
 }
+#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
 
 void ConnectionSettingsPanel::disable_proxy_address_controls() {
     this->proxy_type_label->Disable();

@@ -93,7 +93,9 @@ add_custom_command(
 add_custom_target(tego_rs_target
     DEPENDS ${tego_rs_outputs}
 )
-add_dependencies(tego_rs_target tor_expert_bundle_target)
+if (ENABLE_TOR_EXPERT_BUNDLE)
+    add_dependencies(tego_rs_target tor_expert_bundle_target)
+endif()
 
 #
 # create static library target for consumers
