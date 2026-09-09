@@ -20,7 +20,7 @@ rico-profile = {path = "../rico-profile", features = ["v3-profile", "v4-profile"
 rico-protocol = { path = "../rico-protocol" }
 rico-settings = { path = "../rico-settings" }
 time = {version = "0.3", features = ["formatting", "macros"], optional = true}
-tor-interface = {version = "0.6.7", features = ["legacy-tor-provider"]}
+tor-interface = {version = "0.6.8", features = ["legacy-tor-provider"]}
 which = "7.0"
 
 [lib]
