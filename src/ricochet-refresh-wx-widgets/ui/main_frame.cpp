@@ -216,7 +216,8 @@ void MainFrame::setup_menubar() {
     auto tools_menu = new wxMenu();
     auto file_transfers_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::file_transfers());
-    tools_menu->Bind(wxEVT_MENU, &MainFrame::on_file_transfers, this, file_transfers_menu_item->GetId());
+    tools_menu
+        ->Bind(wxEVT_MENU, &MainFrame::on_file_transfers, this, file_transfers_menu_item->GetId());
     auto tor_logs_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::tor_logs());
     tools_menu->Bind(wxEVT_MENU, &MainFrame::on_tor_logs, this, tor_logs_menu_item->GetId());

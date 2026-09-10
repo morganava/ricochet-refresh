@@ -75,6 +75,12 @@ set(RICOCHET_REFRESH_SOURCE
     ui/panels/connection_status_panel.hpp
     ui/panels/file_transfers_panel.cpp
     ui/panels/file_transfers_panel.hpp
+    ui/panels/file_transfers_panel/file_transfer_row.cpp
+    ui/panels/file_transfers_panel/file_transfer_row.hpp
+    ui/panels/file_transfers_panel/file_transfer_details_panel.cpp
+    ui/panels/file_transfers_panel/file_transfer_details_panel.hpp
+    ui/panels/file_transfers_panel/file_transfers_panel_list_model.cpp
+    ui/panels/file_transfers_panel/file_transfers_panel_list_model.hpp
     ui/panels/file_transfers_panel/speed_calculator.hpp
     ui/panels/sessions_notebook.cpp
     ui/panels/sessions_notebook.hpp
@@ -176,9 +182,9 @@ foreach (language ${RICOCHET_REFRESH_LANGUAGES})
     # Generate .pot
     add_custom_command(
         OUTPUT ${RICOCHET_REFRESH_POT}
-        DEPENDS strings.hpp
+        DEPENDS strings.hpp strings.cpp
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/translations/${language}
-        COMMAND ${XGETTEXT_EXECUTABLE} ${XGETTEXT_OPTIONS} -o ${RICOCHET_REFRESH_POT} strings.hpp
+        COMMAND ${XGETTEXT_EXECUTABLE} ${XGETTEXT_OPTIONS} -o ${RICOCHET_REFRESH_POT} strings.hpp strings.cpp
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

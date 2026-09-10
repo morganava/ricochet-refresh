@@ -1,4 +1,6 @@
 #pragma once
+#define SPEED_CALCULATOR_H
+
 // number of bytes
 typedef uint64_t tego_file_size;
 // timestamp in milliseconds since unix epoch
