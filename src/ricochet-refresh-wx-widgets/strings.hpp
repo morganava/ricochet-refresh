@@ -277,8 +277,8 @@ public:
                 };
 
                 struct Tools {
-                    static wxString downloads() {
-                        return Locale::translate(u8"Downloads…");
+                    static wxString file_transfers() {
+                        return Locale::translate(u8"File Transfers…");
                     }
 
                     static wxString tor_logs() {
@@ -432,6 +432,16 @@ public:
 
         static wxString copied() {
             return Locale::translate(u8"Copied!");
+        }
+
+        static wxString close_button() {
+            return Common::close_button();
+        }
+    };
+
+    struct FileTransferPanel {
+        static wxString title() {
+            return Locale::translate(u8"File Transfers");
         }
 
         static wxString close_button() {

@@ -13,6 +13,7 @@ public:
     void show_sessions_notebook_panel();
 
     // overlay panel methods
+    void show_file_transfers_panel();
     void show_settings_panel(Settings);
     void show_connection_status_panel();
     void show_generate_profile_panel();
@@ -51,6 +52,7 @@ private:
     void on_import_legacy(wxCommandEvent&);
     void on_close_profile(wxCommandEvent&);
 
+    void on_file_transfers(wxCommandEvent&);
     void on_settings(wxCommandEvent&);
     void on_tor_logs(wxCommandEvent&);
 
@@ -70,6 +72,7 @@ private:
     // the overlay panels can come and go and are always valid/available for viewing
     struct {
         wxPanel* current = nullptr;
+        class FileTransfersPanel* file_transfers_panel = nullptr;
         class SettingsPanel* settings_panel = nullptr;
         class ConnectionStatusPanel* connection_status_panel = nullptr;
         class NewProfilePanel* generate_profile_panel = nullptr;
