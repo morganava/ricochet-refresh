@@ -10,9 +10,14 @@ enum class LayoutDirection {
 };
 
 enum class Ordering {
-    Less,
-    Equal,
-    Greater
+    Less = -1,
+    Equal = 0,
+    Greater = 1,
+};
+
+enum class SortDirection {
+    Ascending,
+    Descending,
 };
 
 //
@@ -114,4 +119,20 @@ enum class Visibility {
 
 enum class MessageType {
     Text,
+};
+
+enum class FileTransferDirection {
+    Upload,
+    Download,
+};
+
+enum class FileTransfersPanelListColumn : unsigned int {
+    Filename = 0,
+    Size,
+    Status,
+    Receiver,
+    Sender,
+    Speed,
+    ETA,
+    DateAdded,
 };

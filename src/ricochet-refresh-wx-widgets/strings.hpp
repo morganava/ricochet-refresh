@@ -439,9 +439,41 @@ public:
         }
     };
 
-    struct FileTransferPanel {
+    struct FileTransfersPanel {
         static wxString title() {
             return Locale::translate(u8"File Transfers");
+        }
+
+        static wxString filename_column_header() {
+            return Locale::translate(u8"Filename");
+        }
+
+        static wxString size_column_header() {
+            return Locale::translate(u8"Size");
+        }
+
+        static wxString status_column_header() {
+            return Locale::translate(u8"Status");
+        }
+
+        static wxString sender_column_header() {
+            return Locale::translate(u8"Sender");
+        }
+
+        static wxString receiver_column_header() {
+            return Locale::translate(u8"Receiver");
+        }
+
+        static wxString speed_column_header() {
+            return Locale::translate(u8"Speed");
+        }
+
+        static wxString eta_column_header() {
+            return Locale::translate(u8"ETA");
+        }
+
+        static wxString date_added_column_header() {
+            return Locale::translate(u8"Date Added");
         }
 
         static wxString close_button() {
