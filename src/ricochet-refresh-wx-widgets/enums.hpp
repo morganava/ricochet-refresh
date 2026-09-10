@@ -115,3 +115,8 @@ enum class Visibility {
 enum class MessageType {
     Text,
 };
+
+enum class FileTransferDirection {
+    Upload,
+    Download,
+};
