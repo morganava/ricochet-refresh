@@ -19,6 +19,7 @@
 #include <wx/artprov.h>
 #include <wx/clipbrd.h>
 #include <wx/cmdline.h>
+#include <wx/dataview.h>
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
 #include <wx/filedlg.h>
