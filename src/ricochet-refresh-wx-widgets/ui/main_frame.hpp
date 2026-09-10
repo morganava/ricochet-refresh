@@ -33,6 +33,10 @@ public:
         return *this->overlay_panels.connection_status_panel;
     }
 
+    class FileTransfersPanel& get_file_transfers_panel_mut() {
+        return *this->overlay_panels.file_transfers_panel;
+    }
+
     //misc
     void open_profile(const wxString& profile_path);
 

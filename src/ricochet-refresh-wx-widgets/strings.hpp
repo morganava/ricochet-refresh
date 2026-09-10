@@ -76,6 +76,12 @@ public:
         }
 
         static wxString ricochet_v4_id_uri(const tego_v3_onion_service_id* service_id);
+
+        static wxString time_span_formatted(const wxTimeSpan& time_span);
+
+        static wxString file_size_formatted(uint64_t bytes);
+
+        static wxString transfer_speed_formatted(uint64_t bytes_per_second);
     };
 
     struct Enums {
@@ -439,10 +445,44 @@ public:
         }
     };
 
-    struct FileTransferPanel {
+    struct FileTransfersPanel {
         static wxString title() {
             return Locale::translate(u8"File Transfers");
         }
+
+        static wxString filename_column_header() {
+            return Locale::translate(u8"Filename");
+        }
+
+        static wxString size_column_header() {
+            return Locale::translate(u8"Size");
+        }
+
+        static wxString status_column_header() {
+            return Locale::translate(u8"Status");
+        }
+
+        static wxString sender_column_header() {
+            return Locale::translate(u8"Sender");
+        }
+
+        static wxString receiver_column_header() {
+            return Locale::translate(u8"Receiver");
+        }
+
+        static wxString speed_column_header() {
+            return Locale::translate(u8"Speed");
+        }
+
+        static wxString eta_column_header() {
+            return Locale::translate(u8"ETA");
+        }
+
+        static wxString date_added_column_header() {
+            return Locale::translate(u8"Date Added");
+        }
+
+        static wxString status_formatted(enum FileTransferDirection, double percent_complete);
 
         static wxString close_button() {
             return Common::close_button();

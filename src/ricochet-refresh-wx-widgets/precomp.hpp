@@ -3,6 +3,7 @@
 #undef NDEBUG
 
 // std
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <iostream>
@@ -19,6 +20,7 @@
 #include <wx/artprov.h>
 #include <wx/clipbrd.h>
 #include <wx/cmdline.h>
+#include <wx/dataview.h>
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
 #include <wx/filedlg.h>
@@ -30,6 +32,7 @@
 #include <wx/splitter.h>
 #include <wx/stdpaths.h>
 #include <wx/textwrapper.h>
+#include <wx/timer.h>
 #include <wx/uilocale.h>
 #include <wx/valnum.h>
 #include <wx/wx.h>

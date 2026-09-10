@@ -64,7 +64,7 @@ impl Context {
         match tor_config {
             #[cfg(feature = "bundled-tor")]
             TorConfig::BundledTor {
-                bridge_config : _bridge_config,
+                bridge_config: _bridge_config,
                 proxy_config,
                 firewall_config,
             } => {
