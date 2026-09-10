@@ -176,9 +176,9 @@ foreach (language ${RICOCHET_REFRESH_LANGUAGES})
     # Generate .pot
     add_custom_command(
         OUTPUT ${RICOCHET_REFRESH_POT}
-        DEPENDS strings.hpp
+        DEPENDS strings.hpp strings.cpp
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/translations/${language}
-        COMMAND ${XGETTEXT_EXECUTABLE} ${XGETTEXT_OPTIONS} -o ${RICOCHET_REFRESH_POT} strings.hpp
+        COMMAND ${XGETTEXT_EXECUTABLE} ${XGETTEXT_OPTIONS} -o ${RICOCHET_REFRESH_POT} strings.hpp strings.cpp
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

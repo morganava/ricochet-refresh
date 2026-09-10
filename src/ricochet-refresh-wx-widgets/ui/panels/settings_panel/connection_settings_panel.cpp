@@ -434,7 +434,7 @@ void ConnectionSettingsPanel::load_from_settings() {
     switch (tor_config_type) {
 #ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
         case tego_tor_config_type_bundled_tor: {
-#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
             //
             // Bridge Settings
             //
@@ -480,7 +480,8 @@ void ConnectionSettingsPanel::load_from_settings() {
             } else {
                 this->set_use_bridges(false);
             }
-#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+
             //
             // Proxy Settings
             //
@@ -580,7 +581,7 @@ void ConnectionSettingsPanel::save_to_settings() {
         // Bridge settings
         //
         std::unique_ptr<tego_bridge_config> bridge_config;
-#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
         if (this->use_bridges_toggle->GetValue()) {
             if (this->builtin_bridge_option->GetValue()) {
                 if (this->obfs4_bridge_option->GetValue()) {
@@ -612,7 +613,8 @@ void ConnectionSettingsPanel::save_to_settings() {
             }
         }
 
-#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+
         //
         // Proxy settings
         //

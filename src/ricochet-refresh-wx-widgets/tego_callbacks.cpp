@@ -7,6 +7,7 @@
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/bootstrap_panel/connecting_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
+#include "ui/panels/file_transfers_panel.hpp"
 #include "ui/panels/sessions_notebook.hpp"
 #include "ui/panels/sessions_notebook/conversations_panel.hpp"
 #include "ui/panels/sessions_notebook/session_panel.hpp"
@@ -324,15 +325,31 @@ void TegoCallbacks::on_file_transfer_request_received(
     const tego_string* file_name,
     tego_file_size file_size
 ) {
+    auto file_name_wx = into_wxString(file_name);
+
     // todo: file transfer UI
     LOG_INFO(fmt::format(
         "File transfer request received; SessionHandle: {}, UserHandle: {}, FileTransferId: {}, FileName: {}, FileSize: {}",
         session_handle,
         user_handle,
         file_transfer_id,
-        into_wxString(file_name),
+        file_name_wx,
         file_size
     ));
+
+    wxGetApp().CallAfter([=]() {
+        auto& file_transfers_panel = wxGetApp().get_main_frame().get_file_transfers_panel_mut();
+        file_transfers_panel.add_file_transfer(
+            session_handle,
+            user_handle,
+            file_transfer_id,
+            file_name_wx,
+            file_size,
+            FileTransferDirection::Download,
+            "sender",
+            "receiver"
+        );
+    });
 }
 
 void TegoCallbacks::on_file_transfer_progress(
@@ -354,6 +371,16 @@ void TegoCallbacks::on_file_transfer_progress(
         bytes_complete,
         bytes_total
     ));
+
+    wxGetApp().CallAfter([=]() {
+        auto& file_transfers_panel = wxGetApp().get_main_frame().get_file_transfers_panel_mut();
+        file_transfers_panel.update_file_transfer_progress(
+            session_handle,
+            user_handle,
+            file_transfer_id,
+            bytes_complete
+        );
+    });
 }
 
 void TegoCallbacks::on_file_transfer_complete(

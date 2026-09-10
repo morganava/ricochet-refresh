@@ -57,7 +57,7 @@ private:
     wxCheckBox* connect_automatically_toggle = nullptr;
 #ifdef ENABLE_RICOCHET_REFRESH_BUNDLED_TOR
     wxRadioButton* bundled_legacy_tor_option = nullptr;
-#ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #ifdef ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     // Bridges
     wxCheckBox* use_bridges_toggle = nullptr;
     wxRadioButton* builtin_bridge_option = nullptr;
@@ -69,7 +69,7 @@ private:
     WrappedStaticText* meek_bridge_description = nullptr;
     wxRadioButton* custom_bridge_option = nullptr;
     wxTextCtrl* custom_bridge_textbox = nullptr;
-#endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
+    #endif // ENABLE_RICOCHET_REFRESH_PLUGGABLE_TRANSPORTS
     // Proxy
     wxCheckBox* use_proxy_toggle = nullptr;
     wxStaticText* proxy_type_label = nullptr;
