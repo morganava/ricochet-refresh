@@ -6,6 +6,7 @@
 #include "ui/metrics.hpp"
 #include "ui/panels/bootstrap_panel.hpp"
 #include "ui/panels/connection_status_panel.hpp"
+#include "ui/panels/file_transfers_panel.hpp"
 #include "ui/panels/new_profile_panel.hpp"
 #include "ui/panels/sessions_notebook.hpp"
 #include "ui/panels/settings_panel.hpp"
@@ -40,6 +41,10 @@ void MainFrame::show_bootstrap_panel() {
 
 void MainFrame::show_sessions_notebook_panel() {
     this->show_main_panel(this->main_panels.sessions_notebook_panel);
+}
+
+void MainFrame::show_file_transfers_panel() {
+    this->show_overlay_panel(this->overlay_panels.file_transfers_panel);
 }
 
 void MainFrame::show_settings_panel(Settings settings) {
@@ -209,8 +214,9 @@ void MainFrame::setup_menubar() {
 
     // create Tools menu
     auto tools_menu = new wxMenu();
-    auto downloads_menu_item =
-        tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::downloads());
+    auto file_transfers_menu_item =
+        tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::file_transfers());
+    tools_menu->Bind(wxEVT_MENU, &MainFrame::on_file_transfers, this, file_transfers_menu_item->GetId());
     auto tor_logs_menu_item =
         tools_menu->Append(wxID_ANY, Strings::MainFrame::MenuBar::Menu::Tools::tor_logs());
     tools_menu->Bind(wxEVT_MENU, &MainFrame::on_tor_logs, this, tor_logs_menu_item->GetId());
@@ -259,6 +265,11 @@ void MainFrame::setup_main_panels(wxBoxSizer* sizer) {
 
 void MainFrame::setup_overlay_panels(wxBoxSizer* sizer) {
     auto& overlay_panels = this->overlay_panels;
+
+    auto file_transfers_panel = new FileTransfersPanel(this);
+    sizer->Add(file_transfers_panel, 1, wxEXPAND);
+    file_transfers_panel->Hide();
+    overlay_panels.file_transfers_panel = file_transfers_panel;
 
     // todo: ensure exiting these panels is consistent (e.g. with an 'Ok' button)
     auto settings_panel = new SettingsPanel(this);
@@ -312,6 +323,10 @@ void MainFrame::on_import_legacy(wxCommandEvent&) {
 
 void MainFrame::on_close_profile(wxCommandEvent&) {
     this->get_sessions_notebook_panel_mut().close_focused_session();
+}
+
+void MainFrame::on_file_transfers(wxCommandEvent&) {
+    this->show_file_transfers_panel();
 }
 
 void MainFrame::on_settings(wxCommandEvent&) {
