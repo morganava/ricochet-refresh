@@ -506,7 +506,7 @@
                             "FONT_SIZE": 16,
                             "BACKGROUND_COLOR": 2434341,
                             "TEXT_ALIGNMENT": "left",
-                            "TEXT": "Tools:\n- Downloads...\n- Tor Logs...\n- Settings...\n"
+                            "TEXT": "Tools:\n- File Transfers...\n- Tor Logs...\n- Settings...\n"
                         },
                         "renderer": "Paragraph",
                         "transform": {
@@ -4910,9 +4910,9 @@
                         "renderer": "Paragraph",
                         "transform": {
                             "x": 730,
-                            "y": 580.5,
+                            "y": 581.5,
                             "w": 540,
-                            "h": 403,
+                            "h": 401,
                             "r": 0
                         },
                         "type": "Shape"
@@ -5777,6 +5777,47 @@
                             "r": 0
                         },
                         "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792414",
+                        "appearance": {
+                            "BORDER_RADIUS": 3,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 0,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 738,
+                            "y": 1075,
+                            "w": 564,
+                            "h": 32,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792415",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Cameron (Online)"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 526,
+                            "y": 1075,
+                            "w": 138,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
                     }
                 ],
                 "rootIds": [
@@ -5873,7 +5914,9 @@
                     "1713723806006",
                     "1734805269205",
                     "1787671792337",
-                    "1787671792338"
+                    "1787671792338",
+                    "1787671792414",
+                    "1787671792415"
                 ],
                 "title": "Rico - Conversations (Restricted)"
             },
@@ -6407,9 +6450,9 @@
                         "renderer": "Paragraph",
                         "transform": {
                             "x": 732,
-                            "y": 1360.5,
+                            "y": 1362,
                             "w": 540,
-                            "h": 403,
+                            "h": 400,
                             "r": 0
                         },
                         "type": "Shape"
@@ -6867,9 +6910,9 @@
                         "renderer": "Paragraph",
                         "transform": {
                             "x": 732,
-                            "y": 642.5,
+                            "y": 644,
                             "w": 540,
-                            "h": 403,
+                            "h": 400,
                             "r": 0
                         },
                         "type": "Shape"
@@ -7696,6 +7739,88 @@
                             "r": 0
                         },
                         "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792533",
+                        "appearance": {
+                            "BORDER_RADIUS": 3,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 0,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 739,
+                            "y": 428,
+                            "w": 564,
+                            "h": 32,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792534",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Elizabeth (Offline)"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 527,
+                            "y": 428,
+                            "w": 138,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792696",
+                        "appearance": {
+                            "BORDER_RADIUS": 3,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 0,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 739,
+                            "y": 1146,
+                            "w": 564,
+                            "h": 32,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792697",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Cameron (Online)"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 527,
+                            "y": 1146,
+                            "w": 138,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
                     }
                 ],
                 "rootIds": [
@@ -7789,7 +7914,11 @@
                     "1713060261673",
                     "1713060266845",
                     "1713723810878",
-                    "1713723810879"
+                    "1713723810879",
+                    "1787671792533",
+                    "1787671792534",
+                    "1787671792696",
+                    "1787671792697"
                 ],
                 "title": "Rico - Conversations (Hidden)"
             },
@@ -15388,6 +15517,47 @@
                             "r": 0
                         },
                         "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792929",
+                        "appearance": {
+                            "BORDER_RADIUS": 3,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 0,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 739,
+                            "y": 296,
+                            "w": 564,
+                            "h": 32,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671792930",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Cameron (Online)"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 527,
+                            "y": 296,
+                            "w": 138,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
                     }
                 ],
                 "rootIds": [
@@ -15440,7 +15610,9 @@
                     "1735737565066",
                     "1735737565067",
                     "1735737574260",
-                    "1735737574429"
+                    "1735737574429",
+                    "1787671792929",
+                    "1787671792930"
                 ],
                 "title": "Rico - Attachments (continued)"
             },
@@ -16896,6 +17068,1135 @@
                     "1787651834432"
                 ],
                 "title": "Rico - Import Profile"
+            },
+            {
+                "id": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "items": [
+                    {
+                        "id": "1713723754695",
+                        "appearance": {
+                            "FONT_SIZE": 48,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Rico - File Transfers"
+                        },
+                        "renderer": "Heading",
+                        "transform": {
+                            "x": 225,
+                            "y": 39,
+                            "w": 450,
+                            "h": 78,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1713723754696",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "Central page to view and manage file transfers"
+                        },
+                        "renderer": "Paragraph",
+                        "transform": {
+                            "x": 323,
+                            "y": 148,
+                            "w": 612,
+                            "h": 140,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222163",
+                        "appearance": {
+                            "FOREGROUND_COLOR": "#f8f8f8",
+                            "TEXT_DISABLED": true
+                        },
+                        "renderer": "Window",
+                        "transform": {
+                            "x": 583,
+                            "y": 570,
+                            "w": 800,
+                            "h": 600,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222164",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Rico - Settings"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 583,
+                            "y": 255,
+                            "w": 116,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222165",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 0,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 583,
+                            "y": 289,
+                            "w": 800,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222167",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Contacts",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 287,
+                            "y": 289,
+                            "w": 86,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222168",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Tools",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 410.5,
+                            "y": 289,
+                            "w": 59,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222169",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Help",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 468.5,
+                            "y": 289,
+                            "w": 57,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222172",
+                        "appearance": {
+                            "FOREGROUND_COLOR": 15790320,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Close"
+                        },
+                        "renderer": "Button",
+                        "transform": {
+                            "x": 924,
+                            "y": 851,
+                            "w": 96,
+                            "h": 28,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222175",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Chat",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 353,
+                            "y": 289,
+                            "w": 58,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222176",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": "#f0f0f0",
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": "#f0f0f0",
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Profile",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 215.5,
+                            "y": 289,
+                            "w": 65,
+                            "h": 38,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1734805222204",
+                        "appearance": {
+                            "FONT_SIZE": 24,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "File Transfers"
+                        },
+                        "renderer": "Heading",
+                        "transform": {
+                            "x": 266,
+                            "y": 332,
+                            "w": 166,
+                            "h": 48,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671793963",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "Filename",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 289.5,
+                            "y": 373.5,
+                            "w": 213,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794130",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Size",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 430.5,
+                            "y": 373.5,
+                            "w": 71,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794256",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Speed",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 864.5,
+                            "y": 373.5,
+                            "w": 91,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794338",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Status",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 542.5,
+                            "y": 373.5,
+                            "w": 155,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794400",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Sender",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 669.5,
+                            "y": 373.5,
+                            "w": 101,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794453",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Receiver",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 769.5,
+                            "y": 373.5,
+                            "w": 101,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671794578",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "ETA",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 945.5,
+                            "y": 373.5,
+                            "w": 75,
+                            "h": 35,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671795231",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Cross-Platf... wxWidgets.pdf"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 289,
+                            "y": 406,
+                            "w": 212,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671795378",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "7.1 MB"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 425,
+                            "y": 406,
+                            "w": 62,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671795490",
+                        "appearance": {
+                            "ACCENT_COLOR": 2191797,
+                            "VALUE": 50,
+                            "FOREGROUND_COLOR": 15790320,
+                            "FONT_SIZE": 12,
+                            "BACKGROUND_COLOR": 16777215,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_DISABLED": true
+                        },
+                        "renderer": "Progress",
+                        "transform": {
+                            "x": 583,
+                            "y": 430,
+                            "w": 792,
+                            "h": 16,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671795849",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Alice"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 671,
+                            "y": 406,
+                            "w": 46,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671795938",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Cameron"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 772,
+                            "y": 406,
+                            "w": 78,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671796018",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "16.2 KB/s"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 868,
+                            "y": 406,
+                            "w": 80,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671796246",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "3.7m"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 945,
+                            "y": 406,
+                            "w": 48,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671796682",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Downloading 50.0%"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 542,
+                            "y": 406,
+                            "w": 154,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671799407",
+                        "appearance": {
+                            "FONT_SIZE": 18,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Activity"
+                        },
+                        "renderer": "Heading",
+                        "transform": {
+                            "x": 222,
+                            "y": 643,
+                            "w": 78,
+                            "h": 42,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671799531",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Time Elapsed:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 255,
+                            "y": 679,
+                            "w": 114,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671799586",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Transfered:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 244,
+                            "y": 710,
+                            "w": 92,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671799643",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Average Speed:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 261,
+                            "y": 741,
+                            "w": 126,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800118",
+                        "appearance": {
+                            "FONT_SIZE": 18,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Details"
+                        },
+                        "renderer": "Heading",
+                        "transform": {
+                            "x": 516,
+                            "y": 643,
+                            "w": 76,
+                            "h": 42,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800119",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Location:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 531,
+                            "y": 679,
+                            "w": 76,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800120",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Size:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 517,
+                            "y": 710,
+                            "w": 48,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800121",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Hash:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 520,
+                            "y": 741,
+                            "w": 54,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800747",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "2m 36s"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 436,
+                            "y": 679,
+                            "w": 64,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800748",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "3.55 MB"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 432,
+                            "y": 710,
+                            "w": 72,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671800749",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "22.8 KB/s"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 428,
+                            "y": 741,
+                            "w": 80,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801175",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "/home/alice/Documents/...ing with wxWidgets.pdf"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 763,
+                            "y": 679,
+                            "w": 360,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801176",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "7.1 MB"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 614,
+                            "y": 710,
+                            "w": 62,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801177",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "85725296c3400acd19...cc8104e46cc4bee6469"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 757,
+                            "y": 741,
+                            "w": 348,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801326",
+                        "appearance": {
+                            "FOREGROUND_COLOR": 15790320,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": ""
+                        },
+                        "renderer": "Button",
+                        "transform": {
+                            "x": 957,
+                            "y": 679,
+                            "w": 30,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801576",
+                        "appearance": {
+                            "BACKGROUND_COLOR": 0,
+                            "TEXT_DISABLED": true,
+                            "TEXT": "",
+                            "ICON_FONT_FAMILY": "FontAwesome"
+                        },
+                        "renderer": "Icon",
+                        "transform": {
+                            "x": 957,
+                            "y": 679,
+                            "w": 24,
+                            "h": 24,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801647",
+                        "childIds": [
+                            "1787671801326",
+                            "1787671801576"
+                        ],
+                        "rotation": 0,
+                        "type": "Group"
+                    },
+                    {
+                        "id": "1787671801736",
+                        "appearance": {
+                            "FOREGROUND_COLOR": 15790320,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": ""
+                        },
+                        "renderer": "Button",
+                        "transform": {
+                            "x": 957,
+                            "y": 740,
+                            "w": 30,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801737",
+                        "appearance": {
+                            "BACKGROUND_COLOR": 0,
+                            "TEXT_DISABLED": true,
+                            "TEXT": "",
+                            "ICON_FONT_FAMILY": "FontAwesome"
+                        },
+                        "renderer": "Icon",
+                        "transform": {
+                            "x": 957,
+                            "y": 740,
+                            "w": 24,
+                            "h": 24,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671801928",
+                        "childIds": [
+                            "1787671801736",
+                            "1787671801737"
+                        ],
+                        "rotation": 0,
+                        "type": "Group"
+                    },
+                    {
+                        "id": "1787671801937",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Status:"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 229,
+                            "y": 772,
+                            "w": 62,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671802038",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT": "Downloading"
+                        },
+                        "renderer": "Label",
+                        "transform": {
+                            "x": 416,
+                            "y": 772,
+                            "w": 104,
+                            "h": 30,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671802999",
+                        "appearance": {
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "",
+                            "SHAPE": "Rectangle"
+                        },
+                        "renderer": "Shape",
+                        "transform": {
+                            "x": 583,
+                            "y": 506,
+                            "w": 800,
+                            "h": 232,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671805162",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "Right click menu:\n- Open Folder\n- Cancel\n- Delete File and Cancel"
+                        },
+                        "renderer": "Paragraph",
+                        "transform": {
+                            "x": 1110,
+                            "y": 470,
+                            "w": 200,
+                            "h": 140,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671805184",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "Extra details become populated in this pane when a transfer is selected above"
+                        },
+                        "renderer": "Paragraph",
+                        "transform": {
+                            "x": 96,
+                            "y": 692,
+                            "w": 158,
+                            "h": 140,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671807166",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "<- opens folder where file is"
+                        },
+                        "renderer": "Paragraph",
+                        "transform": {
+                            "x": 1106,
+                            "y": 679.5,
+                            "w": 220,
+                            "h": 31,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1787671807256",
+                        "appearance": {
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 2434341,
+                            "TEXT_ALIGNMENT": "left",
+                            "TEXT": "<- copy the sha256 hash of file to clipboard"
+                        },
+                        "renderer": "Paragraph",
+                        "transform": {
+                            "x": 1110,
+                            "y": 750,
+                            "w": 220,
+                            "h": 50,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1789028582054",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 16777215,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Rectangle",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 316,
+                            "y": 1058,
+                            "w": 100,
+                            "h": 60,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    },
+                    {
+                        "id": "1789028582063",
+                        "appearance": {
+                            "BORDER_RADIUS": 0,
+                            "FOREGROUND_COLOR": 2191797,
+                            "FONT_SIZE": 16,
+                            "BACKGROUND_COLOR": 0,
+                            "STROKE_COLOR": 13224393,
+                            "STROKE_THICKNESS": 1,
+                            "TEXT_ALIGNMENT": "center",
+                            "TEXT": "Rectangle",
+                            "PADDING_HORIZONTAL2": 10,
+                            "PADDING_VERTICAL2": 10
+                        },
+                        "renderer": "Rectangle",
+                        "transform": {
+                            "x": 366,
+                            "y": 1108,
+                            "w": 100,
+                            "h": 60,
+                            "r": 0
+                        },
+                        "type": "Shape"
+                    }
+                ],
+                "rootIds": [
+                    "1734805222163",
+                    "1787671802999",
+                    "1713723754695",
+                    "1713723754696",
+                    "1734805222164",
+                    "1734805222165",
+                    "1734805222167",
+                    "1734805222168",
+                    "1734805222169",
+                    "1734805222172",
+                    "1734805222175",
+                    "1734805222176",
+                    "1734805222204",
+                    "1787671793963",
+                    "1787671794130",
+                    "1787671794256",
+                    "1787671794338",
+                    "1787671794400",
+                    "1787671794453",
+                    "1787671794578",
+                    "1787671795231",
+                    "1787671795378",
+                    "1787671795490",
+                    "1787671795849",
+                    "1787671795938",
+                    "1787671796018",
+                    "1787671796246",
+                    "1787671796682",
+                    "1787671799407",
+                    "1787671799531",
+                    "1787671799586",
+                    "1787671799643",
+                    "1787671800118",
+                    "1787671800119",
+                    "1787671800120",
+                    "1787671800121",
+                    "1787671800747",
+                    "1787671800748",
+                    "1787671800749",
+                    "1787671801175",
+                    "1787671801176",
+                    "1787671801177",
+                    "1787671801647",
+                    "1787671801928",
+                    "1787671801937",
+                    "1787671802038",
+                    "1787671805162",
+                    "1787671805184",
+                    "1787671807166",
+                    "1787671807256",
+                    "1789028582054",
+                    "1789028582063"
+                ],
+                "title": "Rico - File Transfers"
             }
         ],
         "diagramIds": [
@@ -16905,6 +18206,7 @@
             "7dcfb6a5-477d-07db-0156-6b42cba5d355",
             "3ea4032a-0bf8-058c-ca48-279759f15cce",
             "c1fe2795-f392-3b54-e4ee-ba14ad73ee7a",
+            "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
             "1708271107626",
             "384728bc-a37b-1a56-8c97-59b9dd7736f5",
             "24c96b5d-a66d-b8b4-e126-7cd77759dbde",
@@ -16917,7 +18219,7 @@
             "1713060276314",
             "1713839345582"
         ],
-        "id": "a01535ee-40a7-bab8-870c-ad3b9c526652",
+        "id": "f97a9dee-7be4-1b8f-afa3-16aa636bc6d3",
         "size": {
             "x": 1240,
             "y": 1754
@@ -16925,400 +18227,362 @@
     },
     "actions": [
         {
-            "type": "items/paste",
-            "payload": {
-                "diagramId": "aded38e4-f279-58df-12ed-8d8a929a1fdd",
-                "timestamp": 1787732751747,
-                "json": "{\"visuals\":[{\"id\":\"1787671792414\",\"appearance\":{\"BORDER_RADIUS\":3,\"FOREGROUND_COLOR\":\"#f0f0f0\",\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":0,\"STROKE_COLOR\":\"#f0f0f0\",\"STROKE_THICKNESS\":0,\"TEXT_ALIGNMENT\":\"center\",\"TEXT\":\"\",\"PADDING_HORIZONTAL2\":10,\"PADDING_VERTICAL2\":10},\"renderer\":\"Rectangle\",\"transform\":{\"x\":724,\"y\":319,\"w\":564,\"h\":32,\"r\":0},\"type\":\"Shape\"},{\"id\":\"1787671792415\",\"appearance\":{\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":2434341,\"TEXT\":\"Cameron (Online)\"},\"renderer\":\"Label\",\"transform\":{\"x\":512,\"y\":319,\"w\":138,\"h\":30,\"r\":0},\"type\":\"Shape\"}],\"groups\":[]}",
-                "offset": 200
-            }
-        },
-        {
             "type": "items/transform",
             "payload": {
-                "diagramId": "aded38e4-f279-58df-12ed-8d8a929a1fdd",
-                "timestamp": 1787732755161,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031065092,
                 "oldBounds": {
-                    "x": 924,
-                    "y": 519,
-                    "w": 564,
-                    "h": 32,
+                    "x": 366,
+                    "y": 1108,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 738,
-                    "y": 1075,
-                    "w": 564,
-                    "h": 32,
+                    "x": 575,
+                    "y": 970,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792414",
-                    "1787671792415"
-                ]
-            }
-        },
-        {
-            "type": "items/paste",
-            "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732762953,
-                "json": "{\"visuals\":[{\"id\":\"1787671792533\",\"appearance\":{\"BORDER_RADIUS\":3,\"FOREGROUND_COLOR\":\"#f0f0f0\",\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":0,\"STROKE_COLOR\":\"#f0f0f0\",\"STROKE_THICKNESS\":0,\"TEXT_ALIGNMENT\":\"center\",\"TEXT\":\"\",\"PADDING_HORIZONTAL2\":10,\"PADDING_VERTICAL2\":10},\"renderer\":\"Rectangle\",\"transform\":{\"x\":724,\"y\":319,\"w\":564,\"h\":32,\"r\":0},\"type\":\"Shape\"},{\"id\":\"1787671792534\",\"appearance\":{\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":2434341,\"TEXT\":\"Cameron (Online)\"},\"renderer\":\"Label\",\"transform\":{\"x\":512,\"y\":319,\"w\":138,\"h\":30,\"r\":0},\"type\":\"Shape\"}],\"groups\":[]}",
-                "offset": 250
-            }
-        },
-        {
-            "type": "items/transform",
-            "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732765936,
-                "oldBounds": {
-                    "x": 974,
-                    "y": 569,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "newBounds": {
-                    "x": 740,
-                    "y": 429,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "itemIds": [
-                    "1787671792533",
-                    "1787671792534"
-                ]
-            }
-        },
-        {
-            "type": "items/transform",
-            "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732769973,
-                "oldBounds": {
-                    "x": 740,
-                    "y": 429,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "newBounds": {
-                    "x": 739,
-                    "y": 429,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "itemIds": [
-                    "1787671792534",
-                    "1787671792533"
-                ]
-            }
-        },
-        {
-            "type": "items/transform",
-            "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732773058,
-                "oldBounds": {
-                    "x": 739,
-                    "y": 429,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "newBounds": {
-                    "x": 739,
-                    "y": 428,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "itemIds": [
-                    "1787671792534",
-                    "1787671792533"
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/appearance",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732783799,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031069625,
                 "appearance": {
                     "key": "TEXT",
-                    "value": "Elizabeth (Offline)"
+                    "value": " "
                 },
                 "force": false,
                 "itemIds": [
-                    "1787671792534"
+                    "1789028582063"
                 ]
             }
         },
         {
-            "type": "items/paste",
+            "type": "items/appearance",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732786458,
-                "json": "{\"visuals\":[{\"id\":\"1787671792696\",\"appearance\":{\"BORDER_RADIUS\":3,\"FOREGROUND_COLOR\":\"#f0f0f0\",\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":0,\"STROKE_COLOR\":\"#f0f0f0\",\"STROKE_THICKNESS\":0,\"TEXT_ALIGNMENT\":\"center\",\"TEXT\":\"\",\"PADDING_HORIZONTAL2\":10,\"PADDING_VERTICAL2\":10},\"renderer\":\"Rectangle\",\"transform\":{\"x\":724,\"y\":319,\"w\":564,\"h\":32,\"r\":0},\"type\":\"Shape\"},{\"id\":\"1787671792697\",\"appearance\":{\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":2434341,\"TEXT\":\"Cameron (Online)\"},\"renderer\":\"Label\",\"transform\":{\"x\":512,\"y\":319,\"w\":138,\"h\":30,\"r\":0},\"type\":\"Shape\"}],\"groups\":[]}",
-                "offset": 300
-            }
-        },
-        {
-            "type": "items/transform",
-            "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732789801,
-                "oldBounds": {
-                    "x": 1024,
-                    "y": 619,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031072770,
+                "appearance": {
+                    "key": "TEXT",
+                    "value": ""
                 },
-                "newBounds": {
-                    "x": 740,
-                    "y": 1148,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
+                "force": false,
                 "itemIds": [
-                    "1787671792696",
-                    "1787671792697"
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732790729,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031075539,
                 "oldBounds": {
-                    "x": 740,
-                    "y": 1148,
-                    "w": 564,
-                    "h": 32,
+                    "x": 575,
+                    "y": 970,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 740,
-                    "y": 1146,
-                    "w": 564,
-                    "h": 32,
+                    "x": 533,
+                    "y": 506,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792696",
-                    "1787671792697"
+                    "1789028582063"
+                ]
+            }
+        },
+        {
+            "type": "items/order",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031079803,
+                "mode": "SEND_BACKWARDS",
+                "itemIds": [
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732791852,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031083422,
                 "oldBounds": {
-                    "x": 740,
-                    "y": 1146,
-                    "w": 564,
-                    "h": 32,
+                    "x": 533,
+                    "y": 506,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 739,
-                    "y": 1146,
-                    "w": 564,
-                    "h": 32,
+                    "x": 518,
+                    "y": 460,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792696",
-                    "1787671792697"
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732799393,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031084910,
                 "oldBounds": {
-                    "x": 732,
-                    "y": 1360.5,
-                    "w": 540,
-                    "h": 403,
+                    "x": 518,
+                    "y": 460,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 732,
-                    "y": 1362,
-                    "w": 540,
-                    "h": 400,
+                    "x": 518,
+                    "y": 436,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "itemIds": [
-                    "1713060220129"
+                    "1789028582063"
+                ]
+            }
+        },
+        {
+            "type": "items/order",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031088627,
+                "mode": "BRING_TO_FRONT",
+                "itemIds": [
+                    "1787671796682"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "544a9ad8-9a02-4fd4-b179-0e177bd09248",
-                "timestamp": 1787732803961,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031090659,
                 "oldBounds": {
-                    "x": 732,
-                    "y": 642.5,
-                    "w": 540,
-                    "h": 403,
+                    "x": 518,
+                    "y": 436,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 732,
-                    "y": 644,
-                    "w": 540,
-                    "h": 400,
+                    "x": 518,
+                    "y": 421,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "itemIds": [
-                    "1713060246972"
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "aded38e4-f279-58df-12ed-8d8a929a1fdd",
-                "timestamp": 1787732809145,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031096282,
                 "oldBounds": {
-                    "x": 730,
-                    "y": 580.5,
-                    "w": 540,
-                    "h": 403,
+                    "x": 518,
+                    "y": 421,
+                    "w": 100,
+                    "h": 60,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 730,
-                    "y": 581.5,
-                    "w": 540,
-                    "h": 401,
+                    "x": 543.5,
+                    "y": 406,
+                    "w": 151,
+                    "h": 30,
                     "r": 0
                 },
                 "itemIds": [
-                    "1713060246972"
+                    "1789028582063"
                 ]
             }
         },
         {
-            "type": "items/paste",
+            "type": "items/remove",
             "payload": {
-                "diagramId": "425d3797-dfeb-8669-7a81-24d75caf41dd",
-                "timestamp": 1787732829019,
-                "json": "{\"visuals\":[{\"id\":\"1787671792929\",\"appearance\":{\"BORDER_RADIUS\":3,\"FOREGROUND_COLOR\":\"#f0f0f0\",\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":0,\"STROKE_COLOR\":\"#f0f0f0\",\"STROKE_THICKNESS\":0,\"TEXT_ALIGNMENT\":\"center\",\"TEXT\":\"\",\"PADDING_HORIZONTAL2\":10,\"PADDING_VERTICAL2\":10},\"renderer\":\"Rectangle\",\"transform\":{\"x\":724,\"y\":319,\"w\":564,\"h\":32,\"r\":0},\"type\":\"Shape\"},{\"id\":\"1787671792930\",\"appearance\":{\"FONT_SIZE\":16,\"BACKGROUND_COLOR\":2434341,\"TEXT\":\"Cameron (Online)\"},\"renderer\":\"Label\",\"transform\":{\"x\":512,\"y\":319,\"w\":138,\"h\":30,\"r\":0},\"type\":\"Shape\"}],\"groups\":[]}",
-                "offset": 350
-            }
-        },
-        {
-            "type": "items/transform",
-            "payload": {
-                "diagramId": "425d3797-dfeb-8669-7a81-24d75caf41dd",
-                "timestamp": 1787732832561,
-                "oldBounds": {
-                    "x": 1074,
-                    "y": 669,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
-                "newBounds": {
-                    "x": 743,
-                    "y": 297,
-                    "w": 564,
-                    "h": 32,
-                    "r": 0
-                },
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031099217,
                 "itemIds": [
-                    "1787671792929",
-                    "1787671792930"
+                    "1787671795490"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "425d3797-dfeb-8669-7a81-24d75caf41dd",
-                "timestamp": 1787732834598,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031111605,
                 "oldBounds": {
-                    "x": 743,
-                    "y": 297,
-                    "w": 564,
-                    "h": 32,
+                    "x": 542,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 739,
-                    "y": 296,
-                    "w": 564,
-                    "h": 32,
+                    "x": 545,
+                    "y": 455,
+                    "w": 154,
+                    "h": 30,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792929",
-                    "1787671792930"
+                    "1787671796682"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "425d3797-dfeb-8669-7a81-24d75caf41dd",
-                "timestamp": 1787732835883,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031114811,
                 "oldBounds": {
-                    "x": 739,
-                    "y": 296,
-                    "w": 564,
-                    "h": 32,
+                    "x": 543.5,
+                    "y": 406,
+                    "w": 151,
+                    "h": 30,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 740,
-                    "y": 296,
-                    "w": 564,
-                    "h": 32,
+                    "x": 542,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792929",
-                    "1787671792930"
+                    "1789028582063"
                 ]
             }
         },
         {
             "type": "items/transform",
             "payload": {
-                "diagramId": "425d3797-dfeb-8669-7a81-24d75caf41dd",
-                "timestamp": 1787732838987,
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031118851,
                 "oldBounds": {
-                    "x": 740,
-                    "y": 296,
-                    "w": 564,
-                    "h": 32,
+                    "x": 542,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
                     "r": 0
                 },
                 "newBounds": {
-                    "x": 739,
-                    "y": 296,
-                    "w": 564,
-                    "h": 32,
+                    "x": 542.5,
+                    "y": 406,
+                    "w": 155,
+                    "h": 30,
                     "r": 0
                 },
                 "itemIds": [
-                    "1787671792930",
-                    "1787671792929"
+                    "1789028582063"
+                ]
+            }
+        },
+        {
+            "type": "items/transform",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031131027,
+                "oldBounds": {
+                    "x": 542.5,
+                    "y": 406,
+                    "w": 155,
+                    "h": 30,
+                    "r": 0
+                },
+                "newBounds": {
+                    "x": 503.5,
+                    "y": 406,
+                    "w": 77,
+                    "h": 30,
+                    "r": 0
+                },
+                "itemIds": [
+                    "1789028582063"
+                ]
+            }
+        },
+        {
+            "type": "items/transform",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031134731,
+                "oldBounds": {
+                    "x": 545,
+                    "y": 455,
+                    "w": 154,
+                    "h": 30,
+                    "r": 0
+                },
+                "newBounds": {
+                    "x": 543,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
+                    "r": 0
+                },
+                "itemIds": [
+                    "1787671796682"
+                ]
+            }
+        },
+        {
+            "type": "items/transform",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031144448,
+                "oldBounds": {
+                    "x": 543,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
+                    "r": 0
+                },
+                "newBounds": {
+                    "x": 542,
+                    "y": 406,
+                    "w": 154,
+                    "h": 30,
+                    "r": 0
+                },
+                "itemIds": [
+                    "1787671796682"
+                ]
+            }
+        },
+        {
+            "type": "items/remove",
+            "payload": {
+                "diagramId": "8fe82b36-3302-3ece-6a46-4384b8e5b33f",
+                "timestamp": 1789031260879,
+                "itemIds": [
+                    "1789028582054"
                 ]
             }
         }
