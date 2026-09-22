@@ -115,7 +115,7 @@ namespace tego
         return {ptr};
     }
 
-    inline void panic(const std::string& msg) {
+    [[noreturn]] inline void panic(const std::string& msg) {
         tego_panic(msg.data(), msg.size());
     }
 }
