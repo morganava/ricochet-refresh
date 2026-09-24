@@ -75,6 +75,7 @@ set(RICOCHET_REFRESH_SOURCE
     ui/panels/connection_status_panel.hpp
     ui/panels/file_transfers_panel.cpp
     ui/panels/file_transfers_panel.hpp
+    ui/panels/file_transfers_panel/speed_calculator.hpp
     ui/panels/sessions_notebook.cpp
     ui/panels/sessions_notebook.hpp
     ui/panels/sessions_notebook/conversations_panel.cpp
