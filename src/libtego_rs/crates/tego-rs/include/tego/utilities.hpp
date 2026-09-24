@@ -3,18 +3,23 @@
 #define TEGO_STRINGIFY_IMPL(X) #X
 #define TEGO_STRINGIFY(X) TEGO_STRINGIFY_IMPL(X)
 
+// throw macros
 #define TEGO_THROW_MSG(...) throw std::runtime_error(std::string("runtime error " __FILE__ ":" TEGO_STRINGIFY(__LINE__) " " __VA_OPT__(,) __VA_ARGS__));
-
 #define TEGO_THROW_IF_FALSE(B) if (!(B)) { TEGO_THROW_MSG(TEGO_STRINGIFY(B) " must be true"); }
-
 #define TEGO_THROW_IF_TRUE(B) if (B) { TEGO_THROW_MSG(TEGO_STRINGIFY(B) " must be false"); }
 #define TEGO_THROW_IF TEGO_THROW_IF_TRUE
-
 #define TEGO_THROW_IF_NULL(PTR) if ((PTR) == nullptr) { TEGO_THROW_MSG(TEGO_STRINGIFY(PTR) " must not be null"); }
-
 #define TEGO_THROW_IF_NOT_NULL(PTR) if ((PTR) != nullptr) { TEGO_THROW_MSG(TEGO_STRINGIFY(PTR) " must be null") }
-
 #define TEGO_THROW_IF_EQUAL(A, B) if((A) == (B)) { TEGO_THROW_MSG(TEGO_STRINGIFY(A) " and " TEGO_STRINGIFY(B) " must not be equal"); }
+
+// panic macros
+#define TEGO_PANIC_MSG(...) tego::panic(fmt::format("panic " __FILE__ ":" TEGO_STRINGIFY(__LINE__) " " __VA_ARGS__));
+#define TEGO_PANIC_IF_TRUE(B) if (B) { TEGO_PANIC_MSG(TEGO_STRINGIFY(B) " must be false"); }
+#define TEGO_PANIC_IF TEGO_PANIC_IF_TRUE
+#define TEGO_PANIC_IF_FALSE(B) if (!(B)) { TEGO_PANIC_MSG(TEGO_STRINGIFY(B) " must be true"); }
+#define TEGO_PANIC_IF_NULL(PTR) if ((PTR) == nullptr) { TEGO_PANIC_MSG(TEGO_STRINGIFY(PTR) " must not be null"); }
+#define TEGO_PANIC_IF_NOT_NULL(PTR) if ((PTR) != nullptr) { TEGO_PANIC_MSG(TEGO_STRINGIFY(PTR) " must be null") }
+#define TEGO_PANIC_IF_EQUAL(A, B) if((A) == (B)) { TEGO_PANIC_MSG(TEGO_STRINGIFY(A) " and " TEGO_STRINGIFY(B) " must not be equal"); }
 
 namespace tego
 {
