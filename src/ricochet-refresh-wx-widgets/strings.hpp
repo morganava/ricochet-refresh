@@ -482,11 +482,49 @@ public:
             return Locale::translate(u8"Date Added");
         }
 
-        static wxString status_formatted(enum FileTransferDirection, double percent_complete);
+        static wxString status_formatted(enum FileTransferStatus, double percent_complete);
 
         static wxString close_button() {
             return Common::close_button();
         }
+
+        struct Details {
+            static wxString activity_heading() {
+                return Locale::translate(u8"Activity");
+            };
+
+            static wxString time_elapsed_label() {
+                return Locale::translate(u8"Time Elapsed:");
+            }
+
+            static wxString transferred_label() {
+                return Locale::translate(u8"Transferred:");
+            }
+
+            static wxString average_speed_label() {
+                return Locale::translate(u8"Average Speed:");
+            }
+
+            static wxString status_label() {
+                return Locale::translate(u8"Status:");
+            }
+
+            static wxString details_heading() {
+                return Locale::translate(u8"Details");
+            };
+
+            static wxString location_label() {
+                return Locale::translate(u8"Location:");
+            }
+
+            static wxString size_label() {
+                return Locale::translate(u8"Size:");
+            }
+
+            static wxString hash_label() {
+                return Locale::translate(u8"Hash:");
+            }
+        };
     };
 
     struct ConnectionSettingsPanel {

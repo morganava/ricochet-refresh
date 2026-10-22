@@ -23,30 +23,26 @@ class FileTransfersPanel: public wxPanel {
 public:
     explicit FileTransfersPanel(wxWindow* parent);
 
-    void add_file_transfer(
-        tego_session_handle session_handle,
-        tego_user_handle user_handle,
-        tego_file_transfer_id id,
+    void add_pending_upload(
+        FileTransferKey key,
         wxString filename,
+        wxString location,
         uint64_t size,
-        FileTransferDirection direction,
-        wxString sender,
+        wxString hash,
         wxString receiver
     );
-
-    void update_file_transfer_progress(
-        tego_session_handle session_handle,
-        tego_user_handle user_handle,
-        tego_file_transfer_id id,
-        uint64_t bytes_transferred
+    void add_pending_download(
+        FileTransferKey key,
+        wxString original_filename,
+        uint64_t size,
+        wxString hash,
+        wxString sender
     );
-
-    void update_file_transfer_status(
-        tego_session_handle session_handle,
-        tego_user_handle user_handle,
-        tego_file_transfer_id id,
-        FileTransferStatus status
-    );
+    void begin_pending_download(FileTransferKey key, wxString new_filename, wxString location);
+    void update_transfer_progress(FileTransferKey key, uint64_t bytes_transferred);
+    void set_transfer_complete(FileTransferKey key);
+    void set_transfer_cancelled(FileTransferKey key);
+    void set_transfer_failed(FileTransferKey key);
 
 private:
     // fired when user clicks one of the headers, forces resort

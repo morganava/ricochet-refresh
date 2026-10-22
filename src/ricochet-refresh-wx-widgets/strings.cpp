@@ -18,27 +18,33 @@ wxString Strings::Common::ricochet_v4_id_uri(const tego_v3_onion_service_id* ser
     return wxString::Format("ricochet-v4://%s", into_wxString(service_id_string));
 }
 
-wxString Strings::FileTransfersPanel::status_formatted(
-    FileTransferDirection direction,
-    double percent_complete
-) {
-    switch (direction) {
-        case FileTransferDirection::Upload:
-            if (percent_complete < 100.0) {
-                auto fmt_string = Locale::translate(u8"Uploading {:.1f}%").utf8_string();
-                return fmt::format(fmt::runtime(fmt_string), percent_complete);
-            } else {
-                return Locale::translate(u8"Uploaded 100.0%");
-            }
-        case FileTransferDirection::Download:
-            if (percent_complete < 100.0) {
-                auto fmt_string = Locale::translate(u8"Downloading {:.1f}%").utf8_string();
-                return fmt::format(fmt::runtime(fmt_string), percent_complete);
-            } else {
-                return Locale::translate(u8"Downloaded 100.0%");
-            }
+wxString
+Strings::FileTransfersPanel::status_formatted(FileTransferStatus status, double percent_complete) {
+    switch (status) {
+        case FileTransferStatus::Pending:
+            return Locale::translate(u8"Pending");
+        case FileTransferStatus::Downloading: {
+            percent_complete = std::min(99.9, percent_complete);
+            // todo: ensure we don't round up to 100.0% here
+            auto fmt_string = Locale::translate(u8"Downloading {:.1f}%").utf8_string();
+            return fmt::format(fmt::runtime(fmt_string), percent_complete);
+        }
+        case FileTransferStatus::Uploading: {
+            percent_complete = std::min(99.9, percent_complete);
+            // todo: ensure we don't round up to 100.0% here
+            auto fmt_string = Locale::translate(u8"Uploading {:.1f}%").utf8_string();
+            return fmt::format(fmt::runtime(fmt_string), percent_complete);
+        }
+        case FileTransferStatus::DownloadCompleted:
+            return Locale::translate(u8"Downloaded 100%");
+        case FileTransferStatus::UploadCompleted:
+            return Locale::translate(u8"Uploaded 100%");
+        case FileTransferStatus::Cancelled:
+            return Locale::translate(u8"Cancelled");
+        case FileTransferStatus::Failed:
+            return Locale::translate(u8"Failed");
     }
-    TEGO_PANIC_MSG("unknown FileTransferDirection: {}", static_cast<int>(direction));
+    TEGO_PANIC_MSG("unknown FileTransferStatus: {}", static_cast<int>(status));
 }
 
 // file size constants for localization calculations

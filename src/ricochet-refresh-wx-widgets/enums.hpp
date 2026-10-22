@@ -126,6 +126,16 @@ enum class FileTransferDirection {
     Download,
 };
 
+enum class FileTransferStatus {
+    Pending,
+    Downloading,
+    Uploading,
+    DownloadCompleted,
+    UploadCompleted,
+    Cancelled,
+    Failed,
+};
+
 enum class FileTransfersPanelListColumn : unsigned int {
     Filename = 0,
     Size,

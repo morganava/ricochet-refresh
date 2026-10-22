@@ -40,15 +40,25 @@ void FileTransfersPanelListModel::update(const wxDateTime& now) {
     }
 }
 
-void FileTransfersPanelListModel::update_file_transfer_row(
-    tego_session_handle session_handle,
-    tego_user_handle user_handle,
-    tego_file_transfer_id file_transfer_id,
+void FileTransfersPanelListModel::begin_pending_download(
+    FileTransferKey key,
+    wxString new_filename
+) {
+    if (auto it = this->file_transfer_rows.find(key); it != this->file_transfer_rows.end()) {
+        auto& row = it->second;
+        row.set_filename(new_filename);
+        row.set_status(FileTransferStatus::Downloading);
+        row.set_bytes_transferred(0);
+    }
+}
+
+void FileTransfersPanelListModel::update_transfer_progress(
+    FileTransferKey key,
     uint64_t bytes_transferred
 ) {
-    auto key = std::make_tuple(session_handle, user_handle, file_transfer_id);
     if (auto it = this->file_transfer_rows.find(key); it != this->file_transfer_rows.end()) {
-        it->second.update_bytes_transferred(bytes_transferred, into_tego_time(wxDateTime::Now()));
+        auto& row = it->second;
+        row.update_bytes_transferred(bytes_transferred, into_tego_time(wxDateTime::Now()));
     }
 }
 
@@ -81,10 +91,10 @@ void FileTransfersPanelListModel::GetValueByRow(
         }
         case FileTransfersPanelListColumn::Status: {
             // TODO: need to handle not started yet
-            const auto direction = data.get_direction();
+            const auto status = data.get_status();
             const auto percent_progress = data.get_percent_progress();
 
-            variant = Strings::FileTransfersPanel::status_formatted(direction, percent_progress);
+            variant = Strings::FileTransfersPanel::status_formatted(status, percent_progress);
             break;
         }
         case FileTransfersPanelListColumn::Receiver:
@@ -180,6 +190,5 @@ bool FileTransfersPanelListModel::SetValueByRow(
     unsigned int row,
     unsigned int col
 ) {
-    LOG_INFO("SetAttrByRow!");
     return false;
 }

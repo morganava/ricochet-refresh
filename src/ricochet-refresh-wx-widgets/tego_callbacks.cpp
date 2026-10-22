@@ -326,6 +326,12 @@ void TegoCallbacks::on_file_transfer_request_received(
     tego_file_size file_size
 ) {
     auto file_name_wx = into_wxString(file_name);
+    // todo: update the callback to provide this info
+    auto file_location_wx = wxString("/some/path/to/") + file_name_wx;
+    auto file_hash_wx =
+        wxString("badhash1d01174aff5c76b4f38fcfda05a1ee329a7f628862c20eb1750accdaf");
+    auto sender_wx = wxString("sender");
+    auto receiver_wx = wxString("receiver");
 
     // todo: file transfer UI
     LOG_INFO(fmt::format(
@@ -339,18 +345,31 @@ void TegoCallbacks::on_file_transfer_request_received(
 
     wxGetApp().CallAfter([=]() {
         auto& file_transfers_panel = wxGetApp().get_main_frame().get_file_transfers_panel_mut();
-        file_transfers_panel.add_file_transfer(
-            session_handle,
-            user_handle,
-            file_transfer_id,
-            file_name_wx,
-            file_size,
-            FileTransferDirection::Download,
-            "sender",
-            "receiver"
-        );
+        const auto key = std::make_tuple(session_handle, user_handle, file_transfer_id);
+        file_transfers_panel
+            .add_pending_download(key, file_name_wx, file_size, file_hash_wx, sender_wx);
+        // file_transfers_panel.add_file_transfer(
+        //     session_handle,
+        //     user_handle,
+        //     file_transfer_id,
+        //     file_name_wx,
+        //     file_location_wx,
+        //     file_size,
+        //     file_hash_wx,
+        //     sender_wx,
+        //     receiver_wx
+        // );
+        // file_transfers_panel.update_file_transfer_progress(
+        //     session_handle,
+        //     user_handle,
+        //     file_transfer_id,
+        //     FileTransferStatus::Downloading,
+        //     0
+        // );
     });
 }
+
+// todo: on_file_transfer_start(...)
 
 void TegoCallbacks::on_file_transfer_progress(
     tego_context* context,
@@ -372,14 +391,10 @@ void TegoCallbacks::on_file_transfer_progress(
         bytes_total
     ));
 
+    const auto key = std::make_tuple(session_handle, user_handle, file_transfer_id);
     wxGetApp().CallAfter([=]() {
         auto& file_transfers_panel = wxGetApp().get_main_frame().get_file_transfers_panel_mut();
-        file_transfers_panel.update_file_transfer_progress(
-            session_handle,
-            user_handle,
-            file_transfer_id,
-            bytes_complete
-        );
+        file_transfers_panel.update_transfer_progress(key, bytes_complete);
     });
 }
 
@@ -400,6 +415,22 @@ void TegoCallbacks::on_file_transfer_complete(
         static_cast<int>(file_transfer_direction),
         static_cast<int>(result)
     ));
+
+    const auto key = std::make_tuple(session_handle, user_handle, file_transfer_id);
+    wxGetApp().CallAfter([=]() {
+        auto& file_transfers_panel = wxGetApp().get_main_frame().get_file_transfers_panel_mut();
+        switch (result) {
+            case tego_file_transfer_result_success:
+                file_transfers_panel.set_transfer_complete(key);
+                break;
+            case tego_file_transfer_result_cancelled:
+                file_transfers_panel.set_transfer_cancelled(key);
+                break;
+            default:
+                file_transfers_panel.set_transfer_failed(key);
+                break;
+        }
+    });
 }
 
 void TegoCallbacks::on_file_transfer_request_acknowledged(

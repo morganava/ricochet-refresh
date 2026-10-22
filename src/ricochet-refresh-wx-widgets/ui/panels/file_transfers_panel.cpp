@@ -128,24 +128,34 @@ FileTransfersPanel::FileTransfersPanel(wxWindow* parent) : wxPanel(parent), upda
     this->update_timer.Start(500, false);
 }
 
-void FileTransfersPanel::add_file_transfer(
-    tego_session_handle session_handle,
-    tego_user_handle user_handle,
-    tego_file_transfer_id id,
+// new
+void FileTransfersPanel::add_pending_upload(
+    FileTransferKey key,
     wxString filename,
+    wxString location,
     uint64_t size,
-    FileTransferDirection direction,
-    wxString sender,
+    wxString hash,
     wxString receiver
+) {}
+
+void FileTransfersPanel::add_pending_download(
+    FileTransferKey key,
+    wxString original_filename,
+    uint64_t size,
+    wxString hash,
+    wxString sender
 ) {
-    const auto key = std::make_tuple(session_handle, user_handle, id);
+    // todo: get name from profile
+    const auto receiver = wxString("me");
+
     // first update the list model
     this->list_model->add_file_transfer_row(
         key,
-        FileTransferRow(filename, size, direction, sender, receiver, wxDateTime::Now())
+        FileTransferRow(original_filename, size, sender, receiver, wxDateTime::Now())
     );
     // then create our hidden details panel
-    auto* details_panel = new FileTransferDetailsPanel(this);
+    const auto location = wxString("");
+    auto* details_panel = new FileTransferDetailsPanel(this, size, hash);
     this->details_panels.insert(std::make_pair(key, details_panel));
     this->v_sizer->Insert(
         FILE_TRANSFER_DETAILS_INDEX,
@@ -157,14 +167,32 @@ void FileTransfersPanel::add_file_transfer(
     this->v_sizer->Hide(details_panel);
 }
 
-void FileTransfersPanel::update_file_transfer_progress(
-    tego_session_handle session_handle,
-    tego_user_handle user_handle,
-    tego_file_transfer_id id,
-    uint64_t bytes_transferred
+void FileTransfersPanel::begin_pending_download(
+    FileTransferKey key,
+    wxString new_filename,
+    wxString location
 ) {
-    this->list_model->update_file_transfer_row(session_handle, user_handle, id, bytes_transferred);
+    this->list_model->begin_pending_download(key, new_filename);
+
+    if (auto it = this->details_panels.find(key); it != this->details_panels.end()) {
+        auto* details_panel = it->second;
+        details_panel->begin_pending_download(location);
+    }
 }
+
+void FileTransfersPanel::update_transfer_progress(FileTransferKey key, uint64_t bytes_transferred) {
+    this->list_model->update_transfer_progress(key, bytes_transferred);
+    if (auto it = this->details_panels.find(key); it != this->details_panels.end()) {
+        auto details_panel = it->second;
+        details_panel->update_transfer_progress(bytes_transferred);
+    }
+}
+
+// void FileTransfersPanel::set_transfer_complete(FileTransferKey) {}
+
+// void FileTransfersPanel::set_transfer_cancelled(FileTransferKey) {}
+
+// void FileTransfersPanel::set_transfer_failed(FileTransferKey) {}
 
 void FileTransfersPanel::on_sort(const wxDataViewEvent& event) {
     // update our sort column
@@ -213,15 +241,21 @@ void FileTransfersPanel::on_row_select(const wxDataViewEvent& event) {
         this->selected_file_transfer = std::nullopt;
     }
     this->v_sizer->Layout();
-
-    LOG_INFO(fmt::format("on_row_select: {}", row_index));
 }
 
 void FileTransfersPanel::on_timer_event() {
     // convert raw data to rendered data
-    this->list_model->update(wxDateTime::Now());
+    const auto now = wxDateTime::Now();
+    this->list_model->update(now);
 
     this->sort_rows();
+
+    // only update the visible details panel
+    if (this->selected_file_transfer.has_value()) {
+        auto it = this->details_panels.find(this->selected_file_transfer.value());
+        auto details_panel = it->second;
+        details_panel->update(now);
+    }
 }
 
 void FileTransfersPanel::sort_rows() {

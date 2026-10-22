@@ -4,6 +4,7 @@ class FileTransferRow;
 enum class FileTransfersPanelListColumn : unsigned int;
 enum class SortDirection;
 typedef std::tuple<tego_session_handle, tego_user_handle, tego_file_transfer_id> FileTransferKey;
+enum class FileTransferStatus;
 
 class FileTransfersPanelListModel: public wxDataViewVirtualListModel {
 public:
@@ -14,13 +15,8 @@ public:
     // called on a regular interval to update each of our row's speed-derived stats
     void update(const wxDateTime& now);
 
-    // called when receiving file transfer-related events to update a particular row's raw values
-    void update_file_transfer_row(
-        tego_session_handle session_handle,
-        tego_user_handle user_handle,
-        tego_file_transfer_id file_transfer_id,
-        uint64_t bytes_transferred
-    );
+    void begin_pending_download(FileTransferKey key, wxString new_filename);
+    void update_transfer_progress(FileTransferKey, uint64_t bytes_transferred);
 
     FileTransferKey get_file_transfer_key(size_t index);
 

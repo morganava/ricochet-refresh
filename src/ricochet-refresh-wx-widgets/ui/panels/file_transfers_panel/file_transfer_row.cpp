@@ -10,7 +10,6 @@
 FileTransferRow::FileTransferRow(
     wxString filename,
     uint64_t size,
-    FileTransferDirection direction,
     wxString sender,
     wxString receiver,
     wxDateTime now
@@ -18,7 +17,7 @@ FileTransferRow::FileTransferRow(
     filename(filename),
     size(size),
     bytes_transferred(0),
-    direction(direction),
+    status(FileTransferStatus::Pending),
     sender(sender),
     receiver(receiver),
     speed(0.0),

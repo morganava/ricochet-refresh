@@ -7,7 +7,8 @@
     },
     "ui": {
         "combinedChatWindow": true,
-        "language": ""
+        "language": "",
+        "notificationVolume": 0.75
     },
     "users": {
         "qmmttqp6vstcsdyeg6dkfbqxkhlj6cmqdxh3fksf77jaourjid7o4oid": {

@@ -4,7 +4,7 @@
     #include "ui/panels/file_transfers_panel/speed_calculator.hpp"
 #endif // SPEED_CALCUALTOR_H
 
-enum class FileTransferDirection;
+enum class FileTransferStatus;
 enum class Ordering;
 enum class FileTransfersPanelListColumn : unsigned int;
 
@@ -13,7 +13,6 @@ public:
     FileTransferRow(
         wxString filename,
         uint64_t size,
-        FileTransferDirection direction,
         wxString sender,
         wxString receiver,
         wxDateTime now
@@ -34,8 +33,8 @@ public:
         return this->bytes_transferred;
     }
 
-    FileTransferDirection get_direction() const {
-        return this->direction;
+    FileTransferStatus get_status() const {
+        return this->status;
     }
 
     double get_percent_progress() const {
@@ -82,13 +81,30 @@ public:
     //
 
     void update(tego_time now);
+
+    //
+    // Setters
+    //
+    void set_filename(wxString filename) {
+        this->filename = filename;
+    }
+
+    void set_status(FileTransferStatus status) {
+        this->status = status;
+    }
+
+    void set_bytes_transferred(uint64_t bytes_transferred) {
+        this->bytes_transferred = bytes_transferred;
+    }
+
+    // updates as well the internal speed calculator
     void update_bytes_transferred(uint64_t bytes_transferred, tego_time now);
 
 private:
     wxString filename;
     uint64_t size;
     uint64_t bytes_transferred;
-    FileTransferDirection direction;
+    FileTransferStatus status;
     wxString sender;
     wxString receiver;
     double speed; // bytes per second
